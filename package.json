@@ -1,0 +1,17 @@
+{
+  "name": "extropy-engine",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "concurrently \"npm run dev -w packages/epistemology-engine\" \"npm run dev -w packages/signal-flow\" \"npm run dev -w packages/loop-ledger\" \"npm run dev -w packages/reputation\" \"npm run dev -w packages/xp-mint\"",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  }
+}

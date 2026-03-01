@@ -1,0 +1,237 @@
+openapi: 3.1.0
+info:
+  title: Epistemology Engine
+  version: 1.0.0
+  description: Belief & user management service for the Extropy Engine
+
+servers:
+  - url: http://localhost:4001
+    description: Local development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: epistemology-engine
+
+  /users:
+    post:
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: User not found
+
+  /beliefs:
+    post:
+      summary: Create a new belief
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBeliefRequest'
+      responses:
+        '201':
+          description: Belief created and event published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeliefResponse'
+    get:
+      summary: Get all beliefs (paginated)
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Belief list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Belief'
+                  meta:
+                    type: object
+
+  /beliefs/{id}:
+    get:
+      summary: Get belief by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Belief found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeliefResponse'
+        '404':
+          description: Not found
+    put:
+      summary: Update belief
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBeliefRequest'
+      responses:
+        '200':
+          description: Belief updated
+
+components:
+  schemas:
+    CreateUserRequest:
+      type: object
+      required: [handle, email]
+      properties:
+        handle:
+          type: string
+        email:
+          type: string
+          format: email
+
+    UserResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        handle:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateBeliefRequest:
+      type: object
+      required: [userId, content, confidence, domain]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        content:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        domain:
+          type: string
+
+    UpdateBeliefRequest:
+      type: object
+      properties:
+        content:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    BeliefResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Belief'
+
+    Belief:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        content:
+          type: string
+        confidence:
+          type: number
+        domain:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

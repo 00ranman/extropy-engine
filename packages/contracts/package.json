@@ -1,0 +1,22 @@
+{
+  "name": "@extropy/contracts",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@types/pg": "^8.11.0",
+    "pg": "^8.11.3",
+    "redis": "^4.6.12"
+  }
+}
