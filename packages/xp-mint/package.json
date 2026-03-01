@@ -1,7 +1,7 @@
 {
   "name": "@extropy/xp-mint",
   "version": "0.1.0",
-  "description": "Mints XP tokens after loop closure based on entropy reduction and validator reputation",
+  "description": "Mints XP tokens when loops close with verified DeltaS > 0, enforces strict criteria",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
