@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extropy Engine — XP Dashboard</title>
+  <meta name="description" content="Civilisational-scale infrastructure dashboard for verified entropy reduction">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="./base.css">
+  <link rel="stylesheet" href="./style.css">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f98a3'/><circle cx='16' cy='16' r='5' fill='%23d19900'/></svg>">
+</head>
+<body>
+
+  <!-- Skip link -->
+  <a href="#main-content" class="sr-only" style="position:fixed;top:0;left:0;z-index:999;background:var(--color-primary);color:var(--color-text-inverse);padding:8px 16px;border-radius:0 0 4px 0;transform:translateY(-100%);transition:transform 180ms;">Skip to content</a>
+
+  <!-- Dashboard shell -->
+  <div class="dashboard" id="dashboard">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <!-- Built by app.js -->
+    </aside>
+
+    <!-- Header -->
+    <header class="header" id="header">
+      <!-- Built by app.js -->
+    </header>
+
+    <!-- Main content -->
+    <main class="main" id="main-content" style="transition: opacity 120ms cubic-bezier(0.16, 1, 0.3, 1);">
+      <!-- Loading state -->
+      <div class="empty-state">
+        <div class="empty-state-icon" style="color:var(--color-primary);">◎</div>
+        <div class="empty-state-text">Initializing substrate...</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile sidebar overlay -->
+  <div class="panel-overlay" id="mobile-overlay" style="z-index:35;"></div>
+
+  <!-- App init -->
+  <script type="module">
+    import { initApp } from './app.js';
+
+    // Close mobile sidebar on overlay click
+    document.getElementById('mobile-overlay')?.addEventListener('click', () => {
+      document.getElementById('sidebar')?.classList.remove('mobile-open');
+      document.getElementById('mobile-overlay')?.classList.remove('visible');
+    });
+
+    // Init after fonts and Chart.js are ready
+    if (document.fonts) {
+      document.fonts.ready.then(() => initApp());
+    } else {
+      window.addEventListener('load', () => initApp());
+    }
+  </script>
+
+</body>
+</html>
