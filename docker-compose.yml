@@ -1,118 +1,136 @@
 version: '3.9'
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Extropy Engine — Docker Compose
-# ══════════════════════════════════════════════════════════════════════════════
+# ===============================================================================
+#  EXTROPY ENGINE -- Local Development Stack
+# ===============================================================================
+#
+#  Usage:
+#    docker compose up --build        # Start everything
+#    docker compose up postgres redis # Infrastructure only
+#    docker compose logs -f xp-mint   # Tail one service
+#
+# ===============================================================================
 
 services:
-
-  # ── Infrastructure ──────────────────────────────────────────────────────────
-
+  # -- Infrastructure -------------------------------------------------------
   postgres:
     image: postgres:16-alpine
-    restart: unless-stopped
     environment:
       POSTGRES_USER: extropy
-      POSTGRES_PASSWORD: extropy
-      POSTGRES_DB: extropy
+      POSTGRES_PASSWORD: extropy_dev
+      POSTGRES_DB: extropy_engine
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U extropy']
+      test: ["CMD-SHELL", "pg_isready -U extropy"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 5
 
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
     ports:
-      - '6379:6379'
+      - "6379:6379"
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
-      timeout: 3s
-      retries: 10
+      timeout: 5s
+      retries: 5
 
-  # ── Services ─────────────────────────────────────────────────────────────────
-
+  # -- Services -------------------------------------------------------------
   epistemology-engine:
     build:
       context: .
       dockerfile: packages/epistemology-engine/Dockerfile
-    restart: unless-stopped
-    environment:
-      PORT: '4001'
-      DATABASE_URL: postgres://extropy:extropy@postgres:5432/extropy
-      REDIS_URL: redis://redis:6379
     ports:
-      - '4001:4001'
+      - "4001:4001"
+    environment:
+      PORT: 4001
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=epistemology
+      REDIS_URL: redis://redis:6379
+      LOOP_LEDGER_URL: http://loop-ledger:4003
+      SIGNALFLOW_URL: http://signalflow:4002
     depends_on:
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   signalflow:
     build:
       context: .
       dockerfile: packages/signalflow/Dockerfile
-    restart: unless-stopped
-    environment:
-      PORT: '4002'
-      DATABASE_URL: postgres://extropy:extropy@postgres:5432/extropy
-      REDIS_URL: redis://redis:6379
     ports:
-      - '4002:4002'
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=signalflow
+      REDIS_URL: redis://redis:6379
+      REPUTATION_URL: http://reputation:4004
+      EPISTEMOLOGY_URL: http://epistemology-engine:4001
     depends_on:
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   loop-ledger:
     build:
       context: .
       dockerfile: packages/loop-ledger/Dockerfile
-    restart: unless-stopped
-    environment:
-      PORT: '4003'
-      DATABASE_URL: postgres://extropy:extropy@postgres:5432/extropy
-      REDIS_URL: redis://redis:6379
     ports:
-      - '4003:4003'
-    depends_on:
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
-
-  xp-mint:
-    build:
-      context: .
-      dockerfile: packages/xp-mint/Dockerfile
-    restart: unless-stopped
+      - "4003:4003"
     environment:
-      PORT: '4005'
-      DATABASE_URL: postgres://extropy:extropy@postgres:5432/extropy
+      PORT: 4003
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=ledger
       REDIS_URL: redis://redis:6379
-    ports:
-      - '4005:4005'
+      EPISTEMOLOGY_URL: http://epistemology-engine:4001
+      SIGNALFLOW_URL: http://signalflow:4002
+      REPUTATION_URL: http://reputation:4004
+      XP_MINT_URL: http://xp-mint:4005
     depends_on:
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   reputation:
     build:
       context: .
       dockerfile: packages/reputation/Dockerfile
-    restart: unless-stopped
-    environment:
-      PORT: '4004'
-      DATABASE_URL: postgres://extropy:extropy@postgres:5432/extropy
-      REDIS_URL: redis://redis:6379
     ports:
-      - '4004:4004'
+      - "4004:4004"
+    environment:
+      PORT: 4004
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=reputation
+      REDIS_URL: redis://redis:6379
+      SIGNALFLOW_URL: http://signalflow:4002
     depends_on:
-      postgres: { condition: service_healthy }
-      redis: { condition: service_healthy }
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  xp-mint:
+    build:
+      context: .
+      dockerfile: packages/xp-mint/Dockerfile
+    ports:
+      - "4005:4005"
+    environment:
+      PORT: 4005
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=mint
+      REDIS_URL: redis://redis:6379
+      LOOP_LEDGER_URL: http://loop-ledger:4003
+      REPUTATION_URL: http://reputation:4004
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
-  postgres_data:
+  pgdata:
