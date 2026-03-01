@@ -1,7 +1,7 @@
 /**
- * ════════════════════════════════════════════════════════════════════════════════
+ * ═══════════════════════════════════════════════════════════════════════════════
  *  EXTROPY ENGINE — Shared Domain Contracts
- * ════════════════════════════════════════════════════════════════════════════════
+ * ═══════════════════════════════════════════════════════════════════════════════
  *
  *  Core formula:  XP = R × F × ΔS × (w · E) × log(1/Tₛ)
  *
@@ -16,7 +16,7 @@
  *  Invariant: XP is minted if and only if a Loop closes with verified ΔS > 0.
  *             No loop closure → no value → no mint.
  *
- * ════════════════════════════════════════════════════════════════════════════════
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -465,7 +465,7 @@ export interface Loop {
   /** Entropy domain of this loop */
   domain: EntropyDomain;
 
-  // ── Entropy Measurements ──────────────────────────────────────────────────
+  // ── Entropy Measurements ──────────────────────────────────────────────
 
   /** Entropy measurement before the claimed action */
   entropyBefore: EntropyMeasurement | null;
@@ -480,7 +480,7 @@ export interface Loop {
    */
   deltaS: number | null;
 
-  // ── Participants ──────────────────────────────────────────────────────────
+  // ── Participants ──────────────────────────────────────────────────────
 
   /** All validators involved in this loop */
   validatorIds: ValidatorId[];
@@ -488,7 +488,7 @@ export interface Loop {
   /** All task routings for this loop's sub-claims */
   taskIds: TaskId[];
 
-  // ── Consensus ─────────────────────────────────────────────────────────────
+  // ── Consensus ─────────────────────────────────────────────────────────
 
   /**
    * Weighted consensus results.
@@ -498,7 +498,7 @@ export interface Loop {
    */
   consensus: LoopConsensus | null;
 
-  // ── DAG Structure ─────────────────────────────────────────────────────────
+  // ── DAG Structure ─────────────────────────────────────────────────────
 
   /** Parent loop IDs — this loop depends on outputs from these loops */
   parentLoopIds: LoopId[];
@@ -506,7 +506,7 @@ export interface Loop {
   /** Child loop IDs — these loops depend on this loop's output */
   childLoopIds: LoopId[];
 
-  // ── Timing ────────────────────────────────────────────────────────────────
+  // ── Timing ────────────────────────────────────────────────────────────
 
   /** Settlement time Tₛ — duration from open to close */
   settlementTimeSeconds: number | null;
@@ -567,7 +567,7 @@ export interface XPMintEvent {
 
   status: MintStatus;
 
-  // ── Formula Components ────────────────────────────────────────────────────
+  // ── Formula Components ────────────────────────────────────────────────
 
   /** R — Aggregate reputation of the validator(s) who verified the loop */
   reputationFactor: number;
@@ -587,7 +587,7 @@ export interface XPMintEvent {
   /** Final computed XP value */
   xpValue: number;
 
-  // ── Distribution ──────────────────────────────────────────────────────────
+  // ── Distribution ──────────────────────────────────────────────────────
 
   /** How the minted XP is distributed among participants */
   distribution: XPDistribution[];
@@ -595,7 +595,7 @@ export interface XPMintEvent {
   /** Total XP minted in this event */
   totalMinted: number;
 
-  // ── Retroactive Validation ────────────────────────────────────────────────
+  // ── Retroactive Validation ────────────────────────────────────────────
 
   /** If burned, the reason */
   burnReason?: string;
@@ -621,154 +621,297 @@ export interface XPDistribution {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Base shape for all domain events flowing through the event bus.
- * Each service publishes typed events; consumers subscribe to specific types.
+ * All inter-service communication uses typed events.
+ * Services publish events to a shared bus; downstream services subscribe.
+ *
+ * Event naming convention: <Source>.<Action>
+ *
+ * This is the exhaustive event catalog for the Extropy Engine.
  */
-export interface DomainEvent<T = unknown> {
+export enum EventType {
+  // ── Epistemology Engine Events ─────────────────────────────────────────
+  /** New claim ingested and ready for decomposition */
+  CLAIM_SUBMITTED             = 'epistemology.claim.submitted',
+  /** Claim decomposed into sub-claims */
+  CLAIM_DECOMPOSED            = 'epistemology.claim.decomposed',
+  /** Sub-claim truth score updated via Bayesian update */
+  SUBCLAIM_UPDATED            = 'epistemology.subclaim.updated',
+  /** Claim fully evaluated — composite truth score computed */
+  CLAIM_EVALUATED             = 'epistemology.claim.evaluated',
+  /** Claim hit Gödel boundary */
+  CLAIM_UNDECIDABLE           = 'epistemology.claim.undecidable',
+
+  // ── SignalFlow Events ─────────────────────────────────────────────────
+  /** Task created and queued for assignment */
+  TASK_CREATED                = 'signalflow.task.created',
+  /** Task assigned to a validator */
+  TASK_ASSIGNED               = 'signalflow.task.assigned',
+  /** Task completed by validator with result */
+  TASK_COMPLETED              = 'signalflow.task.completed',
+  /** Task timed out and needs reassignment */
+  TASK_TIMED_OUT              = 'signalflow.task.timed_out',
+  /** Task reassigned to a different validator */
+  TASK_REASSIGNED             = 'signalflow.task.reassigned',
+
+  // ── Loop Ledger Events ────────────────────────────────────────────────
+  /** New loop opened */
+  LOOP_OPENED                 = 'ledger.loop.opened',
+  /** Entropy measurement recorded for a loop */
+  LOOP_MEASUREMENT_RECORDED   = 'ledger.loop.measurement_recorded',
+  /** Loop entered consensus phase */
+  LOOP_CONSENSUS_STARTED      = 'ledger.loop.consensus_started',
+  /** Loop closed successfully (ΔS > 0 verified) */
+  LOOP_CLOSED                 = 'ledger.loop.closed',
+  /** Loop failed (ΔS ≤ 0 or consensus rejected) */
+  LOOP_FAILED                 = 'ledger.loop.failed',
+  /** Loop isolated due to Gödel boundary */
+  LOOP_ISOLATED               = 'ledger.loop.isolated',
+  /** Loop fully settled (XP distributed) */
+  LOOP_SETTLED                = 'ledger.loop.settled',
+
+  // ── Reputation Events ─────────────────────────────────────────────────
+  /** Reputation accrued for a validator */
+  REPUTATION_ACCRUED          = 'reputation.accrued',
+  /** Reputation decayed due to inactivity */
+  REPUTATION_DECAYED          = 'reputation.decayed',
+  /** Reputation penalized (adversarial behavior detected) */
+  REPUTATION_PENALIZED        = 'reputation.penalized',
+
+  // ── XP Mint Events ────────────────────────────────────────────────────
+  /** XP provisionally minted */
+  XP_MINTED_PROVISIONAL       = 'mint.xp.provisional',
+  /** XP retroactively confirmed */
+  XP_CONFIRMED                = 'mint.xp.confirmed',
+  /** XP burned (retroactive validation failed) */
+  XP_BURNED                   = 'mint.xp.burned',
+}
+
+/**
+ * Generic event envelope. Every event in the system follows this structure.
+ */
+export interface DomainEvent<T extends EventType = EventType, P = unknown> {
   /** Unique event ID */
   eventId: string;
-
-  /** The aggregate/entity this event pertains to */
-  aggregateId: string;
-
-  /** Event type string (e.g. 'loop.closed', 'claim.verified') */
-  type: string;
-
-  /** Event payload */
-  data: T;
-
-  /** When the event occurred */
-  occurredAt: Timestamp;
-
-  /** Service that emitted this event */
-  source: string;
-
+  /** Event type from the catalog */
+  type: T;
+  /** The event payload — structure depends on event type */
+  payload: P;
+  /** Which service emitted this event */
+  source: ServiceName;
+  /** Correlation ID for tracing a full loop lifecycle */
+  correlationId: LoopId;
+  /** When the event was emitted */
+  timestamp: Timestamp;
   /** Schema version for forward compatibility */
-  schemaVersion: number;
+  version: number;
+}
 
-  /** Optional correlation ID for distributed tracing */
-  correlationId?: string;
+export enum ServiceName {
+  EPISTEMOLOGY_ENGINE = 'epistemology-engine',
+  SIGNALFLOW         = 'signalflow',
+  LOOP_LEDGER        = 'loop-ledger',
+  REPUTATION         = 'reputation',
+  XP_MINT            = 'xp-mint',
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  API Request / Response shapes
+//  Event Payloads (typed per event)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface SubmitClaimRequest {
-  loopId: LoopId;
-  statement: string;
-  domain: EntropyDomain;
-  submitterId: ValidatorId;
-  /** Optional initial prior probability (defaults to 0.5) */
-  initialPrior?: number;
-}
-
-export interface SubmitClaimResponse {
+export interface ClaimSubmittedPayload {
   claim: Claim;
-  estimatedSubClaims: number;
-  estimatedValidationTimeSeconds: number;
 }
 
-export interface GetLoopStatusResponse {
-  loop: Loop;
-  claims: Claim[];
+export interface ClaimDecomposedPayload {
+  claimId: ClaimId;
   subClaims: SubClaim[];
-  tasks: TaskRouting[];
-  mintEvent?: XPMintEvent;
 }
 
-export interface ValidatorRegistrationRequest {
-  name: string;
-  type: 'human' | 'ai' | 'hybrid';
-  domains: EntropyDomain[];
-  maxConcurrentTasks: number;
+export interface SubClaimUpdatedPayload {
+  subClaimId: SubClaimId;
+  claimId: ClaimId;
+  newPosterior: number;
+  update: BayesianUpdate;
 }
 
-export interface ValidatorRegistrationResponse {
-  validator: Validator;
-  apiKey: string;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Database Entity Shapes (for Loop Ledger & Epistemology Engine)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Database row shape for a Loop (stored in loop_ledger DB).
- * JSON columns are stored as JSONB in Postgres.
- */
-export interface LoopRow {
-  id: string;
-  claim_id: string;
-  status: LoopStatus;
-  domain: EntropyDomain;
-  entropy_before: EntropyMeasurement | null;
-  entropy_after: EntropyMeasurement | null;
-  delta_s: number | null;
-  validator_ids: string[];
-  task_ids: string[];
-  consensus: LoopConsensus | null;
-  parent_loop_ids: string[];
-  child_loop_ids: string[];
-  settlement_time_seconds: number | null;
-  causal_closure_speed: number;
-  created_at: string;
-  closed_at: string | null;
-  settled_at: string | null;
-}
-
-/**
- * Database row shape for a Claim (stored in epistemology_engine DB).
- */
-export interface ClaimRow {
-  id: string;
-  loop_id: string;
-  statement: string;
-  domain: EntropyDomain;
-  submitter_id: string;
+export interface ClaimEvaluatedPayload {
+  claimId: ClaimId;
+  truthScore: number;
   status: ClaimStatus;
-  bayesian_prior: BayesianPrior;
-  sub_claim_ids: string[];
-  truth_score: number;
-  created_at: string;
-  updated_at: string;
-  undecidable_reason: string | null;
 }
 
-/**
- * Database row shape for a SubClaim.
- */
-export interface SubClaimRow {
-  id: string;
-  claim_id: string;
-  loop_id: string;
-  statement: string;
+export interface TaskCreatedPayload {
+  task: TaskRouting;
+  subClaim: SubClaim;
+}
+
+export interface TaskAssignedPayload {
+  taskId: TaskId;
+  validatorId: ValidatorId;
+  routingReason: RoutingReason;
+}
+
+export interface TaskCompletedPayload {
+  taskId: TaskId;
+  validatorId: ValidatorId;
+  result: ValidationResult;
+}
+
+export interface LoopOpenedPayload {
+  loop: Loop;
+  claim: Claim;
+}
+
+export interface LoopMeasurementRecordedPayload {
+  loopId: LoopId;
+  measurement: EntropyMeasurement;
+  phase: 'before' | 'after';
+}
+
+export interface LoopClosedPayload {
+  loop: Loop;
+  deltaS: number;
+  consensus: LoopConsensus;
+}
+
+export interface LoopFailedPayload {
+  loopId: LoopId;
+  reason: string;
+  deltaS: number | null;
+  consensus: LoopConsensus | null;
+}
+
+export interface ReputationAccruedPayload {
+  validatorId: ValidatorId;
   domain: EntropyDomain;
-  status: SubClaimStatus;
-  bayesian_prior: BayesianPrior;
-  measurement_ids: string[];
-  assigned_validator_ids: string[];
-  weight: number;
-  depends_on: string[];
-  created_at: string;
-  resolved_at: string | null;
+  delta: number;
+  newAggregate: number;
+  relatedLoopId: LoopId;
+}
+
+export interface ReputationPenalizedPayload {
+  validatorId: ValidatorId;
+  domain: EntropyDomain;
+  penalty: number;
+  reason: string;
+  relatedLoopId: LoopId;
+}
+
+export interface XPMintedProvisionalPayload {
+  mintEvent: XPMintEvent;
+}
+
+export interface XPConfirmedPayload {
+  mintEventId: MintEventId;
+  loopId: LoopId;
+  totalXP: number;
+}
+
+export interface XPBurnedPayload {
+  mintEventId: MintEventId;
+  loopId: LoopId;
+  burnReason: string;
+  xpBurned: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Type-Safe Event Map (for strongly-typed pub/sub)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface EventPayloadMap {
+  [EventType.CLAIM_SUBMITTED]:           ClaimSubmittedPayload;
+  [EventType.CLAIM_DECOMPOSED]:          ClaimDecomposedPayload;
+  [EventType.SUBCLAIM_UPDATED]:          SubClaimUpdatedPayload;
+  [EventType.CLAIM_EVALUATED]:           ClaimEvaluatedPayload;
+  [EventType.CLAIM_UNDECIDABLE]:         ClaimEvaluatedPayload;
+  [EventType.TASK_CREATED]:              TaskCreatedPayload;
+  [EventType.TASK_ASSIGNED]:             TaskAssignedPayload;
+  [EventType.TASK_COMPLETED]:            TaskCompletedPayload;
+  [EventType.TASK_TIMED_OUT]:            TaskCompletedPayload;
+  [EventType.TASK_REASSIGNED]:           TaskAssignedPayload;
+  [EventType.LOOP_OPENED]:               LoopOpenedPayload;
+  [EventType.LOOP_MEASUREMENT_RECORDED]: LoopMeasurementRecordedPayload;
+  [EventType.LOOP_CONSENSUS_STARTED]:    { loopId: LoopId };
+  [EventType.LOOP_CLOSED]:               LoopClosedPayload;
+  [EventType.LOOP_FAILED]:               LoopFailedPayload;
+  [EventType.LOOP_ISOLATED]:             { loopId: LoopId; reason: string };
+  [EventType.LOOP_SETTLED]:              { loopId: LoopId; mintEventId: MintEventId };
+  [EventType.REPUTATION_ACCRUED]:        ReputationAccruedPayload;
+  [EventType.REPUTATION_DECAYED]:        { validatorId: ValidatorId; domain: EntropyDomain; decayAmount: number };
+  [EventType.REPUTATION_PENALIZED]:      ReputationPenalizedPayload;
+  [EventType.XP_MINTED_PROVISIONAL]:     XPMintedProvisionalPayload;
+  [EventType.XP_CONFIRMED]:              XPConfirmedPayload;
+  [EventType.XP_BURNED]:                 XPBurnedPayload;
 }
 
 /**
- * Database row shape for a Validator.
+ * Type-safe event emitter/subscriber interfaces.
+ * Each service implements the relevant subset.
  */
-export interface ValidatorRow {
-  id: string;
-  name: string;
-  type: 'human' | 'ai' | 'hybrid';
-  domains: EntropyDomain[];
-  reputation: ReputationScore;
-  total_xp_earned: number;
-  loops_participated: number;
-  accurate_validations: number;
-  current_task_count: number;
-  max_concurrent_tasks: number;
-  is_active: boolean;
-  created_at: string;
-  last_active_at: string;
+export type TypedDomainEvent<T extends EventType> = DomainEvent<T, EventPayloadMap[T]>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  XP Calculation Helpers (pure functions)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The full XP formula:
+ *   XP = R × F × ΔS × (w · E) × log(1/Tₛ)
+ *
+ * Where each factor is independently verifiable and must be > 0.
+ */
+export interface XPFormulaInputs {
+  /** R — Reputation factor */
+  reputation: number;
+  /** F — Feedback closure strength [0, 1] */
+  feedbackClosure: number;
+  /** ΔS — Net entropy reduction (must be > 0) */
+  deltaS: number;
+  /** w — Domain weight */
+  domainWeight: number;
+  /** E — Essentiality factor [0, 1] */
+  essentiality: number;
+  /** Tₛ — Settlement time in seconds (must be > 0) */
+  settlementTimeSeconds: number;
+}
+
+/**
+ * Irreducible form: XP = ΔS / c_L²
+ * This is the physics floor — the minimum XP that MUST be minted
+ * for a given entropy reduction in a given domain.
+ */
+export interface IrreducibleXPInputs {
+  /** ΔS — Net entropy reduction */
+  deltaS: number;
+  /** c_L — Causal closure speed for the domain */
+  causalClosureSpeed: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Service Health & API Contracts
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ServiceHealthResponse {
+  service: ServiceName;
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  version: string;
+  uptime: number;
+  timestamp: Timestamp;
+  dependencies: Record<ServiceName, 'connected' | 'disconnected'>;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface ErrorResponse {
+  error: string;
+  code: string;
+  details?: Record<string, unknown>;
+  correlationId?: string;
+  timestamp: Timestamp;
 }
