@@ -185,7 +185,12 @@ paths:
     post:
       tags: [Reputation]
       operationId: accrueReputation
-      summary: Accrue reputation for a validator after a loop closes
+      summary: Accrue reputation for a validator after successful validation
+      description: |
+        Called when a loop closes and XP is minted. Applies the formula:
+        R_i(t+1) = R_i(t) + α · XP_t
+        
+        Emits: `reputation.accrued`
       requestBody:
         required: true
         content:
@@ -194,11 +199,37 @@ paths:
               $ref: '#/components/schemas/AccrueReputationRequest'
       responses:
         '200':
-          description: Updated reputation
+          description: Updated validator
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReputationScore'
+                $ref: '#/components/schemas/Validator'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /reputation/penalize:
+    post:
+      tags: [Reputation]
+      operationId: penalizeReputation
+      summary: Apply a reputation penalty for adversarial behavior
+      description: |
+        Applies the formula: R_i(t) = R_i(t) - penalty
+        Resets the validator's streak to 0.
+        
+        Emits: `reputation.penalized`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PenalizeReputationRequest'
+      responses:
+        '200':
+          description: Updated validator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Validator'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -206,57 +237,61 @@ paths:
     post:
       tags: [Decay]
       operationId: applyDecay
-      summary: Apply time-based reputation decay to all validators
+      summary: Apply reputation decay to inactive validators
+      description: |
+        Applies the formula: R_i(t) = R_i(t-1) · (1 - γ)
+        to all validators inactive for more than `thresholdHours`.
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DecayRequest'
+              type: object
+              properties:
+                thresholdHours:
+                  type: integer
+                  default: 24
       responses:
         '200':
           description: Decay applied
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DecayResponse'
+                type: object
+                properties:
+                  affectedValidators: { type: integer }
 
-  /reputation/penalty:
+  /reputation/bulk:
     post:
       tags: [Reputation]
-      operationId: applyPenalty
-      summary: Apply a reputation penalty for adversarial or incorrect behavior
+      operationId: getBulkReputation
+      summary: Get reputation scores for multiple validators in one call
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PenaltyRequest'
+              type: object
+              required: [validatorIds]
+              properties:
+                validatorIds:
+                  type: array
+                  items: { type: string }
       responses:
         '200':
-          description: Penalty applied
+          description: Map of validatorId to reputation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReputationScore'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/ReputationScore'
 
   /reputation/leaderboard:
     get:
       tags: [Reputation]
       operationId: getLeaderboard
-      summary: Get top validators by reputation
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 10
-        - name: domain
-          in: query
-          schema:
-            $ref: '#/components/schemas/EntropyDomain'
+      summary: Get top validators by aggregate reputation
       responses:
         '200':
           description: Leaderboard
@@ -265,13 +300,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/LeaderboardEntry'
+                  $ref: '#/components/schemas/Validator'
 
   /events:
     post:
-      tags: [Health]
-      operationId: receiveEvent
-      summary: Receive domain events (internal service-to-service)
+      tags: [Reputation]
+      operationId: handleEvent
+      summary: Internal event handler (loop.closed → accrue)
       requestBody:
         required: true
         content:
@@ -288,22 +323,15 @@ components:
       name: validatorId
       in: path
       required: true
-      schema:
-        type: string
-        format: uuid
+      schema: { type: string }
     PageParam:
       name: page
       in: query
-      schema:
-        type: integer
-        default: 1
+      schema: { type: integer, default: 1 }
     PageSizeParam:
       name: pageSize
       in: query
-      schema:
-        type: integer
-        default: 20
-        maximum: 100
+      schema: { type: integer, default: 20 }
 
   responses:
     NotFound:
@@ -316,280 +344,139 @@ components:
   schemas:
     EntropyDomain:
       type: string
-      enum:
-        - physics
-        - information
-        - biological
-        - social
-        - economic
-        - thermodynamic
-      description: Domain of entropy measurement
+      enum: [cognitive, code, social, economic, thermodynamic, informational]
 
-    ValidatorId:
+    ValidatorType:
       type: string
-      format: uuid
-      description: Unique identifier for a validator
+      enum: [human, ai, hybrid, oracle]
 
     Validator:
       type: object
-      required: [id, name, domains, reputation, accuracy, totalLoops, isActive, createdAt]
       properties:
-        id:
-          $ref: '#/components/schemas/ValidatorId'
-        name:
-          type: string
-          description: Human-readable validator name
+        id: { type: string }
+        name: { type: string }
+        type: { $ref: '#/components/schemas/ValidatorType' }
         domains:
           type: array
-          items:
-            $ref: '#/components/schemas/EntropyDomain'
-          description: Domains this validator specializes in
-        reputation:
-          type: number
-          format: float
-          description: Current reputation score R_i
-        accuracy:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 1
-          description: Historical verification accuracy (0-1)
-        totalLoops:
-          type: integer
-          description: Total loops participated in
-        isActive:
-          type: boolean
-          description: Whether the validator is currently active
-        createdAt:
+          items: { $ref: '#/components/schemas/EntropyDomain' }
+        aggregateReputation: { type: number }
+        reputationByDomain:
+          type: object
+          additionalProperties: { type: number }
+        accrualRate: { type: number }
+        decayRate: { type: number }
+        currentStreak: { type: integer }
+        penaltyCount: { type: integer }
+        totalXpEarned: { type: number }
+        loopsParticipated: { type: integer }
+        accurateValidations: { type: integer }
+        currentTaskCount: { type: integer }
+        maxConcurrentTasks: { type: integer }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        lastActiveAt: { type: string, format: date-time }
+
+    ReputationScore:
+      type: object
+      properties:
+        aggregate: { type: number }
+        byDomain:
+          type: object
+          additionalProperties: { type: number }
+        accrualRate: { type: number }
+        decayRate: { type: number }
+        currentStreak: { type: integer }
+        penaltyCount: { type: integer }
+        lastUpdatedAt: { type: string, format: date-time }
+
+    ReputationEvent:
+      type: object
+      properties:
+        id: { type: string }
+        validatorId: { type: string }
+        type:
           type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+          enum: [accrual, decay, penalty, bonus]
+        domain: { $ref: '#/components/schemas/EntropyDomain' }
+        delta: { type: number }
+        reason: { type: string }
+        relatedLoopId: { type: string }
+        timestamp: { type: string, format: date-time }
 
     RegisterValidatorRequest:
       type: object
-      required: [name, domains]
+      required: [name, type, domains]
       properties:
-        validatorId:
-          $ref: '#/components/schemas/ValidatorId'
-        name:
-          type: string
+        name: { type: string }
+        type: { $ref: '#/components/schemas/ValidatorType' }
         domains:
           type: array
-          items:
-            $ref: '#/components/schemas/EntropyDomain'
-        initialReputation:
-          type: number
-          default: 1.0
+          items: { $ref: '#/components/schemas/EntropyDomain' }
+        maxConcurrentTasks: { type: integer, default: 5 }
 
     UpdateValidatorRequest:
       type: object
       properties:
-        name:
-          type: string
+        name: { type: string }
+        isActive: { type: boolean }
         domains:
           type: array
-          items:
-            $ref: '#/components/schemas/EntropyDomain'
-        isActive:
-          type: boolean
-
-    ReputationScore:
-      type: object
-      required: [validatorId, score, accuracy, totalLoops, lastUpdated]
-      properties:
-        validatorId:
-          $ref: '#/components/schemas/ValidatorId'
-        score:
-          type: number
-          format: float
-          description: Current reputation score
-        accuracy:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 1
-        totalLoops:
-          type: integer
-        lastUpdated:
-          type: string
-          format: date-time
-
-    ReputationEvent:
-      type: object
-      required: [id, validatorId, eventType, delta, newScore, timestamp]
-      properties:
-        id:
-          type: string
-          format: uuid
-        validatorId:
-          $ref: '#/components/schemas/ValidatorId'
-        eventType:
-          type: string
-          enum: [accrual, decay, penalty, bonus]
-        delta:
-          type: number
-          format: float
-          description: Change in reputation score
-        newScore:
-          type: number
-          format: float
-        loopId:
-          type: string
-          format: uuid
-          nullable: true
-        reason:
-          type: string
-          nullable: true
-        timestamp:
-          type: string
-          format: date-time
+          items: { $ref: '#/components/schemas/EntropyDomain' }
+        maxConcurrentTasks: { type: integer }
 
     AccrueReputationRequest:
       type: object
-      required: [validatorId, loopId, xpAwarded]
+      required: [validatorId, domain, xpEarned, loopId]
       properties:
-        validatorId:
-          $ref: '#/components/schemas/ValidatorId'
-        loopId:
-          type: string
-          format: uuid
-        xpAwarded:
-          type: number
-          format: float
-          description: XP amount awarded (used to compute reputation delta)
-        accrualRate:
-          type: number
-          format: float
-          default: 0.1
-          description: α coefficient in R_i(t+1) = R_i(t) + α · XP_t
+        validatorId: { type: string }
+        domain: { $ref: '#/components/schemas/EntropyDomain' }
+        xpEarned: { type: number }
+        loopId: { type: string }
 
-    DecayRequest:
+    PenalizeReputationRequest:
       type: object
+      required: [validatorId, domain, penalty, reason]
       properties:
-        decayRate:
-          type: number
-          format: float
-          default: 0.01
-          description: γ coefficient in R_i(t) = R_i(t-1) · (1 - γ)
-        validatorIds:
-          type: array
-          items:
-            $ref: '#/components/schemas/ValidatorId'
-          description: Optional subset of validators to decay
-
-    DecayResponse:
-      type: object
-      properties:
-        validatorsDecayed:
-          type: integer
-        decayRate:
-          type: number
-          format: float
-        timestamp:
-          type: string
-          format: date-time
-
-    PenaltyRequest:
-      type: object
-      required: [validatorId, penalty]
-      properties:
-        validatorId:
-          $ref: '#/components/schemas/ValidatorId'
-        penalty:
-          type: number
-          format: float
-          description: Reputation penalty amount (positive number subtracted from score)
-        reason:
-          type: string
-        loopId:
-          type: string
-          format: uuid
-          nullable: true
-
-    LeaderboardEntry:
-      type: object
-      required: [rank, validatorId, name, reputation, accuracy, totalLoops]
-      properties:
-        rank:
-          type: integer
-        validatorId:
-          $ref: '#/components/schemas/ValidatorId'
-        name:
-          type: string
-        reputation:
-          type: number
-          format: float
-        accuracy:
-          type: number
-          format: float
-        totalLoops:
-          type: integer
+        validatorId: { type: string }
+        domain: { $ref: '#/components/schemas/EntropyDomain' }
+        penalty: { type: number }
+        reason: { type: string }
+        loopId: { type: string }
 
     PaginatedValidators:
       type: object
       properties:
-        data:
+        items:
           type: array
-          items:
-            $ref: '#/components/schemas/Validator'
-        total:
-          type: integer
-        page:
-          type: integer
-        pageSize:
-          type: integer
+          items: { $ref: '#/components/schemas/Validator' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
 
     ServiceHealthResponse:
       type: object
-      required: [service, status, version, uptime, timestamp]
       properties:
-        service:
-          type: string
-        status:
-          type: string
-          enum: [healthy, degraded, unhealthy]
-        version:
-          type: string
-        uptime:
-          type: number
-        timestamp:
-          type: string
-          format: date-time
+        service: { type: string }
+        status: { type: string }
+        version: { type: string }
+        uptime: { type: number }
+        timestamp: { type: string, format: date-time }
         dependencies:
           type: object
           additionalProperties:
             type: string
             enum: [connected, disconnected]
 
-    ErrorResponse:
-      type: object
-      required: [error, code, timestamp]
-      properties:
-        error:
-          type: string
-        code:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
-
     DomainEvent:
       type: object
-      required: [id, type, correlationId, payload, timestamp, source]
       properties:
-        id:
-          type: string
-          format: uuid
-        type:
-          type: string
-        correlationId:
-          type: string
-        payload:
-          type: object
-        timestamp:
-          type: string
-          format: date-time
-        source:
-          type: string
+        id: { type: string }
+        type: { type: string }
+        payload: { type: object }
+
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+        code: { type: string }
+        timestamp: { type: string, format: date-time }

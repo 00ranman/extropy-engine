@@ -1,9 +1,9 @@
 /**
  * Reputation Service — Service Entrypoint
  *
- * Computes validator reputation as compressed evidence of past verification
- * accuracy. Reputation feeds back into SignalFlow routing weights and the
- * XP mint formula's R factor.
+ * Computes validator reputation as compressed evidence of past
+ * verification accuracy. Feeds back into SignalFlow routing weights
+ * and the XP mint formula's R factor.
  *
  * Reputation dynamics:
  *   Accrual:  R_i(t+1) = R_i(t) + α · XP_t
@@ -24,12 +24,13 @@ import {
 } from '@extropy/contracts';
 import type {
   ValidatorId,
-  LoopId,
   DomainEvent,
   ServiceHealthResponse,
   EntropyDomain,
+  LoopId,
+  ReputationAccruedPayload,
+  ReputationPenalizedPayload,
   LoopClosedPayload,
-  XPMintedFinalPayload,
 } from '@extropy/contracts';
 
 const app = express();
@@ -38,85 +39,147 @@ app.use(express.json());
 const PORT = process.env.PORT || 4004;
 const SERVICE = ServiceName.REPUTATION;
 
+// ── Reputation Constants ──────────────────────────────────────────────────────
+const DEFAULT_ACCRUAL_RATE = 0.1;
+const DEFAULT_DECAY_RATE = 0.02;
+const INITIAL_REPUTATION = 1.0;
+const STREAK_BONUS_MULTIPLIER = 0.05;
+
+const ALL_DOMAINS: EntropyDomain[] = ['cognitive', 'code', 'social', 'economic', 'thermodynamic', 'informational'] as EntropyDomain[];
+
 const pool = createPool();
 const redis = createRedis();
 const bus = new EventBus(redis, pool, SERVICE);
 
-// ── Constants ─────────────────────────────────────────────────────────────
-const DEFAULT_ACCRUAL_RATE = 0.1;   // α
-const DEFAULT_DECAY_RATE   = 0.01;  // γ
-const INITIAL_REPUTATION   = 1.0;
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-
-function validatorFromRow(row: any) {
+function validatorFromRow(row: any): any {
   return {
-    id:          row.id as ValidatorId,
-    name:        row.name as string,
-    domains:     row.domains as EntropyDomain[],
-    reputation:  row.reputation as number,
-    accuracy:    row.accuracy as number,
-    totalLoops:  row.total_loops as number,
-    isActive:    row.is_active as boolean,
-    createdAt:   row.created_at.toISOString(),
-    updatedAt:   row.updated_at?.toISOString(),
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    domains: row.domains || [],
+    aggregateReputation: row.aggregate_reputation,
+    reputationByDomain: row.reputation_by_domain || {},
+    accrualRate: row.accrual_rate,
+    decayRate: row.decay_rate,
+    currentStreak: row.current_streak,
+    penaltyCount: row.penalty_count,
+    totalXpEarned: row.total_xp_earned,
+    loopsParticipated: row.loops_participated,
+    accurateValidations: row.accurate_validations,
+    currentTaskCount: row.current_task_count,
+    maxConcurrentTasks: row.max_concurrent_tasks,
+    isActive: row.is_active,
+    createdAt: row.created_at.toISOString(),
+    lastActiveAt: row.last_active_at.toISOString(),
+    // Also include snake_case for SignalFlow compatibility
+    aggregate_reputation: row.aggregate_reputation,
+    current_task_count: row.current_task_count,
+    max_concurrent_tasks: row.max_concurrent_tasks,
+    accurate_validations: row.accurate_validations,
+    loops_participated: row.loops_participated,
   };
 }
 
-function repEventFromRow(row: any) {
-  return {
-    id:          row.id,
-    validatorId: row.validator_id as ValidatorId,
-    eventType:   row.event_type as string,
-    delta:       row.delta as number,
-    newScore:    row.new_score as number,
-    loopId:      row.loop_id ?? null,
-    reason:      row.reason ?? null,
-    timestamp:   row.created_at.toISOString(),
-  };
+// ── Internal: Accrue ──────────────────────────────────────────────────────────
+
+async function accrueReputation(
+  validatorId: ValidatorId,
+  domain: EntropyDomain,
+  xpEarned: number,
+  loopId: LoopId,
+): Promise<any> {
+  const res = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [validatorId]);
+  if (res.rows.length === 0) throw new Error(`Validator ${validatorId} not found`);
+  const row = res.rows[0];
+
+  const accrualRate = row.accrual_rate || DEFAULT_ACCRUAL_RATE;
+  const currentStreak = row.current_streak || 0;
+  const effectiveRate = accrualRate + (currentStreak * STREAK_BONUS_MULTIPLIER);
+  const delta = effectiveRate * xpEarned;
+
+  const repByDomain = row.reputation_by_domain || {};
+  repByDomain[domain] = (repByDomain[domain] || INITIAL_REPUTATION) + delta;
+
+  // Recompute aggregate = average of non-zero domain reps
+  const domainValues = Object.values(repByDomain).filter((v: any) => v > 0) as number[];
+  const aggregate = domainValues.length > 0 ? domainValues.reduce((a, b) => a + b, 0) / domainValues.length : INITIAL_REPUTATION;
+
+  await pool.query(
+    `UPDATE reputation.validators
+     SET reputation_by_domain = $1, aggregate_reputation = $2,
+         current_streak = current_streak + 1,
+         loops_participated = loops_participated + 1,
+         accurate_validations = accurate_validations + 1,
+         total_xp_earned = total_xp_earned + $3,
+         last_active_at = NOW()
+     WHERE id = $4`,
+    [JSON.stringify(repByDomain), aggregate, xpEarned, validatorId],
+  );
+
+  // Record event
+  await pool.query(
+    `INSERT INTO reputation.events (validator_id, type, domain, delta, reason, related_loop_id)
+     VALUES ($1, 'accrual', $2, $3, $4, $5)`,
+    [validatorId, domain, delta, `Accrual for loop closure (XP=${xpEarned.toFixed(2)})`, loopId],
+  );
+
+  await bus.emit(EventType.REPUTATION_ACCRUED, loopId, {
+    validatorId,
+    domain,
+    delta,
+    newAggregate: aggregate,
+    relatedLoopId: loopId,
+  } as ReputationAccruedPayload);
+
+  console.log(`[reputation] Accrued ${delta.toFixed(4)} rep for validator ${validatorId} in ${domain} (streak=${currentStreak + 1})`);
+
+  const updated = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [validatorId]);
+  return validatorFromRow(updated.rows[0]);
 }
 
-// ── Health Check ──────────────────────────────────────────────────────────
+// ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
   const health: ServiceHealthResponse = {
-    service:      SERVICE,
-    status:       'healthy',
-    version:      '0.1.0',
-    uptime:       process.uptime(),
-    timestamp:    new Date().toISOString(),
+    service: SERVICE,
+    status: 'healthy',
+    version: '0.1.0',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
     dependencies: {
+      'epistemology-engine': 'disconnected',
+      'signalflow': 'connected',
       'loop-ledger': 'connected',
-      'xp-mint':     'connected',
+      'xp-mint': 'connected',
     } as Record<ServiceName, 'connected' | 'disconnected'>,
   };
   res.json(health);
 });
 
-// ── POST /validators ──────────────────────────────────────────────────────
+// ── POST /validators ──────────────────────────────────────────────────────────
 app.post('/validators', async (req, res) => {
   try {
-    const { name, domains, initialReputation, validatorId: providedId } = req.body;
-    if (!name || !domains || domains.length === 0) {
+    const { name, type, domains } = req.body;
+    if (!name || !type || !domains) {
       res.status(400).json({ error: 'Missing required fields', code: 'VALIDATION_ERROR', timestamp: new Date().toISOString() });
       return;
     }
 
-    const validatorId = (providedId || uuidv4()) as ValidatorId;
-    const rep = initialReputation ?? INITIAL_REPUTATION;
+    const validatorId = uuidv4();
+    const repByDomain: Record<string, number> = {};
+    for (const d of ALL_DOMAINS) {
+      repByDomain[d] = domains.includes(d) ? INITIAL_REPUTATION : 0;
+    }
 
     await pool.query(
-      `INSERT INTO reputation.validators (id, name, domains, reputation, accuracy, total_loops, is_active)
-       VALUES ($1, $2, $3, $4, 0.0, 0, true)
-       ON CONFLICT (id) DO NOTHING`,
-      [validatorId, name, domains, rep],
+      `INSERT INTO reputation.validators (id, name, type, domains, aggregate_reputation, reputation_by_domain)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [validatorId, name, type, domains, INITIAL_REPUTATION, JSON.stringify(repByDomain)],
     );
 
     const result = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [validatorId]);
-    if (result.rows.length === 0) {
-      res.status(409).json({ error: 'Validator already exists', code: 'CONFLICT', timestamp: new Date().toISOString() });
-      return;
-    }
-
+    console.log(`[reputation] Registered validator ${validatorId}: ${name} (${type})`);
     res.status(201).json(validatorFromRow(result.rows[0]));
   } catch (err: any) {
     console.error('[reputation] POST /validators error:', err);
@@ -124,40 +187,33 @@ app.post('/validators', async (req, res) => {
   }
 });
 
-// ── GET /validators ───────────────────────────────────────────────────────
+// ── GET /validators ───────────────────────────────────────────────────────────
 app.get('/validators', async (req, res) => {
   try {
-    const { domain, isActive, sortBy = 'reputation_desc', page = '1', pageSize = '20' } = req.query;
-
     let query = 'SELECT * FROM reputation.validators WHERE 1=1';
     const params: any[] = [];
     let idx = 0;
 
-    if (domain) { idx++; query += ` AND $${idx} = ANY(domains)`; params.push(domain); }
-    if (isActive !== undefined) { idx++; query += ` AND is_active = $${idx}`; params.push(isActive === 'true'); }
-
-    const sortMap: Record<string, string> = {
-      reputation_desc: 'reputation DESC',
-      reputation_asc:  'reputation ASC',
-      accuracy_desc:   'accuracy DESC',
-      xp_desc:         'reputation DESC',
-    };
-    query += ` ORDER BY ${sortMap[sortBy as string] || 'reputation DESC'}`;
-
-    const total = (await pool.query(`SELECT COUNT(*) FROM reputation.validators WHERE 1=1`, [])).rows[0].count;
-    const p  = parseInt(page as string, 10);
-    const ps = parseInt(pageSize as string, 10);
-    idx++; query += ` LIMIT $${idx}`; params.push(ps);
-    idx++; query += ` OFFSET $${idx}`; params.push((p - 1) * ps);
+    if (req.query.domain) {
+      idx++;
+      query += ` AND $${idx} = ANY(domains)`;
+      params.push(req.query.domain);
+    }
+    if (req.query.active !== undefined) {
+      idx++;
+      query += ` AND is_active = $${idx}`;
+      params.push(req.query.active === 'true');
+    }
+    query += ' ORDER BY aggregate_reputation DESC';
 
     const result = await pool.query(query, params);
-    res.json({ data: result.rows.map(validatorFromRow), total: parseInt(total, 10), page: p, pageSize: ps });
+    res.json(result.rows.map(validatorFromRow));
   } catch (err: any) {
     res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
-// ── GET /validators/:validatorId ──────────────────────────────────────────
+// ── GET /validators/:validatorId ──────────────────────────────────────────────
 app.get('/validators/:validatorId', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [req.params.validatorId]);
@@ -171,37 +227,34 @@ app.get('/validators/:validatorId', async (req, res) => {
   }
 });
 
-// ── PATCH /validators/:validatorId ────────────────────────────────────────
+// ── PATCH /validators/:validatorId ────────────────────────────────────────────
 app.patch('/validators/:validatorId', async (req, res) => {
   try {
-    const { name, domains, isActive } = req.body;
-    const sets: string[] = [];
-    const params: any[] = [req.params.validatorId];
-    let idx = 1;
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 0;
 
-    if (name     !== undefined) { idx++; sets.push(`name = $${idx}`);      params.push(name); }
-    if (domains  !== undefined) { idx++; sets.push(`domains = $${idx}`);   params.push(domains); }
-    if (isActive !== undefined) { idx++; sets.push(`is_active = $${idx}`); params.push(isActive); }
+    if (req.body.name !== undefined) { idx++; fields.push(`name = $${idx}`); values.push(req.body.name); }
+    if (req.body.isActive !== undefined) { idx++; fields.push(`is_active = $${idx}`); values.push(req.body.isActive); }
+    if (req.body.domains !== undefined) { idx++; fields.push(`domains = $${idx}`); values.push(req.body.domains); }
 
-    if (sets.length === 0) {
+    if (fields.length === 0) {
       res.status(400).json({ error: 'No fields to update', code: 'VALIDATION_ERROR', timestamp: new Date().toISOString() });
       return;
     }
 
-    sets.push(`updated_at = NOW()`);
-    await pool.query(`UPDATE reputation.validators SET ${sets.join(', ')} WHERE id = $1`, params);
+    idx++;
+    values.push(req.params.validatorId);
+    await pool.query(`UPDATE reputation.validators SET ${fields.join(', ')} WHERE id = $${idx}`, values);
+
     const result = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [req.params.validatorId]);
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Validator not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
-      return;
-    }
     res.json(validatorFromRow(result.rows[0]));
   } catch (err: any) {
     res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
-// ── GET /validators/:validatorId/reputation ───────────────────────────────
+// ── GET /validators/:validatorId/reputation ───────────────────────────────────
 app.get('/validators/:validatorId/reputation', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [req.params.validatorId]);
@@ -209,202 +262,192 @@ app.get('/validators/:validatorId/reputation', async (req, res) => {
       res.status(404).json({ error: 'Validator not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
       return;
     }
-    const v = result.rows[0];
+    const row = result.rows[0];
     res.json({
-      validatorId: v.id,
-      score:       v.reputation,
-      accuracy:    v.accuracy,
-      totalLoops:  v.total_loops,
-      lastUpdated: v.updated_at?.toISOString() || v.created_at.toISOString(),
+      aggregate: row.aggregate_reputation,
+      byDomain: row.reputation_by_domain,
+      accrualRate: row.accrual_rate,
+      decayRate: row.decay_rate,
+      currentStreak: row.current_streak,
+      penaltyCount: row.penalty_count,
+      lastUpdatedAt: row.last_active_at.toISOString(),
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
-// ── GET /validators/:validatorId/reputation/history ───────────────────────
+// ── GET /validators/:validatorId/reputation/history ───────────────────────────
 app.get('/validators/:validatorId/reputation/history', async (req, res) => {
   try {
-    const { limit = '50', eventType } = req.query;
-    let query = 'SELECT * FROM reputation.reputation_events WHERE validator_id = $1';
-    const params: any[] = [req.params.validatorId];
-
-    if (eventType) { query += ' AND event_type = $2'; params.push(eventType); }
-    query += ` ORDER BY created_at DESC LIMIT $${params.length + 1}`;
-    params.push(parseInt(limit as string, 10));
-
-    const result = await pool.query(query, params);
-    res.json({
-      validatorId: req.params.validatorId,
-      events: result.rows.map(repEventFromRow),
-    });
+    const result = await pool.query(
+      'SELECT * FROM reputation.events WHERE validator_id = $1 ORDER BY timestamp DESC LIMIT 100',
+      [req.params.validatorId],
+    );
+    res.json(result.rows);
   } catch (err: any) {
     res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
-// ── POST /reputation/accrue ───────────────────────────────────────────────
+// ── POST /reputation/accrue ───────────────────────────────────────────────────
 app.post('/reputation/accrue', async (req, res) => {
   try {
-    const { validatorId, loopId, xpAwarded, accrualRate = DEFAULT_ACCRUAL_RATE } = req.body;
-    if (!validatorId || !loopId || xpAwarded === undefined) {
-      res.status(400).json({ error: 'Missing required fields', code: 'VALIDATION_ERROR', timestamp: new Date().toISOString() });
-      return;
-    }
-
-    const vRes = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [validatorId]);
-    if (vRes.rows.length === 0) {
-      res.status(404).json({ error: 'Validator not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
-      return;
-    }
-
-    const current = vRes.rows[0].reputation as number;
-    const delta   = accrualRate * xpAwarded;
-    const newScore = current + delta;
-
-    // Update accuracy (simple running average: +1 for positive xp)
-    const totalLoops = (vRes.rows[0].total_loops as number) + 1;
-    const accuracy   = Math.min(1.0, (vRes.rows[0].accuracy * (totalLoops - 1) + (xpAwarded > 0 ? 1 : 0)) / totalLoops);
-
-    await pool.query(
-      `UPDATE reputation.validators SET reputation = $1, total_loops = $2, accuracy = $3, updated_at = NOW() WHERE id = $4`,
-      [newScore, totalLoops, accuracy, validatorId],
-    );
-
-    // Log reputation event
-    await pool.query(
-      `INSERT INTO reputation.reputation_events (id, validator_id, event_type, delta, new_score, loop_id, reason)
-       VALUES ($1, $2, 'accrual', $3, $4, $5, 'XP-based accrual')`,
-      [uuidv4(), validatorId, delta, newScore, loopId],
-    );
-
-    await bus.emit(EventType.REPUTATION_UPDATED, validatorId as ValidatorId, {
-      validatorId,
-      oldScore: current,
-      newScore,
-      delta,
-      reason: 'accrual',
-    });
-
-    res.json({ validatorId, score: newScore, accuracy, totalLoops, lastUpdated: new Date().toISOString() });
+    const { validatorId, domain, xpEarned, loopId } = req.body;
+    const updated = await accrueReputation(validatorId, domain, xpEarned || 1.0, loopId);
+    res.json(updated);
   } catch (err: any) {
     console.error('[reputation] POST /reputation/accrue error:', err);
     res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
-// ── POST /reputation/decay ────────────────────────────────────────────────
-app.post('/reputation/decay', async (req, res) => {
+// ── POST /reputation/penalize ─────────────────────────────────────────────────
+app.post('/reputation/penalize', async (req, res) => {
   try {
-    const { decayRate = DEFAULT_DECAY_RATE, validatorIds } = req.body;
-
-    let query = 'SELECT id, reputation FROM reputation.validators WHERE is_active = true';
-    const params: any[] = [];
-    if (validatorIds && validatorIds.length > 0) {
-      query += ` AND id = ANY($1)`;
-      params.push(validatorIds);
-    }
-
-    const result = await pool.query(query, params);
-    let count = 0;
-
-    for (const row of result.rows) {
-      const newScore = row.reputation * (1 - decayRate);
-      await pool.query(
-        `UPDATE reputation.validators SET reputation = $1, updated_at = NOW() WHERE id = $2`,
-        [newScore, row.id],
-      );
-      await pool.query(
-        `INSERT INTO reputation.reputation_events (id, validator_id, event_type, delta, new_score, reason)
-         VALUES ($1, $2, 'decay', $3, $4, 'Time-based decay')`,
-        [uuidv4(), row.id, newScore - row.reputation, newScore],
-      );
-      count++;
-    }
-
-    res.json({ validatorsDecayed: count, decayRate, timestamp: new Date().toISOString() });
-  } catch (err: any) {
-    console.error('[reputation] POST /reputation/decay error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── POST /reputation/penalty ──────────────────────────────────────────────
-app.post('/reputation/penalty', async (req, res) => {
-  try {
-    const { validatorId, penalty, reason, loopId } = req.body;
-    if (!validatorId || penalty === undefined) {
-      res.status(400).json({ error: 'Missing required fields', code: 'VALIDATION_ERROR', timestamp: new Date().toISOString() });
-      return;
-    }
+    const { validatorId, domain, penalty, reason, loopId } = req.body;
 
     const vRes = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [validatorId]);
     if (vRes.rows.length === 0) {
       res.status(404).json({ error: 'Validator not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
       return;
     }
+    const row = vRes.rows[0];
 
-    const current  = vRes.rows[0].reputation as number;
-    const newScore = Math.max(0, current - penalty);
+    const repByDomain = row.reputation_by_domain || {};
+    repByDomain[domain] = Math.max(0, (repByDomain[domain] || 0) - penalty);
+
+    const domainValues = Object.values(repByDomain).filter((v: any) => v > 0) as number[];
+    const aggregate = domainValues.length > 0 ? domainValues.reduce((a, b) => a + b, 0) / domainValues.length : 0;
 
     await pool.query(
-      `UPDATE reputation.validators SET reputation = $1, updated_at = NOW() WHERE id = $2`,
-      [newScore, validatorId],
+      `UPDATE reputation.validators
+       SET reputation_by_domain = $1, aggregate_reputation = $2,
+           current_streak = 0, penalty_count = penalty_count + 1
+       WHERE id = $3`,
+      [JSON.stringify(repByDomain), aggregate, validatorId],
     );
 
     await pool.query(
-      `INSERT INTO reputation.reputation_events (id, validator_id, event_type, delta, new_score, loop_id, reason)
-       VALUES ($1, $2, 'penalty', $3, $4, $5, $6)`,
-      [uuidv4(), validatorId, -penalty, newScore, loopId || null, reason || 'Penalty applied'],
+      `INSERT INTO reputation.events (validator_id, type, domain, delta, reason, related_loop_id)
+       VALUES ($1, 'penalty', $2, $3, $4, $5)`,
+      [validatorId, domain, -penalty, reason, loopId],
     );
 
-    await bus.emit(EventType.REPUTATION_UPDATED, validatorId as ValidatorId, {
+    await bus.emit(EventType.REPUTATION_PENALIZED, loopId, {
       validatorId,
-      oldScore: current,
-      newScore,
-      delta: -penalty,
-      reason: 'penalty',
-    });
+      domain,
+      penalty,
+      reason,
+      relatedLoopId: loopId,
+    } as ReputationPenalizedPayload);
 
-    res.json({ validatorId, score: newScore, accuracy: vRes.rows[0].accuracy, totalLoops: vRes.rows[0].total_loops, lastUpdated: new Date().toISOString() });
+    const updated = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [validatorId]);
+    res.json(validatorFromRow(updated.rows[0]));
   } catch (err: any) {
     res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
-// ── GET /reputation/leaderboard ───────────────────────────────────────────
-app.get('/reputation/leaderboard', async (req, res) => {
+// ── POST /reputation/decay ────────────────────────────────────────────────────
+app.post('/reputation/decay', async (req, res) => {
   try {
-    const { limit = '10', domain } = req.query;
-    let query = 'SELECT * FROM reputation.validators WHERE is_active = true';
-    const params: any[] = [];
+    const thresholdHours = req.body.thresholdHours || 24;
+    const result = await pool.query(
+      `SELECT * FROM reputation.validators WHERE last_active_at < NOW() - INTERVAL '1 hour' * $1`,
+      [thresholdHours],
+    );
 
-    if (domain) { query += ' AND $1 = ANY(domains)'; params.push(domain); }
-    query += ` ORDER BY reputation DESC LIMIT $${params.length + 1}`;
-    params.push(parseInt(limit as string, 10));
+    let affected = 0;
+    for (const row of result.rows) {
+      const repByDomain = row.reputation_by_domain || {};
+      const decayRate = row.decay_rate || DEFAULT_DECAY_RATE;
 
-    const result = await pool.query(query, params);
-    const leaderboard = result.rows.map((row: any, i: number) => ({
-      rank:        i + 1,
-      validatorId: row.id,
-      name:        row.name,
-      reputation:  row.reputation,
-      accuracy:    row.accuracy,
-      totalLoops:  row.total_loops,
-    }));
+      for (const domain of Object.keys(repByDomain)) {
+        repByDomain[domain] = repByDomain[domain] * (1 - decayRate);
+      }
 
-    res.json(leaderboard);
+      const domainValues = Object.values(repByDomain).filter((v: any) => v > 0) as number[];
+      const aggregate = domainValues.length > 0 ? domainValues.reduce((a, b) => a + b, 0) / domainValues.length : 0;
+
+      await pool.query(
+        `UPDATE reputation.validators SET reputation_by_domain = $1, aggregate_reputation = $2 WHERE id = $3`,
+        [JSON.stringify(repByDomain), aggregate, row.id],
+      );
+
+      affected++;
+    }
+
+    res.json({ affectedValidators: affected });
   } catch (err: any) {
     res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
-// ── POST /events ─────────────────────────────────────────────────────────
+// ── POST /reputation/bulk ─────────────────────────────────────────────────────
+app.post('/reputation/bulk', async (req, res) => {
+  try {
+    const { validatorIds } = req.body;
+    if (!validatorIds || validatorIds.length === 0) {
+      res.json({});
+      return;
+    }
+
+    const placeholders = validatorIds.map((_: any, i: number) => `$${i + 1}`).join(',');
+    const result = await pool.query(
+      `SELECT id, aggregate_reputation, reputation_by_domain FROM reputation.validators WHERE id IN (${placeholders})`,
+      validatorIds,
+    );
+
+    const map: Record<string, any> = {};
+    for (const row of result.rows) {
+      map[row.id] = {
+        aggregate: row.aggregate_reputation,
+        byDomain: row.reputation_by_domain,
+      };
+    }
+    res.json(map);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+  }
+});
+
+// ── GET /reputation/leaderboard ───────────────────────────────────────────────
+app.get('/reputation/leaderboard', async (_req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM reputation.validators WHERE is_active = TRUE ORDER BY aggregate_reputation DESC LIMIT 50',
+    );
+    res.json(result.rows.map(validatorFromRow));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+  }
+});
+
+// ── POST /events ──────────────────────────────────────────────────────────────
 app.post('/events', async (req, res) => {
   try {
     const event = req.body as DomainEvent;
     console.log(`[reputation] Received event: ${event.type}`);
-    await handleEvent(event);
+
+    switch (event.type) {
+      case EventType.LOOP_CLOSED: {
+        const payload = event.payload as LoopClosedPayload;
+        const loop = payload.loop;
+        const validVids = (loop.validatorIds || []).filter((v: any) => v != null);
+        for (const vid of validVids) {
+          try {
+            await accrueReputation(vid, loop.domain, payload.deltaS, loop.id);
+          } catch (err) {
+            console.error(`[reputation] Failed to accrue rep for ${vid}:`, err);
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
     res.status(202).send();
   } catch (err: any) {
     console.error('[reputation] Event handler error:', err);
@@ -412,80 +455,25 @@ app.post('/events', async (req, res) => {
   }
 });
 
-async function handleEvent(event: DomainEvent): Promise<void> {
-  switch (event.type) {
-    case EventType.LOOP_CLOSED: {
-      // Auto-accrue reputation for all validators in the loop
-      const payload = event.payload as LoopClosedPayload;
-      const loop    = payload.loop;
-      const xpBase  = (loop.deltaS ?? 1) * 10; // base XP proportional to ΔS
-
-      for (const validatorId of loop.validatorIds) {
-        try {
-          const vRes = await pool.query('SELECT id FROM reputation.validators WHERE id = $1', [validatorId]);
-          if (vRes.rows.length === 0) {
-            // Auto-register unknown validators
-            await pool.query(
-              `INSERT INTO reputation.validators (id, name, domains, reputation, accuracy, total_loops, is_active)
-               VALUES ($1, $2, $3, $4, 0.0, 0, true) ON CONFLICT (id) DO NOTHING`,
-              [validatorId, `Validator ${validatorId.slice(0, 8)}`, [loop.domain], INITIAL_REPUTATION],
-            );
-          }
-
-          const current   = (await pool.query('SELECT reputation FROM reputation.validators WHERE id = $1', [validatorId])).rows[0]?.reputation ?? INITIAL_REPUTATION;
-          const delta     = DEFAULT_ACCRUAL_RATE * xpBase;
-          const newScore  = current + delta;
-          const totalRes  = await pool.query('SELECT total_loops, accuracy FROM reputation.validators WHERE id = $1', [validatorId]);
-          const totalLoops = (totalRes.rows[0]?.total_loops ?? 0) + 1;
-          const accuracy   = Math.min(1.0, ((totalRes.rows[0]?.accuracy ?? 0) * (totalLoops - 1) + 1) / totalLoops);
-
-          await pool.query(
-            `UPDATE reputation.validators SET reputation = $1, total_loops = $2, accuracy = $3, updated_at = NOW() WHERE id = $4`,
-            [newScore, totalLoops, accuracy, validatorId],
-          );
-
-          await pool.query(
-            `INSERT INTO reputation.reputation_events (id, validator_id, event_type, delta, new_score, loop_id, reason)
-             VALUES ($1, $2, 'accrual', $3, $4, $5, 'Loop closed accrual')`,
-            [uuidv4(), validatorId, delta, newScore, loop.id],
-          );
-
-          await bus.emit(EventType.REPUTATION_UPDATED, validatorId as ValidatorId, {
-            validatorId, oldScore: current, newScore, delta, reason: 'loop_closed',
-          });
-
-          console.log(`[reputation] Accrued +${delta.toFixed(3)} for validator ${validatorId} (loop=${loop.id})`);
-        } catch (err) {
-          console.error(`[reputation] Failed to accrue for validator ${validatorId}:`, err);
-        }
-      }
-      break;
-    }
-
-    case EventType.XP_MINTED_FINAL: {
-      const payload = event.payload as XPMintedFinalPayload;
-      console.log(`[reputation] XP_MINTED_FINAL received for loop ${payload.mintEvent.loopId}`);
-      break;
-    }
-
-    default:
-      break;
-  }
-}
-
-// ── Start ─────────────────────────────────────────────────────────────────
+// ── Start ─────────────────────────────────────────────────────────────────────
 
 async function main() {
   await waitForPostgres(pool);
   await waitForRedis(redis);
   await bus.start();
 
+  // Subscribe via bus
   bus.on(EventType.LOOP_CLOSED, async (event) => {
-    await handleEvent(event as DomainEvent);
-  });
-
-  bus.on(EventType.XP_MINTED_FINAL, async (event) => {
-    await handleEvent(event as DomainEvent);
+    const payload = event.payload as LoopClosedPayload;
+    const loop = payload.loop;
+    const validVids = (loop.validatorIds || []).filter((v: any) => v != null);
+    for (const vid of validVids) {
+      try {
+        await accrueReputation(vid, loop.domain, payload.deltaS, loop.id);
+      } catch (err) {
+        console.error(`[reputation] Bus: Failed to accrue rep for ${vid}:`, err);
+      }
+    }
   });
 
   app.listen(PORT, () => {

@@ -1,24 +1,13 @@
 openapi: 3.1.0
 info:
-  title: XP Mint Service API
+  title: XP Mint API
   description: |
-    Mints Experience Points (XP) for validators when verification loops close.
-    XP is the native unit of value in the Extropy Engine, denominated in entropy
-    reduction (ΔS) and modulated by causal closure speed, truth score, and
-    validator reputation.
-    
-    Mint formula:
-      XP = ΔS · c_L · T · R · B
-      where:
-        ΔS  = entropy reduction achieved by the loop
-        c_L = causal closure speed for the loop's domain
-        T   = truth score from epistemology engine (0-1)
-        R   = validator reputation weight
-        B   = base multiplier (default 1000)
-    
-    Minting is two-phase:
-      1. Provisional mint on loop.closed — XP held in escrow
-      2. Final mint on loop.settled    — XP released to validators
+    Mints XP tokens after loop closure. XP is a function of entropy reduction
+    (ΔS), validator reputation (R), and domain difficulty (D):
+
+      XP = ΔS · R · D
+
+    Each minted XP is stored as an immutable ledger entry.
   version: 1.0.0
 
 servers:
@@ -28,12 +17,10 @@ servers:
     description: Production
 
 tags:
-  - name: Mint
-    description: XP minting operations
+  - name: XP
+    description: XP minting and ledger operations
   - name: Balances
-    description: XP balance management
-  - name: History
-    description: Mint event history
+    description: Validator XP balance queries
   - name: Health
     description: Service health checks
 
@@ -51,102 +38,106 @@ paths:
               schema:
                 $ref: '#/components/schemas/ServiceHealthResponse'
 
-  /mint/provisional:
+  /xp/mint:
     post:
-      tags: [Mint]
-      operationId: mintProvisional
-      summary: Create a provisional XP mint when a loop closes
+      tags: [XP]
+      operationId: mintXP
+      summary: Mint XP for a validator after loop closure
       description: |
-        Triggered by loop.closed events. Creates an escrow entry.
-        XP is not yet credited to validators.
+        Mints XP using the formula: XP = ΔS · R · D
+        
+        - ΔS = entropy reduction (deltaS)
+        - R = validator aggregate reputation
+        - D = domain difficulty multiplier
+        
+        Emits: `xp.minted`
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProvisionalMintRequest'
+              $ref: '#/components/schemas/MintXPRequest'
       responses:
         '201':
-          description: Provisional mint created
+          description: XP minted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MintEvent'
+                $ref: '#/components/schemas/XPEntry'
         '400':
-          description: Invalid request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /mint/final:
-    post:
-      tags: [Mint]
-      operationId: mintFinal
-      summary: Finalize a provisional mint when a loop settles
-      description: |
-        Triggered by loop.settled events. Releases escrowed XP to validators.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FinalMintRequest'
-      responses:
-        '200':
-          description: Mint finalized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MintEvent'
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /mint/events:
+  /xp/mint/bulk:
+    post:
+      tags: [XP]
+      operationId: mintXPBulk
+      summary: Mint XP for multiple validators at once
+      description: |
+        Batch minting for all validators in a closed loop.
+        Emits: `xp.minted` for each validator.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkMintRequest'
+      responses:
+        '201':
+          description: XP minted for all validators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/XPEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /xp/ledger:
     get:
-      tags: [History]
-      operationId: listMintEvents
-      summary: List all mint events
+      tags: [XP]
+      operationId: getLedger
+      summary: Get XP ledger entries
       parameters:
-        - name: loopId
-          in: query
-          schema:
-            type: string
-            format: uuid
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [provisional, final, voided]
         - name: validatorId
           in: query
+          schema: { type: string }
+        - name: loopId
+          in: query
+          schema: { type: string }
+        - name: domain
+          in: query
           schema:
-            type: string
-            format: uuid
+            $ref: '#/components/schemas/EntropyDomain'
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
-          description: Paginated mint events
+          description: XP ledger entries
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedMintEvents'
+                $ref: '#/components/schemas/PaginatedXPEntries'
 
-  /mint/events/{mintEventId}:
+  /xp/ledger/{entryId}:
     get:
-      tags: [History]
-      operationId: getMintEvent
-      summary: Get a specific mint event
+      tags: [XP]
+      operationId: getLedgerEntry
+      summary: Get a specific XP ledger entry
       parameters:
-        - $ref: '#/components/parameters/MintEventIdParam'
+        - name: entryId
+          in: path
+          required: true
+          schema: { type: string }
       responses:
         '200':
-          description: Mint event detail
+          description: XP ledger entry
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MintEvent'
+                $ref: '#/components/schemas/XPEntry'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -156,10 +147,13 @@ paths:
       operationId: getBalance
       summary: Get XP balance for a validator
       parameters:
-        - $ref: '#/components/parameters/ValidatorIdParam'
+        - name: validatorId
+          in: path
+          required: true
+          schema: { type: string }
       responses:
         '200':
-          description: Current XP balance
+          description: XP balance
           content:
             application/json:
               schema:
@@ -167,37 +161,60 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /balances/{validatorId}/history:
-    get:
+  /balances/bulk:
+    post:
       tags: [Balances]
-      operationId: getBalanceHistory
-      summary: Get XP balance history for a validator
-      parameters:
-        - $ref: '#/components/parameters/ValidatorIdParam'
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 50
+      operationId: getBulkBalances
+      summary: Get XP balances for multiple validators
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [validatorIds]
+              properties:
+                validatorIds:
+                  type: array
+                  items: { type: string }
       responses:
         '200':
-          description: Balance history
+          description: Map of validatorId to XP balance
           content:
             application/json:
               schema:
                 type: object
-                properties:
-                  validatorId: { type: string }
-                  history:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/BalanceHistoryEntry'
+                additionalProperties:
+                  $ref: '#/components/schemas/XPBalance'
+
+  /leaderboard:
+    get:
+      tags: [Balances]
+      operationId: getLeaderboard
+      summary: Get top XP holders
+      parameters:
+        - name: domain
+          in: query
+          schema:
+            $ref: '#/components/schemas/EntropyDomain'
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        '200':
+          description: XP leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/XPBalance'
 
   /events:
     post:
-      tags: [Health]
-      operationId: receiveEvent
-      summary: Receive domain events (internal service-to-service)
+      tags: [XP]
+      operationId: handleEvent
+      summary: Internal event handler (loop.closed → mint)
       requestBody:
         required: true
         content:
@@ -210,35 +227,22 @@ paths:
 
 components:
   parameters:
-    ValidatorIdParam:
-      name: validatorId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-    MintEventIdParam:
-      name: mintEventId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
     PageParam:
       name: page
       in: query
-      schema:
-        type: integer
-        default: 1
+      schema: { type: integer, default: 1 }
     PageSizeParam:
       name: pageSize
       in: query
-      schema:
-        type: integer
-        default: 20
-        maximum: 100
+      schema: { type: integer, default: 20 }
 
   responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     NotFound:
       description: Resource not found
       content:
@@ -247,223 +251,105 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
 
   schemas:
-    ValidatorId:
+    EntropyDomain:
       type: string
-      format: uuid
-    
-    MintEventId:
-      type: string
-      format: uuid
+      enum: [cognitive, code, social, economic, thermodynamic, informational]
 
-    MintStatus:
-      type: string
-      enum: [provisional, final, voided]
+    DomainDifficulty:
+      type: number
+      description: Difficulty multiplier for a domain (e.g. 1.0 for cognitive, 1.5 for thermodynamic)
 
-    MintEvent:
+    MintXPRequest:
       type: object
-      required: [id, loopId, status, deltaS, causalClosureSpeed, truthScore, totalXP, validatorAllocations, createdAt]
+      required: [validatorId, loopId, domain, deltaS, reputation]
       properties:
-        id:
-          $ref: '#/components/schemas/MintEventId'
-        loopId:
-          type: string
-          format: uuid
-        status:
-          $ref: '#/components/schemas/MintStatus'
+        validatorId: { type: string }
+        loopId: { type: string }
+        domain: { $ref: '#/components/schemas/EntropyDomain' }
         deltaS:
           type: number
-          format: float
-          description: Entropy reduction used in formula
-        causalClosureSpeed:
+          description: Entropy reduction achieved by closing the loop
+        reputation:
           type: number
-          format: float
-          description: c_L value for the loop domain
-        truthScore:
+          description: Validator's aggregate reputation at time of minting
+        domainDifficulty:
           type: number
-          format: float
-          description: T value from epistemology engine
-        reputationWeight:
-          type: number
-          format: float
-          description: Aggregate R value used in mint
-        baseMultiplier:
-          type: number
-          format: float
-          default: 1000
-        totalXP:
-          type: number
-          format: float
-          description: Total XP minted (sum across validators)
-        validatorAllocations:
+          description: Optional difficulty override (defaults to domain table)
+
+    BulkMintRequest:
+      type: object
+      required: [loopId, domain, deltaS, validators]
+      properties:
+        loopId: { type: string }
+        domain: { $ref: '#/components/schemas/EntropyDomain' }
+        deltaS: { type: number }
+        validators:
           type: array
           items:
-            $ref: '#/components/schemas/ValidatorAllocation'
-        finalizedAt:
-          type: string
-          format: date-time
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
+            type: object
+            required: [validatorId, reputation]
+            properties:
+              validatorId: { type: string }
+              reputation: { type: number }
 
-    ValidatorAllocation:
+    XPEntry:
       type: object
-      required: [validatorId, xpAllocated, reputationWeight]
       properties:
-        validatorId:
-          $ref: '#/components/schemas/ValidatorId'
-        xpAllocated:
-          type: number
-          format: float
-        reputationWeight:
-          type: number
-          format: float
-        status:
-          $ref: '#/components/schemas/MintStatus'
-
-    ProvisionalMintRequest:
-      type: object
-      required: [loopId, deltaS, causalClosureSpeed, validatorIds]
-      properties:
-        loopId:
-          type: string
-          format: uuid
-        deltaS:
-          type: number
-          format: float
-        causalClosureSpeed:
-          type: number
-          format: float
-        truthScore:
-          type: number
-          format: float
-          default: 1.0
-        reputationWeights:
-          type: object
-          additionalProperties:
-            type: number
-          description: Map of validatorId → reputation weight
-        validatorIds:
-          type: array
-          items:
-            $ref: '#/components/schemas/ValidatorId'
-        baseMultiplier:
-          type: number
-          format: float
-          default: 1000
-
-    FinalMintRequest:
-      type: object
-      required: [mintEventId]
-      properties:
-        mintEventId:
-          $ref: '#/components/schemas/MintEventId'
-        loopId:
-          type: string
-          format: uuid
+        id: { type: string }
+        validatorId: { type: string }
+        loopId: { type: string }
+        domain: { $ref: '#/components/schemas/EntropyDomain' }
+        deltaS: { type: number }
+        reputation: { type: number }
+        domainDifficulty: { type: number }
+        xpMinted: { type: number }
+        mintedAt: { type: string, format: date-time }
 
     XPBalance:
       type: object
-      required: [validatorId, provisional, confirmed, total]
       properties:
-        validatorId:
-          $ref: '#/components/schemas/ValidatorId'
-        provisional:
-          type: number
-          format: float
-          description: XP in escrow (not yet finalized)
-        confirmed:
-          type: number
-          format: float
-          description: Finalized and credited XP
-        total:
-          type: number
-          format: float
-          description: provisional + confirmed
-        lastUpdated:
-          type: string
-          format: date-time
+        validatorId: { type: string }
+        totalXP: { type: number }
+        xpByDomain:
+          type: object
+          additionalProperties: { type: number }
+        entryCount: { type: integer }
+        lastMintedAt: { type: string, format: date-time, nullable: true }
 
-    BalanceHistoryEntry:
+    PaginatedXPEntries:
       type: object
       properties:
-        mintEventId:
-          $ref: '#/components/schemas/MintEventId'
-        loopId:
-          type: string
-          format: uuid
-        xpAmount:
-          type: number
-          format: float
-        status:
-          $ref: '#/components/schemas/MintStatus'
-        timestamp:
-          type: string
-          format: date-time
-
-    PaginatedMintEvents:
-      type: object
-      properties:
-        data:
+        items:
           type: array
-          items:
-            $ref: '#/components/schemas/MintEvent'
-        total:
-          type: integer
-        page:
-          type: integer
-        pageSize:
-          type: integer
+          items: { $ref: '#/components/schemas/XPEntry' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
 
     ServiceHealthResponse:
       type: object
-      required: [service, status, version, uptime, timestamp]
       properties:
-        service:
-          type: string
-        status:
-          type: string
-          enum: [healthy, degraded, unhealthy]
-        version:
-          type: string
-        uptime:
-          type: number
-        timestamp:
-          type: string
-          format: date-time
+        service: { type: string }
+        status: { type: string }
+        version: { type: string }
+        uptime: { type: number }
+        timestamp: { type: string, format: date-time }
         dependencies:
           type: object
           additionalProperties:
             type: string
             enum: [connected, disconnected]
 
-    ErrorResponse:
-      type: object
-      required: [error, code, timestamp]
-      properties:
-        error:
-          type: string
-        code:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
-
     DomainEvent:
       type: object
-      required: [id, type, correlationId, payload, timestamp, source]
       properties:
-        id:
-          type: string
-          format: uuid
-        type:
-          type: string
-        correlationId:
-          type: string
-        payload:
-          type: object
-        timestamp:
-          type: string
-          format: date-time
-        source:
-          type: string
+        id: { type: string }
+        type: { type: string }
+        payload: { type: object }
+
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+        code: { type: string }
+        timestamp: { type: string, format: date-time }

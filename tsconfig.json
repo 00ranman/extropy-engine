@@ -1,17 +1,30 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "lib": ["ES2022"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "outDir": "dist",
-    "rootDir": "src"
+    "composite": true,
+    "incremental": true,
+    "paths": {
+      "@extropy/contracts": ["./packages/contracts/src/index.ts"]
+    }
   },
-  "exclude": ["node_modules", "dist"]
+  "references": [
+    { "path": "./packages/contracts" },
+    { "path": "./packages/epistemology-engine" },
+    { "path": "./packages/signalflow" },
+    { "path": "./packages/loop-ledger" },
+    { "path": "./packages/xp-mint" },
+    { "path": "./packages/reputation" }
+  ],
+  "exclude": ["node_modules", "**/dist"]
 }

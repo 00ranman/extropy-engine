@@ -1,17 +1,26 @@
 {
   "name": "extropy-engine",
   "private": true,
+  "version": "0.1.0",
+  "description": "Extropy Engine — monorepo for entropy-reduction feedback services",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "dev": "concurrently \"npm run dev -w packages/epistemology-engine\" \"npm run dev -w packages/signal-flow\" \"npm run dev -w packages/loop-ledger\" \"npm run dev -w packages/reputation\" \"npm run dev -w packages/xp-mint\"",
-    "test": "npm run test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "build": "tsc -b packages/contracts packages/epistemology-engine packages/signalflow packages/loop-ledger packages/xp-mint packages/reputation",
+    "dev": "concurrently \"cd packages/epistemology-engine && npm run dev\" \"cd packages/signalflow && npm run dev\" \"cd packages/loop-ledger && npm run dev\" \"cd packages/xp-mint && npm run dev\" \"cd packages/reputation && npm run dev\"",
+    "test": "vitest run",
+    "lint": "eslint packages/*/src/**/*.ts",
+    "clean": "rm -rf packages/*/dist",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "db:init": "psql $DATABASE_URL -f scripts/init-db.sql"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "typescript": "^5.3.3"
+    "@types/node": "^20.0.0",
+    "concurrently": "^8.2.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
   }
 }
