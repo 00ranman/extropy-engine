@@ -1,0 +1,543 @@
+openapi: 3.1.0
+info:
+  title: Loop Ledger API
+  description: |
+    Manages the lifecycle of entropy reduction loops — tracks what was
+    attempted, what changed, and closes the loop with a verified delta.
+    
+    Loop Ledger is the audit trail of the Extropy Engine. Every entropy
+    reduction attempt is a loop: opened with intent, measured, acted upon,
+    and closed with a verified delta. This service ensures nothing is
+    forgotten and everything is accounted for.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:4003
+    description: Local development
+  - url: https://api.extropy.engine/loop-ledger
+    description: Production
+
+tags:
+  - name: Loops
+    description: Entropy reduction loop management
+  - name: Phases
+    description: Loop phase transitions (open → active → closing → closed)
+  - name: Entries
+    description: Ledger entries within a loop
+  - name: Health
+    description: Service health checks
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      operationId: getHealth
+      summary: Service health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceHealthResponse'
+
+  /loops:
+    post:
+      tags: [Loops]
+      operationId: openLoop
+      summary: Open a new entropy reduction loop
+      description: |
+        Creates a new loop tied to a claim. The loop tracks the full
+        lifecycle of verifying the claim's entropy reduction.
+        
+        Emits: `loop.opened`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenLoopRequest'
+      responses:
+        '201':
+          description: Loop opened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loop'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    get:
+      tags: [Loops]
+      operationId: listLoops
+      summary: List loops with optional filtering
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/LoopStatus'
+        - name: domain
+          in: query
+          schema:
+            type: string
+        - name: claimId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: parentLoopId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paginated list of loops
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLoops'
+
+  /loops/{loopId}:
+    get:
+      tags: [Loops]
+      operationId: getLoop
+      summary: Get a specific loop with full history
+      parameters:
+        - $ref: '#/components/parameters/LoopIdParam'
+      responses:
+        '200':
+          description: Loop detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loop'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /loops/{loopId}/activate:
+    post:
+      tags: [Phases]
+      operationId: activateLoop
+      summary: Transition loop from OPEN to ACTIVE
+      description: |
+        Records that active validation work has begun.
+        
+        Emits: `loop.activated`
+      parameters:
+        - $ref: '#/components/parameters/LoopIdParam'
+      responses:
+        '200':
+          description: Loop activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loop'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Loop not in OPEN status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /loops/{loopId}/close:
+    post:
+      tags: [Phases]
+      operationId: closeLoop
+      summary: Close a loop with verified entropy delta
+      description: |
+        Records the final entropy delta and closes the loop.
+        A closed loop cannot be reopened.
+        
+        Emits: `loop.closed`
+      parameters:
+        - $ref: '#/components/parameters/LoopIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseLoopRequest'
+      responses:
+        '200':
+          description: Loop closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loop'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Loop already closed or in invalid state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /loops/{loopId}/entries:
+    post:
+      tags: [Entries]
+      operationId: addEntry
+      summary: Add an audit entry to a loop
+      description: |
+        Records a discrete event within the loop's lifecycle.
+        All significant state changes should be recorded as entries.
+      parameters:
+        - $ref: '#/components/parameters/LoopIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddEntryRequest'
+      responses:
+        '201':
+          description: Entry added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LedgerEntry'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    get:
+      tags: [Entries]
+      operationId: listEntries
+      summary: List all entries for a loop
+      parameters:
+        - $ref: '#/components/parameters/LoopIdParam'
+        - name: entryType
+          in: query
+          schema:
+            $ref: '#/components/schemas/EntryType'
+      responses:
+        '200':
+          description: List of ledger entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LedgerEntry'
+
+  /loops/{loopId}/delta:
+    get:
+      tags: [Loops]
+      operationId: getDelta
+      summary: Get entropy delta summary for a loop
+      description: |
+        Returns the computed entropy reduction for a loop,
+        including baseline, final, and delta calculations.
+      parameters:
+        - $ref: '#/components/parameters/LoopIdParam'
+      responses:
+        '200':
+          description: Entropy delta summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntropyDelta'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /loops/by-claim/{claimId}:
+    get:
+      tags: [Loops]
+      operationId: getLoopByClaim
+      summary: Get the loop associated with a specific claim
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Loop for claim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loop'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  parameters:
+    LoopIdParam:
+      name: loopId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    PageSizeParam:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    LoopStatus:
+      type: string
+      enum: [open, active, closing, closed, failed]
+      description: |
+        Loop lifecycle states:
+        - open: Loop created, awaiting activation
+        - active: Validation in progress
+        - closing: All sub-claims resolved, computing final delta
+        - closed: Loop finalized with verified entropy delta
+        - failed: Loop terminated without successful closure
+
+    EntryType:
+      type: string
+      enum:
+        - loop_opened
+        - loop_activated
+        - loop_closing
+        - loop_closed
+        - loop_failed
+        - claim_submitted
+        - claim_decomposed
+        - subclaim_updated
+        - claim_evaluated
+        - task_created
+        - task_completed
+        - task_reassigned
+        - measurement_recorded
+        - baseline_set
+        - outcome_set
+        - entropy_computed
+
+    Loop:
+      type: object
+      required: [loopId, claimId, domain, status, entropyDelta, parentLoopIds, childLoopIds, ledgerEntries, openedAt]
+      properties:
+        loopId:
+          type: string
+          format: uuid
+        claimId:
+          type: string
+          format: uuid
+        domain:
+          type: string
+        status:
+          $ref: '#/components/schemas/LoopStatus'
+        entropyDelta:
+          $ref: '#/components/schemas/EntropyDelta'
+        parentLoopIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        childLoopIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        ledgerEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerEntry'
+        openedAt:
+          type: string
+          format: date-time
+        activatedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    EntropyDelta:
+      type: object
+      required: [computed]
+      properties:
+        baseline:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Entropy level at loop open
+        final:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Entropy level at loop close
+        delta:
+          type: number
+          format: float
+          description: Reduction in entropy (baseline - final). Negative = entropy increased.
+        computed:
+          type: boolean
+          description: Whether the delta has been computed yet
+        verificationMethod:
+          type: string
+          enum: [bayesian, measurement, consensus, hybrid]
+        confidenceScore:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    LedgerEntry:
+      type: object
+      required: [entryId, loopId, entryType, timestamp]
+      properties:
+        entryId:
+          type: string
+          format: uuid
+        loopId:
+          type: string
+          format: uuid
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        payload:
+          type: object
+          additionalProperties: true
+        actorId:
+          type: string
+          description: ID of the service or user that triggered this entry
+        timestamp:
+          type: string
+          format: date-time
+
+    OpenLoopRequest:
+      type: object
+      required: [claimId, domain]
+      properties:
+        claimId:
+          type: string
+          format: uuid
+        loopId:
+          type: string
+          format: uuid
+          description: Optional — if provided, use this as the loop ID
+        domain:
+          type: string
+        parentLoopIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          default: []
+        metadata:
+          type: object
+          additionalProperties: true
+
+    CloseLoopRequest:
+      type: object
+      required: [finalEntropy, verificationMethod]
+      properties:
+        finalEntropy:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        verificationMethod:
+          type: string
+          enum: [bayesian, measurement, consensus, hybrid]
+        confidenceScore:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 0.8
+        notes:
+          type: string
+
+    AddEntryRequest:
+      type: object
+      required: [entryType]
+      properties:
+        entryType:
+          $ref: '#/components/schemas/EntryType'
+        payload:
+          type: object
+          additionalProperties: true
+        actorId:
+          type: string
+
+    PaginatedLoops:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Loop'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    ServiceHealthResponse:
+      type: object
+      required: [service, status, version, uptime, timestamp]
+      properties:
+        service:
+          type: string
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        uptime:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        dependencies:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [connected, disconnected]
+
+    ErrorResponse:
+      type: object
+      required: [error, code, timestamp]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        timestamp:
+          type: string
+          format: date-time

@@ -1,0 +1,722 @@
+openapi: 3.1.0
+info:
+  title: SignalFlow Orchestrator API
+  description: |
+    Routes validation tasks to human and AI validators based on domain
+    expertise, manages task lifecycle, and provides invisible UX.
+    
+    SignalFlow is the nervous system of the Extropy Engine — it decides
+    WHO validates WHAT, optimizing for accuracy, speed, and load balance.
+    Validators never see the routing algorithm; tasks simply appear.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:4002
+    description: Local development
+  - url: https://api.extropy.engine/signalflow
+    description: Production
+
+tags:
+  - name: Tasks
+    description: Task creation, assignment, and lifecycle management
+  - name: Routing
+    description: Routing algorithm configuration and introspection
+  - name: Validators
+    description: Validator pool management for routing decisions
+  - name: Health
+    description: Service health checks
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      operationId: getHealth
+      summary: Service health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceHealthResponse'
+
+  /tasks:
+    post:
+      tags: [Tasks]
+      operationId: createTask
+      summary: Create a new validation task from a sub-claim
+      description: |
+        Creates a task for a sub-claim and routes it to the optimal validator.
+        Routing considers domain expertise, reputation, load, and history.
+        
+        Emits: `signalflow.task.created`, `signalflow.task.assigned`
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created and assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRouting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          description: No eligible validators available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags: [Tasks]
+      operationId: listTasks
+      summary: List tasks with optional filtering
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+        - name: validatorId
+          in: query
+          schema:
+            type: string
+        - name: loopId
+          in: query
+          schema:
+            type: string
+        - name: priority
+          in: query
+          description: Minimum priority threshold
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated list of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTasks'
+
+  /tasks/{taskId}:
+    get:
+      tags: [Tasks]
+      operationId: getTask
+      summary: Get a specific task with routing details
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      responses:
+        '200':
+          description: Task detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRouting'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /tasks/{taskId}/complete:
+    post:
+      tags: [Tasks]
+      operationId: completeTask
+      summary: Submit validation result for a task
+      description: |
+        Validator submits their verdict. Updates task status and
+        triggers downstream processing.
+        
+        Emits: `signalflow.task.completed`
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteTaskRequest'
+      responses:
+        '200':
+          description: Task completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRouting'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Task already completed or timed out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tasks/{taskId}/reassign:
+    post:
+      tags: [Tasks]
+      operationId: reassignTask
+      summary: Manually or automatically reassign a task to a different validator
+      description: |
+        Reassigns a task, either due to timeout or manual intervention.
+        The routing algorithm selects the next-best validator.
+        
+        Emits: `signalflow.task.reassigned`
+      parameters:
+        - $ref: '#/components/parameters/TaskIdParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReassignRequest'
+      responses:
+        '200':
+          description: Task reassigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRouting'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /routing/simulate:
+    post:
+      tags: [Routing]
+      operationId: simulateRouting
+      summary: Simulate routing decision without creating a task
+      description: |
+        Dry-run the routing algorithm to see which validator would be
+        selected and why. Useful for debugging and tuning.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulateRoutingRequest'
+      responses:
+        '200':
+          description: Routing simulation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingDecision'
+
+  /routing/config:
+    get:
+      tags: [Routing]
+      operationId: getRoutingConfig
+      summary: Get current routing algorithm configuration
+      responses:
+        '200':
+          description: Routing configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingConfig'
+
+    patch:
+      tags: [Routing]
+      operationId: updateRoutingConfig
+      summary: Update routing algorithm weights
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoutingConfig'
+      responses:
+        '200':
+          description: Updated routing configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingConfig'
+
+  /validators:
+    get:
+      tags: [Validators]
+      operationId: listValidators
+      summary: List validators eligible for routing
+      parameters:
+        - name: domain
+          in: query
+          schema:
+            type: string
+        - name: available
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of validators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ValidatorProfile'
+
+    post:
+      tags: [Validators]
+      operationId: registerValidator
+      summary: Register or update a validator profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterValidatorRequest'
+      responses:
+        '201':
+          description: Validator registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidatorProfile'
+
+  /validators/{validatorId}:
+    get:
+      tags: [Validators]
+      operationId: getValidator
+      summary: Get a specific validator profile
+      parameters:
+        - $ref: '#/components/parameters/ValidatorIdParam'
+      responses:
+        '200':
+          description: Validator profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidatorProfile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Validators]
+      operationId: updateValidator
+      summary: Update validator availability or domain expertise
+      parameters:
+        - $ref: '#/components/parameters/ValidatorIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateValidatorRequest'
+      responses:
+        '200':
+          description: Updated validator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidatorProfile'
+
+components:
+  parameters:
+    TaskIdParam:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    ValidatorIdParam:
+      name: validatorId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    PageSizeParam:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    TaskStatus:
+      type: string
+      enum: [pending, assigned, in_progress, completed, timed_out, reassigned, cancelled]
+
+    TaskPriority:
+      type: integer
+      minimum: 1
+      maximum: 10
+      description: |
+        Task urgency score. Higher = more urgent.
+        10: Governance vote, 8: Consensus required, 5: Standard, 1: Background
+
+    RoutingStrategy:
+      type: string
+      enum: [weighted_random, highest_reputation, least_loaded, round_robin, domain_specialist]
+      description: |
+        Routing algorithm to use:
+        - weighted_random: Probabilistic routing using composite scores
+        - highest_reputation: Always assign to top-reputation validator
+        - least_loaded: Minimize current task queue depth
+        - round_robin: Fair distribution, ignoring performance
+        - domain_specialist: Only use validators with deep domain expertise
+
+    TaskRouting:
+      type: object
+      required: [taskId, subClaimId, loopId, assignedValidatorId, status, createdAt, routingDecision]
+      properties:
+        taskId:
+          type: string
+          format: uuid
+        subClaimId:
+          type: string
+          format: uuid
+        loopId:
+          type: string
+          format: uuid
+        assignedValidatorId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        deadline:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        result:
+          $ref: '#/components/schemas/ValidationResult'
+        routingDecision:
+          $ref: '#/components/schemas/RoutingDecision'
+        reassignmentCount:
+          type: integer
+          default: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RoutingDecision:
+      type: object
+      required: [strategy, selectedValidatorId, candidateCount, score, factors]
+      properties:
+        strategy:
+          $ref: '#/components/schemas/RoutingStrategy'
+        selectedValidatorId:
+          type: string
+          format: uuid
+        candidateCount:
+          type: integer
+        score:
+          type: number
+          format: float
+        factors:
+          type: object
+          properties:
+            reputationScore:
+              type: number
+            domainExpertise:
+              type: number
+            currentLoad:
+              type: number
+            historicalAccuracy:
+              type: number
+            responseTimeScore:
+              type: number
+        alternativesConsidered:
+          type: array
+          items:
+            type: object
+            properties:
+              validatorId:
+                type: string
+              score:
+                type: number
+              rejectionReason:
+                type: string
+
+    ValidationResult:
+      type: object
+      required: [verdict, confidence]
+      properties:
+        verdict:
+          type: string
+          enum: [confirmed, denied, inconclusive]
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        reasoning:
+          type: string
+        evidence:
+          type: array
+          items:
+            type: string
+
+    CreateTaskRequest:
+      type: object
+      required: [subClaimId, loopId]
+      properties:
+        subClaimId:
+          type: string
+          format: uuid
+        loopId:
+          type: string
+          format: uuid
+        domain:
+          type: string
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        preferredStrategy:
+          $ref: '#/components/schemas/RoutingStrategy'
+        deadline:
+          type: string
+          format: date-time
+        excludeValidators:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    CompleteTaskRequest:
+      type: object
+      required: [verdict, confidence, validatorId]
+      properties:
+        verdict:
+          type: string
+          enum: [confirmed, denied, inconclusive]
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        validatorId:
+          type: string
+          format: uuid
+        reasoning:
+          type: string
+        evidence:
+          type: array
+          items:
+            type: string
+
+    ReassignRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          enum: [timeout, validator_unavailable, manual_override, conflict_of_interest]
+        excludeValidators:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    SimulateRoutingRequest:
+      type: object
+      required: [subClaimId, domain]
+      properties:
+        subClaimId:
+          type: string
+          format: uuid
+        domain:
+          type: string
+        strategy:
+          $ref: '#/components/schemas/RoutingStrategy'
+
+    RoutingConfig:
+      type: object
+      properties:
+        defaultStrategy:
+          $ref: '#/components/schemas/RoutingStrategy'
+        weights:
+          type: object
+          properties:
+            reputation:
+              type: number
+              minimum: 0
+              maximum: 1
+            domainExpertise:
+              type: number
+              minimum: 0
+              maximum: 1
+            currentLoad:
+              type: number
+              minimum: 0
+              maximum: 1
+            historicalAccuracy:
+              type: number
+              minimum: 0
+              maximum: 1
+            responseTime:
+              type: number
+              minimum: 0
+              maximum: 1
+        timeoutSeconds:
+          type: integer
+          default: 3600
+        maxReassignments:
+          type: integer
+          default: 3
+
+    ValidatorProfile:
+      type: object
+      required: [validatorId, type, domains, isAvailable, currentLoad, reputationScore]
+      properties:
+        validatorId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [human, ai, hybrid]
+        domains:
+          type: array
+          items:
+            type: string
+        isAvailable:
+          type: boolean
+        currentLoad:
+          type: integer
+          description: Number of tasks currently assigned
+        maxLoad:
+          type: integer
+          default: 10
+        reputationScore:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        domainExpertise:
+          type: object
+          additionalProperties:
+            type: number
+        historicalAccuracy:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        avgResponseTimeSeconds:
+          type: number
+        lastActiveAt:
+          type: string
+          format: date-time
+
+    RegisterValidatorRequest:
+      type: object
+      required: [validatorId, type, domains]
+      properties:
+        validatorId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [human, ai, hybrid]
+        domains:
+          type: array
+          items:
+            type: string
+        maxLoad:
+          type: integer
+          default: 10
+        domainExpertise:
+          type: object
+          additionalProperties:
+            type: number
+
+    UpdateValidatorRequest:
+      type: object
+      properties:
+        isAvailable:
+          type: boolean
+        domains:
+          type: array
+          items:
+            type: string
+        domainExpertise:
+          type: object
+          additionalProperties:
+            type: number
+        maxLoad:
+          type: integer
+
+    PaginatedTasks:
+      type: object
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRouting'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    ServiceHealthResponse:
+      type: object
+      required: [service, status, version, uptime, timestamp]
+      properties:
+        service:
+          type: string
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        uptime:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        dependencies:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [connected, disconnected]
+
+    ErrorResponse:
+      type: object
+      required: [error, code, timestamp]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
