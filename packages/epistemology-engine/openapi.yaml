@@ -1,140 +1,247 @@
 openapi: 3.1.0
 info:
-  title: Epistemology Engine
+  title: Epistemology Engine API
+  description: |
+    Ingests claims, decomposes them into verifiable sub-claims, and scores
+    truth via Bayesian updating against entropy measurements.
+    
+    This is the "brain" of the Extropy Engine — every claim enters here
+    and emerges as a decomposed, scored, verifiable set of sub-claims
+    ready for validation routing.
   version: 1.0.0
-  description: Belief & user management service for the Extropy Engine
-
+  contact:
+    name: Extropy Engine
+    
 servers:
   - url: http://localhost:4001
     description: Local development
+  - url: https://api.extropy.engine/epistemology
+    description: Production
+
+tags:
+  - name: Claims
+    description: Claim ingestion, decomposition, and evaluation
+  - name: SubClaims
+    description: Atomic verifiable sub-claim management
+  - name: Bayesian
+    description: Bayesian prior management and evidence updating
+  - name: Health
+    description: Service health checks
 
 paths:
   /health:
     get:
-      summary: Health check
+      tags: [Health]
+      operationId: getHealth
+      summary: Service health check
       responses:
         '200':
           description: Service is healthy
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                  service:
-                    type: string
-                    example: epistemology-engine
+                $ref: '#/components/schemas/ServiceHealthResponse'
 
-  /users:
+  /claims:
     post:
-      summary: Create a new user
+      tags: [Claims]
+      operationId: submitClaim
+      summary: Submit a new claim for decomposition and evaluation
+      description: |
+        Accepts a natural-language claim, initializes a Bayesian prior,
+        and triggers async decomposition into sub-claims.
+        
+        Emits: `epistemology.claim.submitted`
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUserRequest'
+              $ref: '#/components/schemas/SubmitClaimRequest'
       responses:
         '201':
-          description: User created
+          description: Claim accepted and queued for decomposition
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserResponse'
+                $ref: '#/components/schemas/ClaimResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
 
-  /users/{id}:
     get:
-      summary: Get user by ID
+      tags: [Claims]
+      operationId: listClaims
+      summary: List all claims
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: User found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-        '404':
-          description: User not found
-
-  /beliefs:
-    post:
-      summary: Create a new belief
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateBeliefRequest'
-      responses:
-        '201':
-          description: Belief created and event published
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BeliefResponse'
-    get:
-      summary: Get all beliefs (paginated)
-      parameters:
-        - name: userId
+        - name: status
           in: query
           schema:
-            type: string
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
+            $ref: '#/components/schemas/ClaimStatus'
         - name: limit
           in: query
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
             default: 20
-      responses:
-        '200':
-          description: Belief list
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Belief'
-                  meta:
-                    type: object
-
-  /beliefs/{id}:
-    get:
-      summary: Get belief by ID
-      parameters:
-        - name: id
-          in: path
-          required: true
+        - name: offset
+          in: query
           schema:
-            type: string
-            format: uuid
+            type: integer
+            minimum: 0
+            default: 0
       responses:
         '200':
-          description: Belief found
+          description: List of claims
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BeliefResponse'
-        '404':
-          description: Not found
-    put:
-      summary: Update belief
+                $ref: '#/components/schemas/ClaimListResponse'
+
+  /claims/{claimId}:
+    get:
+      tags: [Claims]
+      operationId: getClaim
+      summary: Get a specific claim with all sub-claims
       parameters:
-        - name: id
+        - $ref: '#/components/parameters/ClaimId'
+      responses:
+        '200':
+          description: Claim details with sub-claims
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /claims/{claimId}/evaluate:
+    post:
+      tags: [Claims]
+      operationId: evaluateClaim
+      summary: Trigger re-evaluation of a claim
+      description: |
+        Forces a fresh Bayesian update pass over all sub-claims.
+        
+        Emits: `epistemology.claim.evaluated`
+      parameters:
+        - $ref: '#/components/parameters/ClaimId'
+      responses:
+        '200':
+          description: Evaluation triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /claims/{claimId}/subclaims:
+    get:
+      tags: [SubClaims]
+      operationId: listSubClaims
+      summary: List all sub-claims for a claim
+      parameters:
+        - $ref: '#/components/parameters/ClaimId'
+      responses:
+        '200':
+          description: List of sub-claims
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubClaimListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /claims/{claimId}/subclaims/{subClaimId}:
+    get:
+      tags: [SubClaims]
+      operationId: getSubClaim
+      summary: Get a specific sub-claim
+      parameters:
+        - $ref: '#/components/parameters/ClaimId'
+        - $ref: '#/components/parameters/SubClaimId'
+      responses:
+        '200':
+          description: Sub-claim details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubClaimResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [SubClaims]
+      operationId: updateSubClaim
+      summary: Update sub-claim validation result
+      description: |
+        Called by validators (human or AI) to record their verdict.
+        
+        Emits: `epistemology.subclaim.validated`
+      parameters:
+        - $ref: '#/components/parameters/ClaimId'
+        - $ref: '#/components/parameters/SubClaimId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubClaimRequest'
+      responses:
+        '200':
+          description: Sub-claim updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubClaimResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /priors:
+    get:
+      tags: [Bayesian]
+      operationId: listPriors
+      summary: List all Bayesian priors
+      responses:
+        '200':
+          description: List of priors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriorListResponse'
+
+    post:
+      tags: [Bayesian]
+      operationId: createPrior
+      summary: Create a new Bayesian prior
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePriorRequest'
+      responses:
+        '201':
+          description: Prior created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriorResponse'
+
+  /priors/{priorId}/update:
+    post:
+      tags: [Bayesian]
+      operationId: updatePrior
+      summary: Apply evidence to update a prior
+      description: |
+        Applies Bayes' theorem: P(H|E) = P(E|H) * P(H) / P(E)
+        
+        Emits: `epistemology.prior.updated`
+      parameters:
+        - name: priorId
           in: path
           required: true
           schema:
@@ -145,93 +252,320 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateBeliefRequest'
+              $ref: '#/components/schemas/UpdatePriorRequest'
       responses:
         '200':
-          description: Belief updated
+          description: Prior updated with new evidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
 components:
+  parameters:
+    ClaimId:
+      name: claimId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    SubClaimId:
+      name: subClaimId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnprocessableEntity:
+      description: Semantic validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
   schemas:
-    CreateUserRequest:
-      type: object
-      required: [handle, email]
-      properties:
-        handle:
-          type: string
-        email:
-          type: string
-          format: email
+    ClaimStatus:
+      type: string
+      enum: [pending, decomposing, evaluating, validated, rejected, disputed]
 
-    UserResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/User'
+    SubClaimStatus:
+      type: string
+      enum: [pending, assigned, validated, rejected, disputed]
 
-    User:
+    SubmitClaimRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 10
+          maxLength: 10000
+          description: The natural-language claim to evaluate
+        context:
+          type: object
+          additionalProperties: true
+          description: Optional metadata about the claim source
+        initialPrior:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 0.5
+          description: Initial probability estimate before evidence
+
+    ClaimResponse:
       type: object
       properties:
         id:
           type: string
           format: uuid
-        handle:
+        text:
           type: string
-        email:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-
-    CreateBeliefRequest:
-      type: object
-      required: [userId, content, confidence, domain]
-      properties:
-        userId:
+        status:
+          $ref: '#/components/schemas/ClaimStatus'
+        priorId:
           type: string
           format: uuid
-        content:
-          type: string
-        confidence:
-          type: number
-          minimum: 0
-          maximum: 1
-        domain:
-          type: string
-
-    UpdateBeliefRequest:
-      type: object
-      properties:
-        content:
-          type: string
-        confidence:
-          type: number
-          minimum: 0
-          maximum: 1
-
-    BeliefResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/Belief'
-
-    Belief:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        userId:
-          type: string
-          format: uuid
-        content:
-          type: string
-        confidence:
-          type: number
-        domain:
-          type: string
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
+
+    ClaimDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/ClaimResponse'
+        - type: object
+          properties:
+            subClaims:
+              type: array
+              items:
+                $ref: '#/components/schemas/SubClaimResponse'
+            compositeScore:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+            entropyScore:
+              type: number
+              format: float
+              minimum: 0
+
+    ClaimListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    SubClaimResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        claimId:
+          type: string
+          format: uuid
+        text:
+          type: string
+        status:
+          $ref: '#/components/schemas/SubClaimStatus'
+        validationType:
+          type: string
+          enum: [human, ai, consensus]
+        validatorId:
+          type: string
+          format: uuid
+          nullable: true
+        verdict:
+          type: string
+          enum: [true, false, uncertain]
+          nullable: true
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          nullable: true
+        evidence:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SubClaimListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubClaimResponse'
+        total:
+          type: integer
+
+    UpdateSubClaimRequest:
+      type: object
+      required: [verdict, confidence]
+      properties:
+        verdict:
+          type: string
+          enum: [true, false, uncertain]
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        evidence:
+          type: string
+          maxLength: 5000
+        validatorId:
+          type: string
+          format: uuid
+
+    PriorResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        claimId:
+          type: string
+          format: uuid
+        alpha:
+          type: number
+          format: float
+          description: Beta distribution alpha parameter (successes + 1)
+        beta:
+          type: number
+          format: float
+          description: Beta distribution beta parameter (failures + 1)
+        mean:
+          type: number
+          format: float
+          description: Current probability estimate (alpha / (alpha + beta))
+        variance:
+          type: number
+          format: float
+          description: Uncertainty measure
+        updatedAt:
+          type: string
+          format: date-time
+
+    PriorListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriorResponse'
+        total:
+          type: integer
+
+    CreatePriorRequest:
+      type: object
+      required: [claimId]
+      properties:
+        claimId:
+          type: string
+          format: uuid
+        alpha:
+          type: number
+          format: float
+          minimum: 0.001
+          default: 1
+        beta:
+          type: number
+          format: float
+          minimum: 0.001
+          default: 1
+
+    UpdatePriorRequest:
+      type: object
+      required: [likelihood, evidence]
+      properties:
+        likelihood:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: P(E|H) — probability of evidence given hypothesis is true
+        evidence:
+          type: string
+          maxLength: 2000
+          description: Description of the evidence being applied
+        isPositive:
+          type: boolean
+          default: true
+          description: Whether this evidence supports (true) or contradicts (false) the claim
+
+    EvaluationResponse:
+      type: object
+      properties:
+        claimId:
+          type: string
+          format: uuid
+        compositeScore:
+          type: number
+          format: float
+        subClaimsEvaluated:
+          type: integer
+        evaluatedAt:
+          type: string
+          format: date-time
+
+    ServiceHealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        uptime:
+          type: number
+        dependencies:
+          type: object
+          additionalProperties:
+            type: string
+
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

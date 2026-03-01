@@ -1,539 +1,361 @@
 /**
  * SignalFlow Orchestrator — Service Entrypoint
  *
- * Routes validation tasks to human/AI validators based on domain expertise,
- * reputation, load, and historical accuracy. Manages task lifecycle.
+ * Routes validation tasks to human and AI validators based on
+ * complexity scores, manages task queues, and tracks completion.
  */
 
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  EventBus,
-  createPool,
-  createRedis,
-  waitForPostgres,
-  waitForRedis,
-  EventType,
-  ServiceName,
-  TaskStatus,
-} from '@extropy/contracts';
-import type {
-  TaskId,
-  SubClaimId,
-  LoopId,
-  ValidatorId,
-  DomainEvent,
-  ServiceHealthResponse,
-  TaskCreatedPayload,
-  TaskAssignedPayload,
-  TaskCompletedPayload,
-} from '@extropy/contracts';
+import Redis from 'ioredis';
 
-const app = express();
-app.use(express.json());
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const PORT = process.env.PORT || 4002;
-const SERVICE = ServiceName.SIGNALFLOW;
+type TaskStatus = 'pending' | 'assigned' | 'in_progress' | 'completed' | 'failed' | 'expired';
+type ValidatorType = 'human' | 'ai' | 'consensus';
+type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 
-const pool = createPool();
-const redis = createRedis();
-const bus = new EventBus(redis, pool, SERVICE);
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-interface RoutingDecision {
-  strategy: string;
-  selectedValidatorId: ValidatorId;
-  candidateCount: number;
-  score: number;
-  factors: {
-    reputationScore: number;
-    domainExpertise: number;
-    currentLoad: number;
-    historicalAccuracy: number;
-    responseTimeScore: number;
-  };
-  alternativesConsidered: Array<{ validatorId: string; score: number; rejectionReason?: string }>;
-}
-
-interface TaskRouting {
-  taskId: TaskId;
-  subClaimId: SubClaimId;
-  loopId: LoopId;
-  assignedValidatorId: ValidatorId;
+interface ValidationTask {
+  id: string;
+  subClaimId: string;
+  claimId: string;
+  text: string;
+  validatorType: ValidatorType;
+  priority: TaskPriority;
   status: TaskStatus;
-  priority: number;
+  assignedTo?: string;
+  complexityScore: number;
   deadline?: string;
-  completedAt?: string;
-  result?: { verdict: string; confidence: number; reasoning?: string; evidence?: string[] };
-  routingDecision: RoutingDecision;
-  reassignmentCount: number;
   createdAt: string;
   updatedAt: string;
 }
 
-interface ValidatorProfile {
-  validatorId: ValidatorId;
-  type: 'human' | 'ai' | 'hybrid';
-  domains: string[];
-  isAvailable: boolean;
-  currentLoad: number;
-  maxLoad: number;
-  reputationScore: number;
-  domainExpertise: Record<string, number>;
-  historicalAccuracy: number;
-  avgResponseTimeSeconds: number;
-  lastActiveAt: string;
+interface TaskResult {
+  taskId: string;
+  validatorId: string;
+  verdict: 'true' | 'false' | 'uncertain';
+  confidence: number;
+  evidence?: string;
+  completedAt: string;
 }
 
-// ── Routing helpers ───────────────────────────────────────────────────────────
-
-async function getValidatorsForDomain(domain: string): Promise<ValidatorProfile[]> {
-  const res = await pool.query(
-    `SELECT * FROM signalflow.validators
-     WHERE is_available = true AND current_load < max_load
-       AND (domains @> $1::text[] OR cardinality(domains) = 0)
-     ORDER BY reputation_score DESC`,
-    [JSON.stringify([domain])],
-  );
-  return res.rows.map((r: any) => ({
-    validatorId: r.validator_id as ValidatorId,
-    type: r.type,
-    domains: r.domains,
-    isAvailable: r.is_available,
-    currentLoad: r.current_load,
-    maxLoad: r.max_load,
-    reputationScore: r.reputation_score,
-    domainExpertise: r.domain_expertise || {},
-    historicalAccuracy: r.historical_accuracy || 0.5,
-    avgResponseTimeSeconds: r.avg_response_time_seconds || 3600,
-    lastActiveAt: r.last_active_at?.toISOString() || new Date().toISOString(),
-  }));
+interface RoutingConfig {
+  humanThreshold: number;  // complexity >= this → human validator
+  aiThreshold: number;     // complexity < this → AI validator
+  consensusThreshold: number; // for high-stakes claims
 }
 
-function scoreValidator(v: ValidatorProfile, domain: string): number {
-  const expertise = v.domainExpertise[domain] || 0.5;
-  const loadFactor = v.maxLoad > 0 ? 1 - v.currentLoad / v.maxLoad : 0;
-  const timeFactor = Math.min(1, 3600 / (v.avgResponseTimeSeconds || 3600));
-  return (
-    0.35 * v.reputationScore +
-    0.25 * expertise +
-    0.20 * loadFactor +
-    0.15 * v.historicalAccuracy +
-    0.05 * timeFactor
-  );
+// ─── Configuration ────────────────────────────────────────────────────────────
+
+const PORT = process.env.PORT || 4003;
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const TASK_TTL = parseInt(process.env.TASK_TTL || '86400'); // 24 hours
+const TASK_EXPIRY_MS = parseInt(process.env.TASK_EXPIRY_MS || '3600000'); // 1 hour
+
+const routingConfig: RoutingConfig = {
+  humanThreshold: parseFloat(process.env.HUMAN_THRESHOLD || '0.7'),
+  aiThreshold: parseFloat(process.env.AI_THRESHOLD || '0.3'),
+  consensusThreshold: parseFloat(process.env.CONSENSUS_THRESHOLD || '0.9'),
+};
+
+// ─── Infrastructure ───────────────────────────────────────────────────────────
+
+const redis = new Redis(REDIS_URL);
+const app = express();
+const httpServer = createServer(app);
+const io = new SocketIOServer(httpServer, {
+  cors: { origin: '*' },
+});
+
+app.use(express.json());
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function routeToValidator(complexityScore: number): ValidatorType {
+  if (complexityScore >= routingConfig.consensusThreshold) return 'consensus';
+  if (complexityScore >= routingConfig.humanThreshold) return 'human';
+  return 'ai';
 }
 
-async function selectValidator(
-  domain: string,
-  excludeIds: ValidatorId[] = [],
-  strategy = 'weighted_random',
-): Promise<{ validator: ValidatorProfile; decision: RoutingDecision }> {
-  const candidates = (await getValidatorsForDomain(domain))
-    .filter(v => !excludeIds.includes(v.validatorId));
-
-  if (candidates.length === 0) throw new Error('No eligible validators available');
-
-  const scored = candidates.map(v => ({ v, score: scoreValidator(v, domain) }));
-  scored.sort((a, b) => b.score - a.score);
-
-  let selected = scored[0];
-
-  if (strategy === 'weighted_random' && scored.length > 1) {
-    // Softmax-style weighted random
-    const totalScore = scored.reduce((acc, s) => acc + s.score, 0);
-    let rand = Math.random() * totalScore;
-    for (const s of scored) {
-      rand -= s.score;
-      if (rand <= 0) { selected = s; break; }
-    }
-  }
-
-  const decision: RoutingDecision = {
-    strategy,
-    selectedValidatorId: selected.v.validatorId,
-    candidateCount: candidates.length,
-    score: selected.score,
-    factors: {
-      reputationScore: selected.v.reputationScore,
-      domainExpertise: selected.v.domainExpertise[domain] || 0.5,
-      currentLoad: selected.v.currentLoad,
-      historicalAccuracy: selected.v.historicalAccuracy,
-      responseTimeScore: Math.min(1, 3600 / (selected.v.avgResponseTimeSeconds || 3600)),
-    },
-    alternativesConsidered: scored
-      .filter(s => s.v.validatorId !== selected.v.validatorId)
-      .slice(0, 5)
-      .map(s => ({ validatorId: s.v.validatorId, score: s.score })),
-  };
-
-  return { validator: selected.v, decision };
+async function saveTask(task: ValidationTask): Promise<void> {
+  await redis.setex(`task:${task.id}`, TASK_TTL, JSON.stringify(task));
+  // Add to appropriate queue
+  await redis.lpush(`queue:${task.validatorType}`, task.id);
 }
 
-function taskFromRow(row: any): TaskRouting {
-  return {
-    taskId: row.task_id as TaskId,
-    subClaimId: row.sub_claim_id as SubClaimId,
-    loopId: row.loop_id as LoopId,
-    assignedValidatorId: row.assigned_validator_id as ValidatorId,
-    status: row.status as TaskStatus,
-    priority: row.priority,
-    deadline: row.deadline?.toISOString(),
-    completedAt: row.completed_at?.toISOString(),
-    result: row.result,
-    routingDecision: row.routing_decision,
-    reassignmentCount: row.reassignment_count || 0,
-    createdAt: row.created_at.toISOString(),
-    updatedAt: row.updated_at.toISOString(),
-  };
+async function getTask(taskId: string): Promise<ValidationTask | null> {
+  const data = await redis.get(`task:${taskId}`);
+  return data ? JSON.parse(data) : null;
 }
 
-function validatorFromRow(row: any): ValidatorProfile {
-  return {
-    validatorId: row.validator_id as ValidatorId,
-    type: row.type,
-    domains: row.domains || [],
-    isAvailable: row.is_available,
-    currentLoad: row.current_load,
-    maxLoad: row.max_load || 10,
-    reputationScore: row.reputation_score || 0.5,
-    domainExpertise: row.domain_expertise || {},
-    historicalAccuracy: row.historical_accuracy || 0.5,
-    avgResponseTimeSeconds: row.avg_response_time_seconds || 3600,
-    lastActiveAt: row.last_active_at?.toISOString() || new Date().toISOString(),
-  };
+async function updateTask(task: ValidationTask): Promise<void> {
+  await redis.setex(`task:${task.id}`, TASK_TTL, JSON.stringify(task));
 }
 
-// ── Health ────────────────────────────────────────────────────────────────────
+function nowISO(): string {
+  return new Date().toISOString();
+}
 
-app.get('/health', (_req, res) => {
-  const h: ServiceHealthResponse = {
-    service: SERVICE,
-    status: 'healthy',
-    version: '0.1.0',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    dependencies: {} as Record<ServiceName, 'connected' | 'disconnected'>,
-  };
-  res.json(h);
-});
+// ─── Routes ───────────────────────────────────────────────────────────────────
 
-// ── POST /tasks ───────────────────────────────────────────────────────────────
-
-app.post('/tasks', async (req, res) => {
-  try {
-    const { subClaimId, loopId, domain = 'general', priority = 5, preferredStrategy, deadline, excludeValidators = [] } = req.body;
-    if (!subClaimId || !loopId) {
-      res.status(400).json({ error: 'subClaimId and loopId are required', code: 'VALIDATION_ERROR', timestamp: new Date().toISOString() });
-      return;
-    }
-
-    const { validator, decision } = await selectValidator(domain, excludeValidators as ValidatorId[], preferredStrategy);
-
-    const taskId = uuidv4() as TaskId;
-    const dl = deadline || new Date(Date.now() + 3600 * 1000).toISOString();
-
-    await pool.query(
-      `INSERT INTO signalflow.tasks (task_id, sub_claim_id, loop_id, assigned_validator_id, status, priority, deadline, routing_decision)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [taskId, subClaimId, loopId, validator.validatorId, TaskStatus.ASSIGNED, priority, dl, JSON.stringify(decision)],
-    );
-
-    // Increment validator load
-    await pool.query(
-      `UPDATE signalflow.validators SET current_load = current_load + 1, last_active_at = NOW() WHERE validator_id = $1`,
-      [validator.validatorId],
-    );
-
-    const task = await pool.query('SELECT * FROM signalflow.tasks WHERE task_id = $1', [taskId]);
-    const t = taskFromRow(task.rows[0]);
-
-    await bus.emit(EventType.TASK_CREATED, loopId as LoopId, { taskId, subClaimId, loopId, validatorId: validator.validatorId } as TaskCreatedPayload);
-    await bus.emit(EventType.TASK_ASSIGNED, loopId as LoopId, { taskId, validatorId: validator.validatorId, decision } as TaskAssignedPayload);
-
-    console.log(`[signalflow] Task ${taskId} created and assigned to validator ${validator.validatorId}`);
-    res.status(201).json(t);
-  } catch (err: any) {
-    console.error('[signalflow] POST /tasks error:', err);
-    const status = err.message.includes('No eligible') ? 503 : 500;
-    res.status(status).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── GET /tasks ────────────────────────────────────────────────────────────────
-
-app.get('/tasks', async (req, res) => {
-  try {
-    const { status, validatorId, loopId, priority, page = 1, pageSize = 20 } = req.query;
-    let query = 'SELECT * FROM signalflow.tasks WHERE 1=1';
-    const params: any[] = [];
-    let idx = 1;
-
-    if (status) { query += ` AND status = $${idx++}`; params.push(status); }
-    if (validatorId) { query += ` AND assigned_validator_id = $${idx++}`; params.push(validatorId); }
-    if (loopId) { query += ` AND loop_id = $${idx++}`; params.push(loopId); }
-    if (priority) { query += ` AND priority >= $${idx++}`; params.push(Number(priority)); }
-
-    const countRes = await pool.query(`SELECT COUNT(*) FROM signalflow.tasks WHERE 1=1`, []);
-    const total = parseInt(countRes.rows[0].count);
-
-    query += ` ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`;
-    params.push(Number(pageSize), (Number(page) - 1) * Number(pageSize));
-
-    const result = await pool.query(query, params);
-    res.json({ items: result.rows.map(taskFromRow), total, page: Number(page), pageSize: Number(pageSize) });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── GET /tasks/:taskId ────────────────────────────────────────────────────────
-
-app.get('/tasks/:taskId', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM signalflow.tasks WHERE task_id = $1', [req.params.taskId]);
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Task not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
-      return;
-    }
-    res.json(taskFromRow(result.rows[0]));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── POST /tasks/:taskId/complete ──────────────────────────────────────────────
-
-app.post('/tasks/:taskId/complete', async (req, res) => {
-  try {
-    const { verdict, confidence, validatorId, reasoning, evidence } = req.body;
-    const taskRes = await pool.query('SELECT * FROM signalflow.tasks WHERE task_id = $1', [req.params.taskId]);
-    if (taskRes.rows.length === 0) {
-      res.status(404).json({ error: 'Task not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
-      return;
-    }
-    const t = taskFromRow(taskRes.rows[0]);
-    if ([TaskStatus.COMPLETED, TaskStatus.TIMED_OUT].includes(t.status)) {
-      res.status(409).json({ error: 'Task already completed or timed out', code: 'CONFLICT', timestamp: new Date().toISOString() });
-      return;
-    }
-
-    const result = { verdict, confidence, reasoning, evidence };
-    await pool.query(
-      `UPDATE signalflow.tasks SET status = $1, result = $2, completed_at = NOW(), updated_at = NOW() WHERE task_id = $3`,
-      [TaskStatus.COMPLETED, JSON.stringify(result), req.params.taskId],
-    );
-
-    // Decrement load
-    await pool.query(
-      `UPDATE signalflow.validators SET current_load = GREATEST(0, current_load - 1) WHERE validator_id = $1`,
-      [t.assignedValidatorId],
-    );
-
-    const updated = await pool.query('SELECT * FROM signalflow.tasks WHERE task_id = $1', [req.params.taskId]);
-    const updatedTask = taskFromRow(updated.rows[0]);
-
-    await bus.emit(EventType.TASK_COMPLETED, t.loopId, {
-      taskId: t.taskId,
-      subClaimId: t.subClaimId,
-      loopId: t.loopId,
-      validatorId: validatorId || t.assignedValidatorId,
-      result,
-    } as TaskCompletedPayload);
-
-    console.log(`[signalflow] Task ${t.taskId} completed: verdict=${verdict}, confidence=${confidence}`);
-    res.json(updatedTask);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── POST /tasks/:taskId/reassign ──────────────────────────────────────────────
-
-app.post('/tasks/:taskId/reassign', async (req, res) => {
-  try {
-    const { reason = 'manual_override', excludeValidators = [] } = req.body;
-    const taskRes = await pool.query('SELECT * FROM signalflow.tasks WHERE task_id = $1', [req.params.taskId]);
-    if (taskRes.rows.length === 0) {
-      res.status(404).json({ error: 'Task not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
-      return;
-    }
-    const t = taskFromRow(taskRes.rows[0]);
-
-    // Get domain from sub-claim (fall back to 'general')
-    const domain = 'general';
-    const excluded = [t.assignedValidatorId, ...excludeValidators] as ValidatorId[];
-    const { validator, decision } = await selectValidator(domain, excluded);
-
-    // Decrement old validator
-    await pool.query(
-      `UPDATE signalflow.validators SET current_load = GREATEST(0, current_load - 1) WHERE validator_id = $1`,
-      [t.assignedValidatorId],
-    );
-
-    await pool.query(
-      `UPDATE signalflow.tasks SET assigned_validator_id = $1, status = $2, routing_decision = $3,
-       reassignment_count = reassignment_count + 1, updated_at = NOW() WHERE task_id = $4`,
-      [validator.validatorId, TaskStatus.REASSIGNED, JSON.stringify(decision), req.params.taskId],
-    );
-
-    // Increment new validator
-    await pool.query(
-      `UPDATE signalflow.validators SET current_load = current_load + 1 WHERE validator_id = $1`,
-      [validator.validatorId],
-    );
-
-    const updated = await pool.query('SELECT * FROM signalflow.tasks WHERE task_id = $1', [req.params.taskId]);
-    console.log(`[signalflow] Task ${t.taskId} reassigned to ${validator.validatorId} (reason: ${reason})`);
-    res.json(taskFromRow(updated.rows[0]));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── POST /routing/simulate ────────────────────────────────────────────────────
-
-app.post('/routing/simulate', async (req, res) => {
-  try {
-    const { subClaimId, domain = 'general', strategy } = req.body;
-    if (!subClaimId) {
-      res.status(400).json({ error: 'subClaimId is required', code: 'VALIDATION_ERROR', timestamp: new Date().toISOString() });
-      return;
-    }
-    const { decision } = await selectValidator(domain, [], strategy);
-    res.json(decision);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── GET /routing/config ───────────────────────────────────────────────────────
-
-app.get('/routing/config', async (_req, res) => {
+// Health check
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
-    defaultStrategy: 'weighted_random',
-    weights: { reputation: 0.35, domainExpertise: 0.25, currentLoad: 0.20, historicalAccuracy: 0.15, responseTime: 0.05 },
-    timeoutSeconds: 3600,
-    maxReassignments: 3,
+    status: 'healthy',
+    version: process.env.npm_package_version || '1.0.0',
+    uptime: process.uptime(),
+    dependencies: {
+      redis: redis.status,
+    },
   });
 });
 
-// ── GET /validators ───────────────────────────────────────────────────────────
-
-app.get('/validators', async (req, res) => {
+// Create a new validation task
+app.post('/tasks', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { domain, available } = req.query;
-    let query = 'SELECT * FROM signalflow.validators WHERE 1=1';
-    const params: any[] = [];
-    let idx = 1;
-    if (domain) { query += ` AND domains @> $${idx++}::text[]`; params.push(JSON.stringify([domain])); }
-    if (available !== undefined) { query += ` AND is_available = $${idx++}`; params.push(available === 'true'); }
-    query += ' ORDER BY reputation_score DESC';
-    const result = await pool.query(query, params);
-    res.json(result.rows.map(validatorFromRow));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
+    const { subClaimId, claimId, text, complexityScore, priority, deadline } = req.body;
 
-// ── POST /validators ──────────────────────────────────────────────────────────
-
-app.post('/validators', async (req, res) => {
-  try {
-    const { validatorId, type, domains, maxLoad = 10, domainExpertise = {} } = req.body;
-    if (!validatorId || !type || !domains) {
-      res.status(400).json({ error: 'validatorId, type, and domains are required', code: 'VALIDATION_ERROR', timestamp: new Date().toISOString() });
-      return;
-    }
-    await pool.query(
-      `INSERT INTO signalflow.validators (validator_id, type, domains, max_load, domain_expertise)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (validator_id) DO UPDATE SET type = $2, domains = $3, max_load = $4, domain_expertise = $5`,
-      [validatorId, type, domains, maxLoad, JSON.stringify(domainExpertise)],
-    );
-    const result = await pool.query('SELECT * FROM signalflow.validators WHERE validator_id = $1', [validatorId]);
-    res.status(201).json(validatorFromRow(result.rows[0]));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── GET /validators/:validatorId ──────────────────────────────────────────────
-
-app.get('/validators/:validatorId', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM signalflow.validators WHERE validator_id = $1', [req.params.validatorId]);
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Validator not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
-      return;
-    }
-    res.json(validatorFromRow(result.rows[0]));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── PATCH /validators/:validatorId ────────────────────────────────────────────
-
-app.patch('/validators/:validatorId', async (req, res) => {
-  try {
-    const { isAvailable, domains, domainExpertise, maxLoad } = req.body;
-    const updates: string[] = [];
-    const params: any[] = [];
-    let idx = 1;
-
-    if (isAvailable !== undefined) { updates.push(`is_available = $${idx++}`); params.push(isAvailable); }
-    if (domains) { updates.push(`domains = $${idx++}`); params.push(domains); }
-    if (domainExpertise) { updates.push(`domain_expertise = $${idx++}`); params.push(JSON.stringify(domainExpertise)); }
-    if (maxLoad !== undefined) { updates.push(`max_load = $${idx++}`); params.push(maxLoad); }
-
-    if (updates.length === 0) {
-      res.status(400).json({ error: 'No fields to update', code: 'VALIDATION_ERROR', timestamp: new Date().toISOString() });
-      return;
+    if (!subClaimId || !claimId || !text || complexityScore === undefined) {
+      return res.status(400).json({
+        error: 'MISSING_FIELDS',
+        message: 'subClaimId, claimId, text, and complexityScore are required',
+      });
     }
 
-    updates.push(`updated_at = NOW()`);
-    params.push(req.params.validatorId);
-    await pool.query(`UPDATE signalflow.validators SET ${updates.join(', ')} WHERE validator_id = $${idx}`, params);
-
-    const result = await pool.query('SELECT * FROM signalflow.validators WHERE validator_id = $1', [req.params.validatorId]);
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Validator not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
-      return;
+    if (complexityScore < 0 || complexityScore > 1) {
+      return res.status(422).json({
+        error: 'INVALID_COMPLEXITY',
+        message: 'complexityScore must be between 0 and 1',
+      });
     }
-    res.json(validatorFromRow(result.rows[0]));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+
+    const task: ValidationTask = {
+      id: uuidv4(),
+      subClaimId,
+      claimId,
+      text,
+      validatorType: routeToValidator(complexityScore),
+      priority: priority || 'medium',
+      status: 'pending',
+      complexityScore,
+      deadline,
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
+    };
+
+    await saveTask(task);
+
+    // Notify connected validators via WebSocket
+    io.to(task.validatorType).emit('task:new', task);
+
+    res.status(201).json(task);
+  } catch (err) {
+    next(err);
   }
 });
 
-// ── POST /events ──────────────────────────────────────────────────────────────
-
-app.post('/events', async (req, res) => {
+// List tasks (optionally filter by status/type)
+app.get('/tasks', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const event = req.body as DomainEvent;
-    console.log(`[signalflow] Received event: ${event.type}`);
-    res.status(202).send();
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    const { status, validatorType, limit = '20', offset = '0' } = req.query;
+
+    // Scan Redis for tasks
+    const keys = await redis.keys('task:*');
+    const tasks: ValidationTask[] = [];
+
+    for (const key of keys) {
+      const data = await redis.get(key);
+      if (data) {
+        const task = JSON.parse(data) as ValidationTask;
+        if (status && task.status !== status) continue;
+        if (validatorType && task.validatorType !== validatorType) continue;
+        tasks.push(task);
+      }
+    }
+
+    // Sort by createdAt desc
+    tasks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const start = parseInt(offset as string);
+    const end = start + parseInt(limit as string);
+
+    res.json({
+      items: tasks.slice(start, end),
+      total: tasks.length,
+      limit: parseInt(limit as string),
+      offset: start,
+    });
+  } catch (err) {
+    next(err);
   }
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+// Get a specific task
+app.get('/tasks/:taskId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const task = await getTask(req.params.taskId);
+    if (!task) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: 'Task not found' });
+    }
+    res.json(task);
+  } catch (err) {
+    next(err);
+  }
+});
 
-async function main() {
-  await waitForPostgres(pool);
-  await waitForRedis(redis);
-  await bus.start();
+// Claim a task (validator picks it up)
+app.post('/tasks/:taskId/claim', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { validatorId } = req.body;
+    if (!validatorId) {
+      return res.status(400).json({ error: 'MISSING_FIELDS', message: 'validatorId is required' });
+    }
 
-  app.listen(PORT, () => {
-    console.log(`[signalflow] listening on :${PORT}`);
+    const task = await getTask(req.params.taskId);
+    if (!task) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: 'Task not found' });
+    }
+    if (task.status !== 'pending') {
+      return res.status(409).json({ error: 'ALREADY_CLAIMED', message: `Task is ${task.status}` });
+    }
+
+    task.status = 'assigned';
+    task.assignedTo = validatorId;
+    task.updatedAt = nowISO();
+    if (!task.deadline) {
+      task.deadline = new Date(Date.now() + TASK_EXPIRY_MS).toISOString();
+    }
+
+    await updateTask(task);
+    io.to(task.validatorType).emit('task:claimed', { taskId: task.id, validatorId });
+
+    res.json(task);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Submit result for a task
+app.post('/tasks/:taskId/result', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { validatorId, verdict, confidence, evidence } = req.body;
+
+    if (!validatorId || !verdict || confidence === undefined) {
+      return res.status(400).json({
+        error: 'MISSING_FIELDS',
+        message: 'validatorId, verdict, and confidence are required',
+      });
+    }
+
+    if (!['true', 'false', 'uncertain'].includes(verdict)) {
+      return res.status(422).json({ error: 'INVALID_VERDICT', message: 'verdict must be true, false, or uncertain' });
+    }
+
+    if (confidence < 0 || confidence > 1) {
+      return res.status(422).json({ error: 'INVALID_CONFIDENCE', message: 'confidence must be between 0 and 1' });
+    }
+
+    const task = await getTask(req.params.taskId);
+    if (!task) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: 'Task not found' });
+    }
+
+    task.status = 'completed';
+    task.updatedAt = nowISO();
+    await updateTask(task);
+
+    const result: TaskResult = {
+      taskId: task.id,
+      validatorId,
+      verdict,
+      confidence,
+      evidence,
+      completedAt: nowISO(),
+    };
+
+    // Store result separately
+    await redis.setex(`result:${task.id}`, TASK_TTL, JSON.stringify(result));
+
+    // Emit completion event
+    io.emit('task:completed', result);
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get task result
+app.get('/tasks/:taskId/result', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await redis.get(`result:${req.params.taskId}`);
+    if (!data) {
+      return res.status(404).json({ error: 'NOT_FOUND', message: 'Result not found' });
+    }
+    res.json(JSON.parse(data));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Queue depth metrics
+app.get('/metrics/queues', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const [humanDepth, aiDepth, consensusDepth] = await Promise.all([
+      redis.llen('queue:human'),
+      redis.llen('queue:ai'),
+      redis.llen('queue:consensus'),
+    ]);
+
+    res.json({
+      human: humanDepth,
+      ai: aiDepth,
+      consensus: consensusDepth,
+      total: humanDepth + aiDepth + consensusDepth,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─── WebSocket ────────────────────────────────────────────────────────────────
+
+io.on('connection', (socket) => {
+  console.log(`Validator connected: ${socket.id}`);
+
+  socket.on('join:room', (room: string) => {
+    if (['human', 'ai', 'consensus'].includes(room)) {
+      socket.join(room);
+      console.log(`${socket.id} joined room: ${room}`);
+    }
   });
-}
 
-main().catch((err) => {
-  console.error('[signalflow] Fatal startup error:', err);
-  process.exit(1);
+  socket.on('disconnect', () => {
+    console.log(`Validator disconnected: ${socket.id}`);
+  });
 });
 
-export default app;
+// ─── Error Handler ────────────────────────────────────────────────────────────
+
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[SignalFlow Error]', err);
+  res.status(500).json({
+    error: 'INTERNAL_ERROR',
+    message: err.message || 'An unexpected error occurred',
+  });
+});
+
+// ─── Startup ──────────────────────────────────────────────────────────────────
+
+httpServer.listen(PORT, () => {
+  console.log(`SignalFlow running on port ${PORT}`);
+  console.log(`Routing config:`, routingConfig);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  await redis.quit();
+  httpServer.close(() => process.exit(0));
+});

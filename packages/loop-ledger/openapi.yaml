@@ -2,28 +2,29 @@ openapi: 3.1.0
 info:
   title: Loop Ledger API
   description: |
-    Manages the lifecycle of entropy reduction loops — tracks what was
-    attempted, what changed, and closes the loop with a verified delta.
+    Immutable append-only audit log for all claim validation events.
+    Every state transition, verdict, and Bayesian update is recorded
+    here with cryptographic integrity.
     
-    Loop Ledger is the audit trail of the Extropy Engine. Every entropy
-    reduction attempt is a loop: opened with intent, measured, acted upon,
-    and closed with a verified delta. This service ensures nothing is
-    forgotten and everything is accounted for.
+    The Loop Ledger is the source of truth for the entire Extropy Engine —
+    once an entry is written, it cannot be modified or deleted.
   version: 1.0.0
+  contact:
+    name: Extropy Engine
 
 servers:
-  - url: http://localhost:4003
+  - url: http://localhost:4004
     description: Local development
   - url: https://api.extropy.engine/loop-ledger
     description: Production
 
 tags:
-  - name: Loops
-    description: Entropy reduction loop management
-  - name: Phases
-    description: Loop phase transitions (open → active → closing → closed)
   - name: Entries
-    description: Ledger entries within a loop
+    description: Ledger entry management
+  - name: Audit
+    description: Audit trail queries
+  - name: Integrity
+    description: Cryptographic integrity verification
   - name: Health
     description: Service health checks
 
@@ -41,214 +42,115 @@ paths:
               schema:
                 $ref: '#/components/schemas/ServiceHealthResponse'
 
-  /loops:
+  /entries:
     post:
-      tags: [Loops]
-      operationId: openLoop
-      summary: Open a new entropy reduction loop
+      tags: [Entries]
+      operationId: appendEntry
+      summary: Append a new ledger entry
       description: |
-        Creates a new loop tied to a claim. The loop tracks the full
-        lifecycle of verifying the claim's entropy reduction.
+        Appends an immutable entry to the ledger. Each entry is linked
+        to its predecessor via hash chain, ensuring tamper-evidence.
         
-        Emits: `loop.opened`
+        This endpoint is idempotent on `eventId` — duplicate events
+        are silently ignored.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OpenLoopRequest'
+              $ref: '#/components/schemas/AppendEntryRequest'
       responses:
         '201':
-          description: Loop opened
+          description: Entry appended to ledger
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Loop'
+                $ref: '#/components/schemas/LedgerEntryResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
     get:
-      tags: [Loops]
-      operationId: listLoops
-      summary: List loops with optional filtering
+      tags: [Entries]
+      operationId: listEntries
+      summary: List ledger entries
       parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PageSizeParam'
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/LoopStatus'
-        - name: domain
-          in: query
-          schema:
-            type: string
         - name: claimId
           in: query
           schema:
             type: string
             format: uuid
-        - name: parentLoopId
+          description: Filter by claim ID
+        - name: eventType
+          in: query
+          schema:
+            $ref: '#/components/schemas/EventType'
+          description: Filter by event type
+        - name: actorId
           in: query
           schema:
             type: string
             format: uuid
-      responses:
-        '200':
-          description: Paginated list of loops
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedLoops'
-
-  /loops/{loopId}:
-    get:
-      tags: [Loops]
-      operationId: getLoop
-      summary: Get a specific loop with full history
-      parameters:
-        - $ref: '#/components/parameters/LoopIdParam'
-      responses:
-        '200':
-          description: Loop detail
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Loop'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /loops/{loopId}/activate:
-    post:
-      tags: [Phases]
-      operationId: activateLoop
-      summary: Transition loop from OPEN to ACTIVE
-      description: |
-        Records that active validation work has begun.
-        
-        Emits: `loop.activated`
-      parameters:
-        - $ref: '#/components/parameters/LoopIdParam'
-      responses:
-        '200':
-          description: Loop activated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Loop'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          description: Loop not in OPEN status
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /loops/{loopId}/close:
-    post:
-      tags: [Phases]
-      operationId: closeLoop
-      summary: Close a loop with verified entropy delta
-      description: |
-        Records the final entropy delta and closes the loop.
-        A closed loop cannot be reopened.
-        
-        Emits: `loop.closed`
-      parameters:
-        - $ref: '#/components/parameters/LoopIdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CloseLoopRequest'
-      responses:
-        '200':
-          description: Loop closed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Loop'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          description: Loop already closed or in invalid state
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /loops/{loopId}/entries:
-    post:
-      tags: [Entries]
-      operationId: addEntry
-      summary: Add an audit entry to a loop
-      description: |
-        Records a discrete event within the loop's lifecycle.
-        All significant state changes should be recorded as entries.
-      parameters:
-        - $ref: '#/components/parameters/LoopIdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddEntryRequest'
-      responses:
-        '201':
-          description: Entry added
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LedgerEntry'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-    get:
-      tags: [Entries]
-      operationId: listEntries
-      summary: List all entries for a loop
-      parameters:
-        - $ref: '#/components/parameters/LoopIdParam'
-        - name: entryType
+          description: Filter by actor
+        - name: since
           in: query
           schema:
-            $ref: '#/components/schemas/EntryType'
+            type: string
+            format: date-time
+          description: Entries after this timestamp
+        - name: until
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Entries before this timestamp
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
       responses:
         '200':
           description: List of ledger entries
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/LedgerEntry'
+                $ref: '#/components/schemas/LedgerEntryListResponse'
 
-  /loops/{loopId}/delta:
+  /entries/{entryId}:
     get:
-      tags: [Loops]
-      operationId: getDelta
-      summary: Get entropy delta summary for a loop
-      description: |
-        Returns the computed entropy reduction for a loop,
-        including baseline, final, and delta calculations.
+      tags: [Entries]
+      operationId: getEntry
+      summary: Get a specific ledger entry
       parameters:
-        - $ref: '#/components/parameters/LoopIdParam'
+        - $ref: '#/components/parameters/EntryId'
       responses:
         '200':
-          description: Entropy delta summary
+          description: Ledger entry
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EntropyDelta'
+                $ref: '#/components/schemas/LedgerEntryResponse'
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /loops/by-claim/{claimId}:
+  /audit/claims/{claimId}:
     get:
-      tags: [Loops]
-      operationId: getLoopByClaim
-      summary: Get the loop associated with a specific claim
+      tags: [Audit]
+      operationId: getClaimAuditTrail
+      summary: Get complete audit trail for a claim
+      description: |
+        Returns all ledger entries for a claim in chronological order,
+        showing every state transition and validation event.
       parameters:
         - name: claimId
           in: path
@@ -258,40 +160,96 @@ paths:
             format: uuid
       responses:
         '200':
-          description: Loop for claim
+          description: Complete audit trail for the claim
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Loop'
+                $ref: '#/components/schemas/AuditTrailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /audit/actors/{actorId}:
+    get:
+      tags: [Audit]
+      operationId: getActorAuditTrail
+      summary: Get audit trail for a specific actor
+      description: |
+        Returns all actions performed by a specific validator or system actor.
+      parameters:
+        - name: actorId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+      responses:
+        '200':
+          description: Actor audit trail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditTrailResponse'
+
+  /integrity/verify:
+    post:
+      tags: [Integrity]
+      operationId: verifyIntegrity
+      summary: Verify ledger integrity
+      description: |
+        Verifies the hash chain integrity for a range of entries.
+        Detects any tampering or corruption in the ledger.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyIntegrityRequest'
+      responses:
+        '200':
+          description: Integrity verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrityVerificationResponse'
+
+  /integrity/hash/{entryId}:
+    get:
+      tags: [Integrity]
+      operationId: getEntryHash
+      summary: Get cryptographic hash for an entry
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      responses:
+        '200':
+          description: Entry hash details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntryHashResponse'
         '404':
           $ref: '#/components/responses/NotFound'
 
 components:
   parameters:
-    LoopIdParam:
-      name: loopId
+    EntryId:
+      name: entryId
       in: path
       required: true
       schema:
         type: string
         format: uuid
-
-    PageParam:
-      name: page
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        default: 1
-
-    PageSizeParam:
-      name: pageSize
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
 
   responses:
     BadRequest:
@@ -300,220 +258,216 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-
     NotFound:
       description: Resource not found
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Duplicate event ID
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
 
   schemas:
-    LoopStatus:
-      type: string
-      enum: [open, active, closing, closed, failed]
-      description: |
-        Loop lifecycle states:
-        - open: Loop created, awaiting activation
-        - active: Validation in progress
-        - closing: All sub-claims resolved, computing final delta
-        - closed: Loop finalized with verified entropy delta
-        - failed: Loop terminated without successful closure
-
-    EntryType:
+    EventType:
       type: string
       enum:
-        - loop_opened
-        - loop_activated
-        - loop_closing
-        - loop_closed
-        - loop_failed
-        - claim_submitted
-        - claim_decomposed
-        - subclaim_updated
-        - claim_evaluated
-        - task_created
-        - task_completed
-        - task_reassigned
-        - measurement_recorded
-        - baseline_set
-        - outcome_set
-        - entropy_computed
+        - claim.submitted
+        - claim.decomposed
+        - claim.evaluated
+        - claim.validated
+        - claim.rejected
+        - claim.disputed
+        - subclaim.created
+        - subclaim.assigned
+        - subclaim.validated
+        - subclaim.rejected
+        - task.created
+        - task.claimed
+        - task.completed
+        - task.expired
+        - prior.initialized
+        - prior.updated
+        - validator.registered
+        - validator.scored
 
-    Loop:
+    AppendEntryRequest:
       type: object
-      required: [loopId, claimId, domain, status, entropyDelta, parentLoopIds, childLoopIds, ledgerEntries, openedAt]
+      required: [eventId, eventType, claimId, actorId, payload]
       properties:
-        loopId:
+        eventId:
           type: string
           format: uuid
+          description: Idempotency key — duplicate eventIds are ignored
+        eventType:
+          $ref: '#/components/schemas/EventType'
         claimId:
           type: string
           format: uuid
-        domain:
-          type: string
-        status:
-          $ref: '#/components/schemas/LoopStatus'
-        entropyDelta:
-          $ref: '#/components/schemas/EntropyDelta'
-        parentLoopIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-        childLoopIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-        ledgerEntries:
-          type: array
-          items:
-            $ref: '#/components/schemas/LedgerEntry'
-        openedAt:
-          type: string
-          format: date-time
-        activatedAt:
-          type: string
-          format: date-time
-        closedAt:
-          type: string
-          format: date-time
-        metadata:
-          type: object
-          additionalProperties: true
-
-    EntropyDelta:
-      type: object
-      required: [computed]
-      properties:
-        baseline:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 1
-          description: Entropy level at loop open
-        final:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 1
-          description: Entropy level at loop close
-        delta:
-          type: number
-          format: float
-          description: Reduction in entropy (baseline - final). Negative = entropy increased.
-        computed:
-          type: boolean
-          description: Whether the delta has been computed yet
-        verificationMethod:
-          type: string
-          enum: [bayesian, measurement, consensus, hybrid]
-        confidenceScore:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 1
-
-    LedgerEntry:
-      type: object
-      required: [entryId, loopId, entryType, timestamp]
-      properties:
-        entryId:
+          description: The claim this event relates to
+        actorId:
           type: string
           format: uuid
-        loopId:
+          description: The validator, system, or user who triggered this event
+        subClaimId:
           type: string
           format: uuid
-        entryType:
-          $ref: '#/components/schemas/EntryType'
+          nullable: true
+          description: Optional sub-claim reference
+        taskId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Optional task reference
         payload:
           type: object
           additionalProperties: true
+          description: Event-specific data
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Optional additional context
+
+    LedgerEntryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sequenceNumber:
+          type: integer
+          description: Monotonically increasing sequence number
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          $ref: '#/components/schemas/EventType'
+        claimId:
+          type: string
+          format: uuid
         actorId:
           type: string
-          description: ID of the service or user that triggered this entry
+          format: uuid
+        subClaimId:
+          type: string
+          format: uuid
+          nullable: true
+        taskId:
+          type: string
+          format: uuid
+          nullable: true
+        payload:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+        hash:
+          type: string
+          description: SHA-256 hash of this entry's content
+        previousHash:
+          type: string
+          nullable: true
+          description: Hash of the previous entry (null for genesis)
         timestamp:
           type: string
           format: date-time
 
-    OpenLoopRequest:
+    LedgerEntryListResponse:
       type: object
-      required: [claimId, domain]
-      properties:
-        claimId:
-          type: string
-          format: uuid
-        loopId:
-          type: string
-          format: uuid
-          description: Optional — if provided, use this as the loop ID
-        domain:
-          type: string
-        parentLoopIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-          default: []
-        metadata:
-          type: object
-          additionalProperties: true
-
-    CloseLoopRequest:
-      type: object
-      required: [finalEntropy, verificationMethod]
-      properties:
-        finalEntropy:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 1
-        verificationMethod:
-          type: string
-          enum: [bayesian, measurement, consensus, hybrid]
-        confidenceScore:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 1
-          default: 0.8
-        notes:
-          type: string
-
-    AddEntryRequest:
-      type: object
-      required: [entryType]
-      properties:
-        entryType:
-          $ref: '#/components/schemas/EntryType'
-        payload:
-          type: object
-          additionalProperties: true
-        actorId:
-          type: string
-
-    PaginatedLoops:
-      type: object
-      required: [items, total, page, pageSize]
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/Loop'
+            $ref: '#/components/schemas/LedgerEntryResponse'
         total:
           type: integer
-        page:
+        limit:
           type: integer
-        pageSize:
+        offset:
           type: integer
+
+    AuditTrailResponse:
+      type: object
+      properties:
+        entityId:
+          type: string
+          format: uuid
+          description: The claim or actor ID this trail belongs to
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerEntryResponse'
+        totalEvents:
+          type: integer
+        firstEvent:
+          type: string
+          format: date-time
+          nullable: true
+        lastEvent:
+          type: string
+          format: date-time
+          nullable: true
+
+    VerifyIntegrityRequest:
+      type: object
+      properties:
+        fromSequence:
+          type: integer
+          minimum: 1
+          description: Start verification from this sequence number
+        toSequence:
+          type: integer
+          description: End verification at this sequence number
+        claimId:
+          type: string
+          format: uuid
+          description: Optionally scope verification to a specific claim
+
+    IntegrityVerificationResponse:
+      type: object
+      properties:
+        verified:
+          type: boolean
+          description: True if the entire range is tamper-free
+        entriesChecked:
+          type: integer
+        firstSequence:
+          type: integer
+        lastSequence:
+          type: integer
+        brokenAt:
+          type: integer
+          nullable: true
+          description: Sequence number where chain break was detected (null if intact)
+        verifiedAt:
+          type: string
+          format: date-time
+
+    EntryHashResponse:
+      type: object
+      properties:
+        entryId:
+          type: string
+          format: uuid
+        sequenceNumber:
+          type: integer
+        hash:
+          type: string
+          description: SHA-256 hash of this entry
+        previousHash:
+          type: string
+          nullable: true
+        algorithm:
+          type: string
+          enum: [sha256]
 
     ServiceHealthResponse:
       type: object
-      required: [service, status, version, uptime, timestamp]
       properties:
-        service:
-          type: string
         status:
           type: string
           enum: [healthy, degraded, unhealthy]
@@ -521,23 +475,19 @@ components:
           type: string
         uptime:
           type: number
-        timestamp:
-          type: string
-          format: date-time
         dependencies:
           type: object
           additionalProperties:
             type: string
-            enum: [connected, disconnected]
 
     ErrorResponse:
       type: object
-      required: [error, code, timestamp]
+      required: [error, message]
       properties:
         error:
           type: string
-        code:
+        message:
           type: string
-        timestamp:
-          type: string
-          format: date-time
+        details:
+          type: object
+          additionalProperties: true
