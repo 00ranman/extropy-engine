@@ -1,63 +1,72 @@
 /**
- * ════════════════════════════════════════════════════════════════════════════════
- *  EXTROPY ENGINE — Database Contract
- * ════════════════════════════════════════════════════════════════════════════════
- *
- *  Defines the shared database interface contract that all services use.
- *  Each service gets its own database but shares this contract for type safety.
- *
- * ════════════════════════════════════════════════════════════════════════════════
+ * ===============================================================================
+ *  Shared Database Helpers -- Connection Pool + Query Utilities
+ * ===============================================================================
  */
 
-import type { LoopRow, ClaimRow, SubClaimRow, ValidatorRow } from './types';
+import { Pool } from 'pg';
+import Redis from 'ioredis';
 
 /**
- * Generic repository interface — all service-specific repos extend this.
+ * Create a PostgreSQL connection pool from DATABASE_URL env var.
  */
-export interface Repository<T, ID = string> {
-  findById(id: ID): Promise<T | null>;
-  findMany(filter: Partial<T>): Promise<T[]>;
-  save(entity: T): Promise<T>;
-  update(id: ID, partial: Partial<T>): Promise<T>;
-  delete(id: ID): Promise<void>;
-}
-
-export interface LoopRepository extends Repository<LoopRow> {
-  findByStatus(status: string): Promise<LoopRow[]>;
-  findByDomain(domain: string): Promise<LoopRow[]>;
-  findOpenLoops(): Promise<LoopRow[]>;
-}
-
-export interface ClaimRepository extends Repository<ClaimRow> {
-  findByLoopId(loopId: string): Promise<ClaimRow[]>;
-  findByStatus(status: string): Promise<ClaimRow[]>;
-}
-
-export interface SubClaimRepository extends Repository<SubClaimRow> {
-  findByClaimId(claimId: string): Promise<SubClaimRow[]>;
-  findByValidatorId(validatorId: string): Promise<SubClaimRow[]>;
-  findPendingByDomain(domain: string): Promise<SubClaimRow[]>;
-}
-
-export interface ValidatorRepository extends Repository<ValidatorRow> {
-  findActiveByDomain(domain: string): Promise<ValidatorRow[]>;
-  findByReputation(minReputation: number): Promise<ValidatorRow[]>;
+export function createPool(): Pool {
+  const connectionString = process.env.DATABASE_URL
+    || 'postgresql://extropy:extropy_dev@localhost:5432/extropy_engine';
+  const pool = new Pool({ connectionString, max: 10 });
+  pool.on('error', (err) => {
+    console.error('Unexpected PG pool error:', err);
+  });
+  return pool;
 }
 
 /**
- * Health-check shape returned by each service's /health endpoint.
+ * Create a Redis client from REDIS_URL env var.
  */
-export interface ServiceHealth {
-  service: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
-  version: string;
-  uptime: number;
-  checks: HealthCheck[];
+export function createRedis(): Redis {
+  const url = process.env.REDIS_URL || 'redis://localhost:6379';
+  const redis = new Redis(url, {
+    maxRetriesPerRequest: 3,
+    retryStrategy(times: number) {
+      return Math.min(times * 200, 2000);
+    },
+  });
+  redis.on('error', (err) => {
+    console.error('Redis connection error:', err);
+  });
+  return redis;
 }
 
-export interface HealthCheck {
-  name: string;
-  status: 'pass' | 'fail' | 'warn';
-  message?: string;
-  durationMs?: number;
+/**
+ * Wait for PostgreSQL to be ready (useful at service startup).
+ */
+export async function waitForPostgres(pool: Pool, maxRetries = 30, delayMs = 1000): Promise<void> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await pool.query('SELECT 1');
+      console.log('PostgreSQL connected');
+      return;
+    } catch {
+      console.log(`Waiting for PostgreSQL... (${i + 1}/${maxRetries})`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error('Failed to connect to PostgreSQL');
+}
+
+/**
+ * Wait for Redis to be ready (useful at service startup).
+ */
+export async function waitForRedis(redis: Redis, maxRetries = 30, delayMs = 1000): Promise<void> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await redis.ping();
+      console.log('Redis connected');
+      return;
+    } catch {
+      console.log(`Waiting for Redis... (${i + 1}/${maxRetries})`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error('Failed to connect to Redis');
 }
