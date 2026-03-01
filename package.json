@@ -2,25 +2,37 @@
   "name": "extropy-engine",
   "private": true,
   "version": "0.1.0",
-  "description": "Extropy Engine — monorepo for entropy-reduction feedback services",
+  "description": "Civilisational-scale infrastructure where verified entropy reduction is the sole basis of value",
+  "author": "Randall Gossett",
+  "license": "MIT",
   "workspaces": [
-    "packages/*"
+    "packages/contracts",
+    "packages/epistemology-engine",
+    "packages/signalflow",
+    "packages/loop-ledger",
+    "packages/reputation",
+    "packages/xp-mint"
   ],
   "scripts": {
-    "build": "tsc -b packages/contracts packages/epistemology-engine packages/signalflow packages/loop-ledger packages/xp-mint packages/reputation",
-    "dev": "concurrently \"cd packages/epistemology-engine && npm run dev\" \"cd packages/signalflow && npm run dev\" \"cd packages/loop-ledger && npm run dev\" \"cd packages/xp-mint && npm run dev\" \"cd packages/reputation && npm run dev\"",
-    "test": "vitest run",
+    "build": "npm run build --workspaces",
+    "build:contracts": "npm run build -w packages/contracts",
+    "build:epistemology": "npm run build -w packages/epistemology-engine",
+    "build:signalflow": "npm run build -w packages/signalflow",
+    "build:ledger": "npm run build -w packages/loop-ledger",
+    "build:reputation": "npm run build -w packages/reputation",
+    "build:mint": "npm run build -w packages/xp-mint",
+    "dev": "docker compose up --build",
+    "dev:services": "npm run dev --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "lint": "eslint packages/*/src/**/*.ts",
-    "clean": "rm -rf packages/*/dist",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "db:init": "psql $DATABASE_URL -f scripts/init-db.sql"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "clean": "rm -rf packages/*/dist"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "concurrently": "^8.2.0",
-    "eslint": "^8.57.0",
+    "@types/node": "^20.11.0",
     "typescript": "^5.4.0",
+    "eslint": "^9.0.0",
+    "tsx": "^4.7.0",
     "vitest": "^2.0.0"
   }
 }
