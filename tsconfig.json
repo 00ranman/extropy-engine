@@ -31,7 +31,14 @@
     { "path": "./packages/signalflow" },
     { "path": "./packages/loop-ledger" },
     { "path": "./packages/reputation" },
-    { "path": "./packages/xp-mint" }
+    { "path": "./packages/xp-mint" },
+    { "path": "./packages/dag-substrate" },
+    { "path": "./packages/dfao-registry" },
+    { "path": "./packages/governance" },
+    { "path": "./packages/temporal" },
+    { "path": "./packages/token-economy" },
+    { "path": "./packages/credentials" },
+    { "path": "./packages/ecosystem" }
   ],
   "exclude": ["node_modules", "dist"]
 }
