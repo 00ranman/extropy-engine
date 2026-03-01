@@ -6,92 +6,99 @@ Services must be built in this order due to type and runtime dependencies:
 
 ```
 1. @extropy/contracts        ← no dependencies, builds first
-2. @extropy/epistemology-engine
-3. @extropy/signal-flow
-4. @extropy/loop-ledger
-5. @extropy/reputation
-6. @extropy/xp-mint
+2. @extropy/event-bus        ← depends on @extropy/contracts
+3. epistemology-engine       ← depends on contracts + event-bus
+4. signalflow                ← depends on contracts + event-bus
+5. loop-ledger               ← depends on contracts + event-bus
+6. reputation                ← depends on contracts + event-bus
+7. xp-mint                   ← depends on contracts + event-bus + loop-ledger (for loop reads)
 ```
 
-## Dependency Matrix
-
-| Package | contracts | epistemology | signal-flow | loop-ledger | reputation |
-|---------|-----------|--------------|-------------|-------------|------------|
-| epistemology-engine | ✓ dep | — | — | — | — |
-| signal-flow | ✓ dep | ✓ HTTP | — | — | — |
-| loop-ledger | ✓ dep | ✓ HTTP | ✓ HTTP | — | — |
-| reputation | ✓ dep | ✓ HTTP | ✓ event | ✓ HTTP | — |
-| xp-mint | ✓ dep | ✓ event | ✓ event | ✓ HTTP | ✓ HTTP |
-
-## Data Flow Diagrams
-
-### Belief Propagation (Core Loop)
+## Package Dependency Matrix
 
 ```
-Client
+                    contracts  event-bus  epistemology  signalflow  loop-ledger  reputation  xp-mint
+contracts              —
+event-bus              ✓          —
+epistemology-engine    ✓          ✓            —
+signalflow             ✓          ✓                         —
+loop-ledger            ✓          ✓                                      —
+reputation             ✓          ✓                                                   —
+xp-mint                ✓          ✓                                      reads                  —
+```
+
+## Event Flow
+
+```
+POST /claims
   │
-  ├── POST /beliefs ─────────────────────────────────────────────
-  │                                                         ↓
-  │                                             Epistemology Engine
-  │                                               stores belief
-  │                                               publishes belief.created
+  ▼
+epistomology-engine
+  │  publishes: claim.submitted
+  │             loop.opened          ─────────────────────────────►  loop-ledger
+  │             claim.decomposed
   │
-  ├── GET /signals ──────────────────────────────────────────────
-  │                                                         ↓
-  │                                               Signal Flow
-  │                                               (listens for belief.created)
-  │                                               generates signals
+  ▼ (subscribes: claim.submitted)
+signalflow
+  │  creates Tasks for each sub-claim
+  │  publishes: task.created
+  │             task.assigned
   │
-  └── PUT /loops/:id/close ────────────────────────────────────
-                                                            ↓
-                                                    Loop Ledger
-                                                    validates
-                                                    calls Reputation
-                                                    calls XP Mint
+  ▼ (validator calls POST /tasks/:id/complete)
+signalflow
+  │  publishes: task.completed
+  │
+  ├──────────────────────────────────────────────────────────────►  epistemology-engine
+  │                                                                    subscribes: task.completed
+  │                                                                    updates sub-claim status
+  │                                                                    runs Bayesian update
+  │                                                                    publishes: subclaim.updated
+  │                                                                              claim.evaluated
+  │
+  └──────────────────────────────────────────────────────────────►  loop-ledger
+                                                                       subscribes: task.completed
+                                                                                   subclaim.updated
+                                                                                   claim.evaluated
+                                                                       records measurements
+                                                                       runs consensus
+                                                                       publishes: loop.consensus
+                                                                                 loop.closed
+                                                                                 loop.settled
+                                                                            │
+                                                                            ├──► xp-mint
+                                                                            │      subscribes: loop.closed
+                                                                            │      computes XP = R×F×ΔS×(w·E)×log(1/Tₛ)
+                                                                            │      publishes: xp.minted
+                                                                            │
+                                                                            └──► reputation
+                                                                                   subscribes: xp.minted
+                                                                                               loop.settled
+                                                                                   accrues reputation
 ```
 
-### Event Bus Subscriptions
+## Data Stores
 
-```
-Publisher              Event                    Subscriber(s)
-─────────────────────────────────────────────────────────────────────────
-Epistemology Engine    belief.created           Signal Flow
-Epistemology Engine    belief.updated           Signal Flow
-Signal Flow            signal.fired             XP Mint
-Loop Ledger            loop.closed              Reputation, XP Mint
-Reputation             reputation.updated       (logged only)
-XP Mint                xp.minted                (logged only)
-```
+All services share one PostgreSQL database (`extropy_engine`) with isolated schemas:
 
-## Inter-Service HTTP Calls
+| Service | Schema | Key Tables |
+|---|---|---|
+| epistemology-engine | `epistemology` | `claims`, `sub_claims` |
+| signalflow | `signalflow` | `tasks` |
+| loop-ledger | `loop_ledger` | `loops`, `measurements`, `consensus_votes` |
+| reputation | `reputation` | `validators`, `reputation_events` |
+| xp-mint | `xp_mint` | `mint_events`, `xp_distributions` |
+| shared | `public` | `event_log` |
 
-```
-Loop Ledger ─── GET /users/:id ─────────────────→ Epistemology Engine
-Loop Ledger ─── POST /scores/:userId ──────────── → Reputation
-Loop Ledger ─── POST /mint ──────────────────── → XP Mint
-Reputation ──── GET /users/:id ─────────────────→ Epistemology Engine
-Reputation ──── GET /loops/:userId ───────────── → Loop Ledger
-XP Mint ─────── GET /users/:id ─────────────────→ Epistemology Engine
-XP Mint ─────── GET /scores/:userId ──────────── → Reputation
-```
+Redis is used exclusively as the event bus (pub/sub channels).
 
-## Database Schema (Shared PostgreSQL)
+## Port Map
 
-Each service owns its own tables with a service-prefix naming convention:
-
-```
-epist_beliefs          ← Epistemology Engine
-epist_users
-signal_signals         ← Signal Flow
-loop_loops             ← Loop Ledger
-rep_scores             ← Reputation
-xp_ledger              ← XP Mint
-```
-
-## Redis Key Patterns
-
-```
-channel: extropy:events          ← pub/sub channel for all events
-cache:beliefs:{userId}           ← belief cache (TTL: 5min)
-cache:reputation:{userId}        ← reputation cache (TTL: 1min)
-```
+| Service | Port | Health Endpoint |
+|---|---|---|
+| epistemology-engine | 4001 | GET /health |
+| signalflow | 4002 | GET /health |
+| loop-ledger | 4003 | GET /health |
+| reputation | 4004 | GET /health |
+| xp-mint | 4005 | GET /health |
+| PostgreSQL | 5432 | — |
+| Redis | 6379 | — |
