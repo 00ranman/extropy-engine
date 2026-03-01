@@ -1,3 +1,3 @@
-export * from './types';
-export * from './event-bus';
-export * from './db';
+export * from './types.js';
+export { EventBus } from './event-bus.js';
+export { createPool, createRedis, waitForPostgres, waitForRedis } from './db.js';
