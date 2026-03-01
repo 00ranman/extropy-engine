@@ -1,30 +1,55 @@
-FROM node:20-alpine AS base
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 1: Builder
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+
 WORKDIR /app
 
-# ── Install dependencies ──────────────────────────────────────────────────────────
-FROM base AS deps
-COPY package.json package.json
-COPY packages/contracts/package.json packages/contracts/package.json
-COPY packages/epistemology-engine/package.json packages/epistemology-engine/package.json
-RUN npm install --workspace=packages/contracts --workspace=packages/epistemology-engine
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# ── Build ────────────────────────────────────────────────────────────────────
-FROM deps AS builder
-COPY tsconfig.json tsconfig.json
-COPY packages/contracts/tsconfig.json packages/contracts/tsconfig.json
-COPY packages/contracts/src packages/contracts/src
-COPY packages/epistemology-engine/tsconfig.json packages/epistemology-engine/tsconfig.json
-COPY packages/epistemology-engine/src packages/epistemology-engine/src
-RUN npm run build -w packages/contracts && npm run build -w packages/epistemology-engine
+# Copy workspace manifests first (cache layer)
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/contracts/package.json ./packages/contracts/
+COPY packages/epistemology-engine/package.json ./packages/epistemology-engine/
 
-# ── Runtime ───────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS runtime
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy source
+COPY packages/contracts/       ./packages/contracts/
+COPY packages/epistemology-engine/ ./packages/epistemology-engine/
+
+# Build contracts first (dependency)
+RUN pnpm --filter @extropy/contracts build
+
+# Build epistemology engine
+RUN pnpm --filter @extropy/epistemology-engine build
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 2: Production
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS production
+
 WORKDIR /app
-COPY --from=builder /app/packages/contracts/dist packages/contracts/dist
-COPY --from=builder /app/packages/contracts/package.json packages/contracts/package.json
-COPY --from=builder /app/packages/epistemology-engine/dist packages/epistemology-engine/dist
-COPY --from=builder /app/packages/epistemology-engine/package.json packages/epistemology-engine/package.json
-COPY --from=builder /app/node_modules node_modules
-COPY --from=builder /app/package.json package.json
-EXPOSE 4001
-CMD ["node", "packages/epistemology-engine/dist/index.js"]
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy workspace manifests
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/contracts/package.json ./packages/contracts/
+COPY packages/epistemology-engine/package.json ./packages/epistemology-engine/
+
+# Install production deps only
+RUN pnpm install --frozen-lockfile --prod
+
+# Copy built artifacts
+COPY --from=builder /app/packages/contracts/dist ./packages/contracts/dist
+COPY --from=builder /app/packages/epistemology-engine/dist ./packages/epistemology-engine/dist
+
+EXPOSE 3002
+
+USER node
+
+CMD ["node", "/app/packages/epistemology-engine/dist/index.js"]

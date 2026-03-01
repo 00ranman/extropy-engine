@@ -1,538 +1,564 @@
 /**
- * Epistemology Engine — Service Entrypoint
+ * ════════════════════════════════════════════════════════════════════════════════
+ *  EXTROPY ENGINE — Epistemology Engine
+ * ════════════════════════════════════════════════════════════════════════════════
  *
- * Ingests claims, decomposes them into verifiable sub-claims,
- * and scores truth via Bayesian updating against entropy measurements.
+ *  The Epistemology Engine is responsible for:
+ *    1. Receiving claims submitted by users/agents
+ *    2. Decomposing claims into atomic, verifiable sub-claims (DAG)
+ *    3. Maintaining Bayesian priors for each claim and sub-claim
+ *    4. Detecting Gödel boundaries (self-referential / undecidable claims)
+ *    5. Publishing events to the event bus for downstream services
+ *    6. Providing the truth score for loop closure decisions
+ *
+ *  Architecture:
+ *    - Express HTTP server (port 3002)
+ *    - PostgreSQL database (claims + sub-claims)
+ *    - Redis for event bus pub/sub
+ *    - Shares @extropy/contracts types
+ *
+ * ════════════════════════════════════════════════════════════════════════════════
  */
 
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import { Pool } from 'pg';
+import { createClient } from 'redis';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  EventBus,
-  createPool,
-  createRedis,
-  waitForPostgres,
-  waitForRedis,
-  EventType,
-  ServiceName,
-  ClaimStatus,
-  SubClaimStatus,
-} from '@extropy/contracts';
+
 import type {
   Claim,
-  ClaimId,
   SubClaim,
+  ClaimId,
   SubClaimId,
   LoopId,
   ValidatorId,
   MeasurementId,
+  EntropyDomain,
   BayesianPrior,
   BayesianUpdate,
+  SubmitClaimRequest,
+  SubmitClaimResponse,
   DomainEvent,
-  ServiceHealthResponse,
-  EntropyDomain,
-  ClaimSubmittedPayload,
-  ClaimDecomposedPayload,
-  SubClaimUpdatedPayload,
-  ClaimEvaluatedPayload,
-  TaskCompletedPayload,
 } from '@extropy/contracts';
 
-const app = express();
-app.use(express.json());
+import {
+  ClaimStatus,
+  SubClaimStatus,
+  EVENT_TYPES,
+} from '@extropy/contracts';
 
-const PORT = process.env.PORT || 4001;
-const SERVICE = ServiceName.EPISTEMOLOGY_ENGINE;
-const LOOP_LEDGER_URL = process.env.LOOP_LEDGER_URL || 'http://loop-ledger:4003';
-const SIGNALFLOW_URL = process.env.SIGNALFLOW_URL || 'http://signalflow:4002';
+// ─────────────────────────────────────────────────────────────────────────────
+//  Configuration
+// ─────────────────────────────────────────────────────────────────────────────
 
-const pool = createPool();
-const redis = createRedis();
-const bus = new EventBus(redis, pool, SERVICE);
+const PORT     = parseInt(process.env.PORT     ?? '3002', 10);
+const DB_URL   = process.env.DATABASE_URL      ?? 'postgresql://postgres:postgres@localhost:5433/epistemology';
+const REDIS_URL = process.env.REDIS_URL        ?? 'redis://localhost:6379';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+//  Database
+// ─────────────────────────────────────────────────────────────────────────────
 
-function makeInitialPrior(): BayesianPrior {
-  return {
-    priorProbability: 0.5,
-    likelihood: 0.5,
-    counterLikelihood: 0.5,
-    posteriorProbability: 0.5,
-    updateCount: 0,
-    confidenceInterval: [0.3, 0.7],
-    updateHistory: [],
-  };
-}
+const db = new Pool({ connectionString: DB_URL });
 
-function claimFromRow(row: any): Claim {
-  return {
-    id: row.id as ClaimId,
-    loopId: row.loop_id as LoopId,
-    statement: row.statement,
-    domain: row.domain as EntropyDomain,
-    submitterId: row.submitter_id as ValidatorId,
-    status: row.status as ClaimStatus,
-    bayesianPrior: row.bayesian_prior,
-    subClaimIds: row.sub_claim_ids || [],
-    truthScore: row.truth_score || 0,
-    createdAt: row.created_at.toISOString(),
-    updatedAt: row.updated_at.toISOString(),
-  };
-}
-
-function subClaimFromRow(row: any): SubClaim {
-  return {
-    id: row.id as SubClaimId,
-    claimId: row.claim_id as ClaimId,
-    loopId: row.loop_id as LoopId,
-    statement: row.statement,
-    domain: row.domain as EntropyDomain,
-    status: row.status as SubClaimStatus,
-    bayesianPrior: row.bayesian_prior,
-    measurementIds: row.measurement_ids || [],
-    assignedValidatorIds: row.assigned_validator_ids || [],
-    weight: row.weight,
-    dependsOn: row.depends_on || [],
-    createdAt: row.created_at.toISOString(),
-    resolvedAt: row.resolved_at ? row.resolved_at.toISOString() : undefined,
-  };
-}
-
-// ── Internal: Decompose ──────────────────────────────────────────────────────
-
-async function decomposeClaim(claimId: ClaimId): Promise<SubClaim[]> {
-  const claimRes = await pool.query('SELECT * FROM epistemology.claims WHERE id = $1', [claimId]);
-  if (claimRes.rows.length === 0) throw new Error('Claim not found');
-  const claim = claimFromRow(claimRes.rows[0]);
-
-  const subClaims: SubClaim[] = [];
-  const labels = [
-    `Baseline measurement: ${claim.statement} — initial state`,
-    `Action verification: ${claim.statement} — intervention occurred`,
-    `Outcome measurement: ${claim.statement} — result state`,
-  ];
-
-  const ids: SubClaimId[] = [];
-  for (let i = 0; i < 3; i++) {
-    const id = uuidv4() as SubClaimId;
-    ids.push(id);
-    const prior = makeInitialPrior();
-    const dependsOn = i === 0 ? [] : [ids[i - 1]];
-    const weight = 1 / 3;
-
-    await pool.query(
-      `INSERT INTO epistemology.sub_claims (id, claim_id, loop_id, statement, domain, status, bayesian_prior, weight, depends_on)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [id, claimId, claim.loopId, labels[i], claim.domain, SubClaimStatus.PENDING, JSON.stringify(prior), weight, dependsOn],
+async function initDb(): Promise<void> {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS claims (
+      id             TEXT PRIMARY KEY,
+      loop_id        TEXT NOT NULL,
+      statement      TEXT NOT NULL,
+      domain         TEXT NOT NULL,
+      submitter_id   TEXT NOT NULL,
+      status         TEXT NOT NULL DEFAULT 'submitted',
+      bayesian_prior JSONB NOT NULL,
+      sub_claim_ids  TEXT[] NOT NULL DEFAULT '{}',
+      truth_score    FLOAT NOT NULL DEFAULT 0.5,
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      undecidable_reason TEXT
     );
 
-    subClaims.push({
-      id,
+    CREATE TABLE IF NOT EXISTS sub_claims (
+      id                      TEXT PRIMARY KEY,
+      claim_id                TEXT NOT NULL REFERENCES claims(id),
+      loop_id                 TEXT NOT NULL,
+      statement               TEXT NOT NULL,
+      domain                  TEXT NOT NULL,
+      status                  TEXT NOT NULL DEFAULT 'pending',
+      bayesian_prior          JSONB NOT NULL,
+      measurement_ids         TEXT[] NOT NULL DEFAULT '{}',
+      assigned_validator_ids  TEXT[] NOT NULL DEFAULT '{}',
+      weight                  FLOAT NOT NULL DEFAULT 1.0,
+      depends_on              TEXT[] NOT NULL DEFAULT '{}',
+      created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      resolved_at             TIMESTAMPTZ
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_claims_loop_id   ON claims(loop_id);
+    CREATE INDEX IF NOT EXISTS idx_claims_status    ON claims(status);
+    CREATE INDEX IF NOT EXISTS idx_subclaims_claim  ON sub_claims(claim_id);
+    CREATE INDEX IF NOT EXISTS idx_subclaims_loop   ON sub_claims(loop_id);
+    CREATE INDEX IF NOT EXISTS idx_subclaims_status ON sub_claims(status);
+  `);
+  console.log('[epistemology-engine] Database schema ready');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Redis Event Bus
+// ─────────────────────────────────────────────────────────────────────────────
+
+const redis = createClient({ url: REDIS_URL });
+
+async function publishEvent<T>(type: string, aggregateId: string, data: T): Promise<void> {
+  const event: DomainEvent<T> = {
+    eventId: uuidv4(),
+    aggregateId,
+    type,
+    data,
+    occurredAt: new Date().toISOString(),
+    source: 'epistemology-engine',
+    schemaVersion: 1,
+  };
+  await redis.publish('extropy:events', JSON.stringify(event));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Bayesian Math
+// ─────────────────────────────────────────────────────────────────────────────
+
+function computePosterior(prior: number, likelihood: number, counterLikelihood: number): number {
+  // Bayes: P(H|E) = P(E|H)·P(H) / [P(E|H)·P(H) + P(E|¬H)·P(¬H)]
+  const numerator   = likelihood * prior;
+  const denominator = numerator + counterLikelihood * (1 - prior);
+  return denominator === 0 ? prior : numerator / denominator;
+}
+
+function initBayesianPrior(initialProbability = 0.5): BayesianPrior {
+  return {
+    priorProbability:    initialProbability,
+    likelihood:          0.8,  // default: evidence is 4x more likely if claim is true
+    counterLikelihood:   0.2,
+    posteriorProbability: initialProbability,
+    updateCount:         0,
+    confidenceInterval:  [Math.max(0, initialProbability - 0.2), Math.min(1, initialProbability + 0.2)],
+    updateHistory:       [],
+  };
+}
+
+function updateBayesianPrior(
+  prior: BayesianPrior,
+  evidenceId: MeasurementId | SubClaimId,
+  newLikelihood?: number,
+  newCounterLikelihood?: number,
+): BayesianPrior {
+  const likelihood        = newLikelihood        ?? prior.likelihood;
+  const counterLikelihood = newCounterLikelihood ?? prior.counterLikelihood;
+  const posterior         = computePosterior(prior.posteriorProbability, likelihood, counterLikelihood);
+
+  const update: BayesianUpdate = {
+    timestamp:       new Date().toISOString(),
+    evidenceId,
+    priorBefore:     prior.posteriorProbability,
+    posteriorAfter:  posterior,
+    likelihoodRatio: likelihood / counterLikelihood,
+  };
+
+  const ci = 1.96 * Math.sqrt(posterior * (1 - posterior) / Math.max(1, prior.updateCount + 1));
+
+  return {
+    ...prior,
+    priorProbability:    prior.posteriorProbability,
+    likelihood,
+    counterLikelihood,
+    posteriorProbability: posterior,
+    updateCount:         prior.updateCount + 1,
+    confidenceInterval:  [Math.max(0, posterior - ci), Math.min(1, posterior + ci)],
+    updateHistory:       [...prior.updateHistory, update],
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Claim Decomposition
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Decomposes a top-level claim into atomic sub-claims.
+ *
+ * In production this would call an LLM to do semantic decomposition.
+ * Here we use a deterministic rule-based decomposition for correctness.
+ *
+ * Rules:
+ *   - Every claim gets a "measurability" sub-claim (can we measure ΔS?)
+ *   - Every claim gets a "causality" sub-claim (does the action cause the effect?)
+ *   - CODE domain claims get a "correctness" sub-claim (does the code do what it says?)
+ *   - COGNITIVE domain claims get a "reproducibility" sub-claim
+ *   - Claims with numbers get a "magnitude" sub-claim (is the magnitude correct?)
+ */
+function decomposeClaimToSubClaims(
+  claim: Claim,
+): Array<Omit<SubClaim, 'id'>> {
+  const base = [
+    {
       claimId: claim.id,
       loopId: claim.loopId,
-      statement: labels[i],
+      statement: `The entropy reduction claimed in "${claim.statement}" is measurable and quantifiable`,
       domain: claim.domain,
       status: SubClaimStatus.PENDING,
-      bayesianPrior: prior,
-      measurementIds: [],
-      assignedValidatorIds: [],
-      weight,
-      dependsOn,
+      bayesianPrior: initBayesianPrior(0.7),
+      measurementIds: [] as MeasurementId[],
+      assignedValidatorIds: [] as ValidatorId[],
+      weight: 0.3,
+      dependsOn: [] as SubClaimId[],
+      createdAt: new Date().toISOString(),
+    },
+    {
+      claimId: claim.id,
+      loopId: claim.loopId,
+      statement: `There is a direct causal link between the action and the outcome in "${claim.statement}"`,
+      domain: claim.domain,
+      status: SubClaimStatus.PENDING,
+      bayesianPrior: initBayesianPrior(0.6),
+      measurementIds: [] as MeasurementId[],
+      assignedValidatorIds: [] as ValidatorId[],
+      weight: 0.4,
+      dependsOn: [] as SubClaimId[],
+      createdAt: new Date().toISOString(),
+    },
+  ];
+
+  const domain_specific: Array<Omit<SubClaim, 'id'>> = [];
+
+  if (claim.domain === 'code') {
+    domain_specific.push({
+      claimId: claim.id,
+      loopId: claim.loopId,
+      statement: `The implementation described in "${claim.statement}" is technically correct and functions as claimed`,
+      domain: claim.domain,
+      status: SubClaimStatus.PENDING,
+      bayesianPrior: initBayesianPrior(0.65),
+      measurementIds: [] as MeasurementId[],
+      assignedValidatorIds: [] as ValidatorId[],
+      weight: 0.2,
+      dependsOn: [] as SubClaimId[],
       createdAt: new Date().toISOString(),
     });
   }
 
-  // Update claim
-  await pool.query(
-    `UPDATE epistemology.claims SET status = $1, sub_claim_ids = $2, updated_at = NOW() WHERE id = $3`,
-    [ClaimStatus.DECOMPOSED, ids, claimId],
-  );
-
-  // Emit
-  await bus.emit(EventType.CLAIM_DECOMPOSED, claim.loopId, {
-    claimId: claim.id,
-    subClaims,
-  } as ClaimDecomposedPayload);
-
-  console.log(`[epistemology-engine] Decomposed claim ${claimId} into ${ids.length} sub-claims`);
-  return subClaims;
-}
-
-// ── Internal: Evidence / Bayesian Update ─────────────────────────────────────
-
-async function applyEvidence(
-  subClaimId: SubClaimId,
-  verdict: 'confirmed' | 'denied',
-  confidence: number,
-  validatorId: ValidatorId,
-  measurementId?: MeasurementId,
-): Promise<SubClaim> {
-  const res = await pool.query('SELECT * FROM epistemology.sub_claims WHERE id = $1', [subClaimId]);
-  if (res.rows.length === 0) throw new Error('SubClaim not found');
-  const sc = subClaimFromRow(res.rows[0]);
-  const prior = sc.bayesianPrior;
-
-  // Bayesian update
-  const likelihood = verdict === 'confirmed' ? confidence : (1 - confidence);
-  const counterLikelihood = verdict === 'confirmed' ? (1 - confidence) : confidence;
-  const likelihoodRatio = counterLikelihood > 0 ? likelihood / counterLikelihood : 100;
-  const numerator = prior.posteriorProbability * likelihoodRatio;
-  const denominator = numerator + (1 - prior.posteriorProbability);
-  const newPosterior = denominator > 0 ? numerator / denominator : prior.posteriorProbability;
-
-  const update: BayesianUpdate = {
-    timestamp: new Date().toISOString(),
-    evidenceId: measurementId || subClaimId,
-    priorBefore: prior.posteriorProbability,
-    posteriorAfter: newPosterior,
-    likelihoodRatio,
-  };
-
-  const updatedPrior: BayesianPrior = {
-    ...prior,
-    likelihood,
-    counterLikelihood,
-    posteriorProbability: newPosterior,
-    updateCount: prior.updateCount + 1,
-    confidenceInterval: [Math.max(0, newPosterior - 0.15), Math.min(1, newPosterior + 0.15)],
-    updateHistory: [...prior.updateHistory, update],
-  };
-
-  // Determine new status
-  let newStatus: SubClaimStatus = SubClaimStatus.VALIDATING;
-  if (newPosterior > 0.7) newStatus = SubClaimStatus.VERIFIED;
-  else if (newPosterior < 0.3) newStatus = SubClaimStatus.FALSIFIED;
-
-  // Update assigned validators
-  const validators = sc.assignedValidatorIds.includes(validatorId)
-    ? sc.assignedValidatorIds
-    : [...sc.assignedValidatorIds, validatorId];
-
-  const measurements = measurementId && !sc.measurementIds.includes(measurementId)
-    ? [...sc.measurementIds, measurementId]
-    : sc.measurementIds;
-
-  await pool.query(
-    `UPDATE epistemology.sub_claims
-     SET bayesian_prior = $1, status = $2, assigned_validator_ids = $3, measurement_ids = $4,
-         resolved_at = CASE WHEN $2 IN ('verified','falsified','undecidable') THEN NOW() ELSE resolved_at END
-     WHERE id = $5`,
-    [JSON.stringify(updatedPrior), newStatus, validators, measurements, subClaimId],
-  );
-
-  // Emit sub-claim updated
-  await bus.emit(EventType.SUBCLAIM_UPDATED, sc.loopId, {
-    subClaimId: sc.id,
-    claimId: sc.claimId,
-    newPosterior,
-    update,
-  } as SubClaimUpdatedPayload);
-
-  console.log(`[epistemology-engine] SubClaim ${subClaimId}: ${verdict} → posterior=${newPosterior.toFixed(3)} → ${newStatus}`);
-
-  // Check if all sub-claims for this claim are resolved
-  const allSc = await pool.query(
-    `SELECT status FROM epistemology.sub_claims WHERE claim_id = $1`,
-    [sc.claimId],
-  );
-  const allResolved = allSc.rows.every((r: any) =>
-    ['verified', 'falsified', 'undecidable'].includes(r.status),
-  );
-  if (allResolved) {
-    console.log(`[epistemology-engine] All sub-claims resolved for claim ${sc.claimId} — evaluating`);
-    await evaluateClaim(sc.claimId);
+  if (claim.domain === 'cognitive') {
+    domain_specific.push({
+      claimId: claim.id,
+      loopId: claim.loopId,
+      statement: `The cognitive effect claimed in "${claim.statement}" is reproducible under similar conditions`,
+      domain: claim.domain,
+      status: SubClaimStatus.PENDING,
+      bayesianPrior: initBayesianPrior(0.55),
+      measurementIds: [] as MeasurementId[],
+      assignedValidatorIds: [] as ValidatorId[],
+      weight: 0.2,
+      dependsOn: [] as SubClaimId[],
+      createdAt: new Date().toISOString(),
+    });
   }
 
-  return { ...sc, bayesianPrior: updatedPrior, status: newStatus };
-}
-
-// ── Internal: Evaluate ───────────────────────────────────────────────────────
-
-async function evaluateClaim(claimId: ClaimId): Promise<void> {
-  const scRes = await pool.query(
-    'SELECT * FROM epistemology.sub_claims WHERE claim_id = $1',
-    [claimId],
-  );
-  const subClaims = scRes.rows.map(subClaimFromRow);
-
-  // Weighted average of posteriors
-  let weightedSum = 0;
-  let totalWeight = 0;
-  for (const sc of subClaims) {
-    weightedSum += sc.weight * sc.bayesianPrior.posteriorProbability;
-    totalWeight += sc.weight;
+  // Numeric magnitude sub-claim
+  if (/\d/.test(claim.statement)) {
+    domain_specific.push({
+      claimId: claim.id,
+      loopId: claim.loopId,
+      statement: `The numeric magnitude stated in "${claim.statement}" is accurate within ±5%`,
+      domain: claim.domain,
+      status: SubClaimStatus.PENDING,
+      bayesianPrior: initBayesianPrior(0.6),
+      measurementIds: [] as MeasurementId[],
+      assignedValidatorIds: [] as ValidatorId[],
+      weight: 0.1,
+      dependsOn: [] as SubClaimId[],
+      createdAt: new Date().toISOString(),
+    });
   }
-  const truthScore = totalWeight > 0 ? weightedSum / totalWeight : 0;
 
-  let status: ClaimStatus;
-  if (truthScore > 0.6) status = ClaimStatus.VERIFIED;
-  else if (truthScore < 0.4) status = ClaimStatus.FALSIFIED;
-  else status = ClaimStatus.EVALUATED;
-
-  await pool.query(
-    `UPDATE epistemology.claims SET status = $1, truth_score = $2, updated_at = NOW() WHERE id = $3`,
-    [status, truthScore, claimId],
-  );
-
-  const claimRes = await pool.query('SELECT loop_id FROM epistemology.claims WHERE id = $1', [claimId]);
-  const loopId = claimRes.rows[0].loop_id as LoopId;
-
-  await bus.emit(EventType.CLAIM_EVALUATED, loopId, {
-    claimId,
-    truthScore,
-    status,
-  } as ClaimEvaluatedPayload);
-
-  console.log(`[epistemology-engine] Claim ${claimId} evaluated: truthScore=${truthScore.toFixed(3)}, status=${status}`);
+  // Renormalize weights
+  const all = [...base, ...domain_specific];
+  const totalWeight = all.reduce((s, sc) => s + sc.weight, 0);
+  return all.map(sc => ({ ...sc, weight: sc.weight / totalWeight }));
 }
 
-// ── Health Check ─────────────────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
-  const health: ServiceHealthResponse = {
-    service: SERVICE,
-    status: 'healthy',
-    version: '0.1.0',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    dependencies: {
-      'loop-ledger': 'connected',
-      'signalflow': 'connected',
-      'reputation': 'disconnected',
-      'xp-mint': 'disconnected',
-    } as Record<ServiceName, 'connected' | 'disconnected'>,
-  };
-  res.json(health);
+/**
+ * Detects if a claim is self-referential or otherwise undecidable.
+ * Gödel boundary detection — very simplified.
+ */
+function detectGodelBoundary(statement: string): string | null {
+  const lower = statement.toLowerCase();
+  const selfRefPatterns = [
+    'this claim',
+    'this statement',
+    'itself',
+    'self-referential',
+    'cannot be verified',
+    'is unprovable',
+    'is undecidable',
+  ];
+  for (const pattern of selfRefPatterns) {
+    if (lower.includes(pattern)) {
+      return `Gödel boundary detected: claim contains self-referential pattern "${pattern}"`;
+    }
+  }
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Express App
+// ─────────────────────────────────────────────────────────────────────────────
+
+const app = express();
+app.use(express.json());
+
+// ── Health check ──────────────────────────────────────────────────────────────
+app.get('/health', async (_req: Request, res: Response) => {
+  try {
+    await db.query('SELECT 1');
+    res.json({ service: 'epistemology-engine', status: 'healthy', version: '1.0.0', uptime: process.uptime() });
+  } catch (err) {
+    res.status(503).json({ service: 'epistemology-engine', status: 'unhealthy', error: String(err) });
+  }
 });
 
-// ── POST /claims ─────────────────────────────────────────────────────────────
-app.post('/claims', async (req, res) => {
+// ── POST /claims — submit a new claim ─────────────────────────────────────────
+app.post('/claims', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { statement, domain, submitterId } = req.body;
-    if (!statement || !domain || !submitterId) {
-      res.status(400).json({ error: 'Missing required fields', code: 'VALIDATION_ERROR', timestamp: new Date().toISOString() });
+    const body = req.body as SubmitClaimRequest;
+
+    if (!body.loopId || !body.statement || !body.domain || !body.submitterId) {
+      res.status(400).json({ error: 'Missing required fields: loopId, statement, domain, submitterId' });
       return;
     }
+
+    // Gödel boundary check
+    const godelReason = detectGodelBoundary(body.statement);
 
     const claimId = uuidv4() as ClaimId;
-    const loopId = uuidv4() as LoopId;
-    const prior = makeInitialPrior();
-
-    await pool.query(
-      `INSERT INTO epistemology.claims (id, loop_id, statement, domain, submitter_id, status, bayesian_prior, truth_score)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [claimId, loopId, statement, domain, submitterId, ClaimStatus.SUBMITTED, JSON.stringify(prior), 0],
-    );
+    const now     = new Date().toISOString();
 
     const claim: Claim = {
-      id: claimId,
-      loopId,
-      statement,
-      domain,
-      submitterId,
-      status: ClaimStatus.SUBMITTED,
-      bayesianPrior: prior,
-      subClaimIds: [],
-      truthScore: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      id:            claimId,
+      loopId:        body.loopId as LoopId,
+      statement:     body.statement,
+      domain:        body.domain as EntropyDomain,
+      submitterId:   body.submitterId as ValidatorId,
+      status:        godelReason ? ClaimStatus.UNDECIDABLE : ClaimStatus.SUBMITTED,
+      bayesianPrior: initBayesianPrior(body.initialPrior ?? 0.5),
+      subClaimIds:   [],
+      truthScore:    body.initialPrior ?? 0.5,
+      createdAt:     now,
+      updatedAt:     now,
+      undecidableReason: godelReason ?? undefined,
     };
 
-    // Emit claim.submitted
-    await bus.emit(EventType.CLAIM_SUBMITTED, loopId, { claim } as ClaimSubmittedPayload);
+    // Persist claim
+    await db.query(
+      `INSERT INTO claims
+         (id, loop_id, statement, domain, submitter_id, status,
+          bayesian_prior, sub_claim_ids, truth_score, created_at, updated_at, undecidable_reason)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+      [
+        claim.id, claim.loopId, claim.statement, claim.domain,
+        claim.submitterId, claim.status, JSON.stringify(claim.bayesianPrior),
+        claim.subClaimIds, claim.truthScore, claim.createdAt, claim.updatedAt,
+        claim.undecidableReason ?? null,
+      ],
+    );
 
-    // Open a loop in Loop Ledger
-    try {
-      await fetch(`${LOOP_LEDGER_URL}/loops`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claimId, domain, parentLoopIds: [], loopId }),
+    if (godelReason) {
+      await publishEvent(EVENT_TYPES.CLAIM_SUBMITTED, claimId, {
+        claimId, loopId: claim.loopId, domain: claim.domain, statement: claim.statement,
       });
-      console.log(`[epistemology-engine] Opened loop ${loopId} in Loop Ledger`);
-    } catch (err) {
-      console.error(`[epistemology-engine] Failed to open loop in Ledger:`, err);
-    }
-
-    // Auto-decompose
-    await decomposeClaim(claimId);
-
-    // Re-read claim after decompose
-    const updated = await pool.query('SELECT * FROM epistemology.claims WHERE id = $1', [claimId]);
-    const finalClaim = claimFromRow(updated.rows[0]);
-
-    console.log(`[epistemology-engine] Claim ${claimId} created and decomposed`);
-    res.status(201).json(finalClaim);
-  } catch (err: any) {
-    console.error('[epistemology-engine] POST /claims error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── GET /claims ──────────────────────────────────────────────────────────────
-app.get('/claims', async (_req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM epistemology.claims ORDER BY created_at DESC');
-    res.json(result.rows.map(claimFromRow));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
-
-// ── GET /claims/:claimId ─────────────────────────────────────────────────────
-app.get('/claims/:claimId', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM epistemology.claims WHERE id = $1', [req.params.claimId]);
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: 'Claim not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
+      res.status(201).json({ claim, estimatedSubClaims: 0, estimatedValidationTimeSeconds: 0 } as SubmitClaimResponse);
       return;
     }
-    res.json(claimFromRow(result.rows[0]));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
 
-// ── POST /claims/:claimId/decompose ──────────────────────────────────────────
-app.post('/claims/:claimId/decompose', async (req, res) => {
-  try {
-    const subClaims = await decomposeClaim(req.params.claimId as ClaimId);
-    res.status(201).json(subClaims);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
+    // Decompose into sub-claims
+    const subClaimDrafts = decomposeClaimToSubClaims(claim);
+    const subClaimIds: SubClaimId[] = [];
 
-// ── POST /claims/:claimId/evaluate ───────────────────────────────────────────
-app.post('/claims/:claimId/evaluate', async (req, res) => {
-  try {
-    await evaluateClaim(req.params.claimId as ClaimId);
-    const result = await pool.query('SELECT * FROM epistemology.claims WHERE id = $1', [req.params.claimId]);
-    res.json(claimFromRow(result.rows[0]));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
+    for (const draft of subClaimDrafts) {
+      const scId = uuidv4() as SubClaimId;
+      subClaimIds.push(scId);
 
-// ── GET /subclaims/:subClaimId ───────────────────────────────────────────────
-app.get('/subclaims/:subClaimId', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM epistemology.sub_claims WHERE id = $1', [req.params.subClaimId]);
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: 'SubClaim not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
-      return;
+      await db.query(
+        `INSERT INTO sub_claims
+           (id, claim_id, loop_id, statement, domain, status, bayesian_prior,
+            measurement_ids, assigned_validator_ids, weight, depends_on, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        [
+          scId, draft.claimId, draft.loopId, draft.statement, draft.domain,
+          draft.status, JSON.stringify(draft.bayesianPrior), draft.measurementIds,
+          draft.assignedValidatorIds, draft.weight, draft.dependsOn, draft.createdAt,
+        ],
+      );
     }
-    res.json(subClaimFromRow(result.rows[0]));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
-});
 
-// ── GET /subclaims/by-claim/:claimId ────────────────────────────────────────
-app.get('/subclaims/by-claim/:claimId', async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT * FROM epistemology.sub_claims WHERE claim_id = $1 ORDER BY created_at',
-      [req.params.claimId],
+    // Update claim with sub-claim IDs and status
+    await db.query(
+      `UPDATE claims SET sub_claim_ids=$1, status=$2, updated_at=NOW() WHERE id=$3`,
+      [subClaimIds, ClaimStatus.DECOMPOSED, claimId],
     );
-    res.json(result.rows.map(subClaimFromRow));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+
+    // Publish events
+    await publishEvent(EVENT_TYPES.CLAIM_SUBMITTED, claimId, {
+      claimId, loopId: claim.loopId, domain: claim.domain, statement: claim.statement,
+    });
+    await publishEvent(EVENT_TYPES.CLAIM_DECOMPOSED, claimId, {
+      claimId, loopId: claim.loopId, subClaimIds,
+      estimatedValidationTimeSeconds: subClaimDrafts.length * 30,
+    });
+
+    const response: SubmitClaimResponse = {
+      claim: { ...claim, status: ClaimStatus.DECOMPOSED, subClaimIds },
+      estimatedSubClaims: subClaimDrafts.length,
+      estimatedValidationTimeSeconds: subClaimDrafts.length * 30,
+    };
+
+    res.status(201).json(response);
+  } catch (err) {
+    next(err);
   }
 });
 
-// ── POST /subclaims/:subClaimId/evidence ─────────────────────────────────────
-app.post('/subclaims/:subClaimId/evidence', async (req, res) => {
+// ── GET /claims/:id ───────────────────────────────────────────────────────────
+app.get('/claims/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { verdict, confidence, validatorId, measurementId } = req.body;
-    const sc = await applyEvidence(
-      req.params.subClaimId as SubClaimId,
-      verdict,
-      confidence || 0.85,
-      validatorId,
+    const { rows } = await db.query('SELECT * FROM claims WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) { res.status(404).json({ error: 'Claim not found' }); return; }
+    res.json(rows[0]);
+  } catch (err) { next(err); }
+});
+
+// ── GET /claims/:id/sub-claims ────────────────────────────────────────────────
+app.get('/claims/:id/sub-claims', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM sub_claims WHERE claim_id = $1 ORDER BY created_at', [req.params.id]);
+    res.json(rows);
+  } catch (err) { next(err); }
+});
+
+// ── PATCH /sub-claims/:id/evidence — record evidence for a sub-claim ──────────
+app.patch('/sub-claims/:id/evidence', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { measurementId, likelihood, counterLikelihood } = req.body as {
+      measurementId: MeasurementId;
+      likelihood?: number;
+      counterLikelihood?: number;
+    };
+
+    const { rows } = await db.query('SELECT * FROM sub_claims WHERE id = $1', [req.params.id]);
+    if (rows.length === 0) { res.status(404).json({ error: 'SubClaim not found' }); return; }
+
+    const sc = rows[0];
+    const updatedPrior = updateBayesianPrior(
+      sc.bayesian_prior as BayesianPrior,
       measurementId,
+      likelihood,
+      counterLikelihood,
     );
-    res.json(sc);
-  } catch (err: any) {
-    console.error('[epistemology-engine] POST /subclaims/evidence error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
-  }
+
+    await db.query(
+      `UPDATE sub_claims
+       SET bayesian_prior=$1,
+           measurement_ids=array_append(measurement_ids, $2),
+           updated_at=NOW()
+       WHERE id=$3`,
+      [JSON.stringify(updatedPrior), measurementId, req.params.id],
+    );
+
+    res.json({ subClaimId: req.params.id, updatedPrior });
+  } catch (err) { next(err); }
 });
 
-// ── POST /events ─────────────────────────────────────────────────────────────
-app.post('/events', async (req, res) => {
+// ── PATCH /sub-claims/:id/resolve — resolve a sub-claim ───────────────────────
+app.patch('/sub-claims/:id/resolve', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const event = req.body as DomainEvent;
-    console.log(`[epistemology-engine] Received event: ${event.type}`);
+    const { verdict, confidence, justification, validationDurationSeconds } = req.body;
+    const newStatus = verdict === 'confirmed' ? SubClaimStatus.VERIFIED
+                    : verdict === 'denied'    ? SubClaimStatus.FALSIFIED
+                    :                           SubClaimStatus.UNDECIDABLE;
 
-    switch (event.type) {
-      case EventType.TASK_COMPLETED: {
-        const payload = event.payload as TaskCompletedPayload;
-        // Look up which sub-claim this task was for
-        // We need to find the sub-claim by querying signalflow for the task
-        try {
-          const taskRes = await fetch(`${SIGNALFLOW_URL}/tasks/${payload.taskId}`);
-          if (taskRes.ok) {
-            const task = await taskRes.json() as any;
-            const rawVerdict = String(payload.result.verdict);
-            const verdict = (rawVerdict === 'confirmed' || rawVerdict === 'supported') ? 'confirmed' as const : 'denied' as const;
-            await applyEvidence(
-              task.subClaimId as SubClaimId,
-              verdict,
-              payload.result.confidence,
-              payload.validatorId,
-            );
-          }
-        } catch (err) {
-          console.error('[epistemology-engine] Error processing task.completed:', err);
-        }
-        break;
-      }
-      default:
-        break;
+    const { rows: scRows } = await db.query('SELECT * FROM sub_claims WHERE id=$1', [req.params.id]);
+    if (scRows.length === 0) { res.status(404).json({ error: 'SubClaim not found' }); return; }
+
+    await db.query(
+      `UPDATE sub_claims SET status=$1, resolved_at=NOW() WHERE id=$2`,
+      [newStatus, req.params.id],
+    );
+
+    // Propagate to parent claim: recompute composite truth score
+    const claimId = scRows[0].claim_id;
+    const { rows: allSc } = await db.query('SELECT * FROM sub_claims WHERE claim_id=$1', [claimId]);
+
+    const truthScore = allSc.reduce((acc: number, sc: { weight: number; bayesian_prior: BayesianPrior }) => {
+      return acc * Math.pow(sc.bayesian_prior.posteriorProbability, sc.weight);
+    }, 1.0);
+
+    const allResolved = allSc.every((sc: { status: string }) =>
+      [SubClaimStatus.VERIFIED, SubClaimStatus.FALSIFIED, SubClaimStatus.UNDECIDABLE].includes(sc.status as SubClaimStatus)
+    );
+
+    const claimStatus = allResolved
+      ? (truthScore >= 0.6 ? ClaimStatus.VERIFIED : ClaimStatus.FALSIFIED)
+      : ClaimStatus.DECOMPOSED;
+
+    await db.query(
+      `UPDATE claims SET truth_score=$1, status=$2, updated_at=NOW() WHERE id=$3`,
+      [truthScore, claimStatus, claimId],
+    );
+
+    if (allResolved) {
+      await publishEvent(
+        truthScore >= 0.6 ? EVENT_TYPES.CLAIM_VERIFIED : EVENT_TYPES.CLAIM_FALSIFIED,
+        claimId,
+        { claimId, loopId: scRows[0].loop_id, truthScore },
+      );
     }
 
-    res.status(202).send();
-  } catch (err: any) {
-    console.error('[epistemology-engine] Event handler error:', err);
-    res.status(500).json({ error: err.message });
-  }
+    await publishEvent(EVENT_TYPES.SUBCLAIM_RESOLVED, req.params.id, {
+      subClaimId: req.params.id, claimId, loopId: scRows[0].loop_id,
+      status: newStatus,
+      result: { verdict, confidence, evidenceMeasurementIds: [], justification, validationDurationSeconds },
+    });
+
+    res.json({ subClaimId: req.params.id, status: newStatus, claimTruthScore: truthScore });
+  } catch (err) { next(err); }
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+// ── GET /loops/:loopId/claims ─────────────────────────────────────────────────
+app.get('/loops/:loopId/claims', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM claims WHERE loop_id=$1', [req.params.loopId]);
+    res.json(rows);
+  } catch (err) { next(err); }
+});
 
-async function main() {
-  await waitForPostgres(pool);
-  await waitForRedis(redis);
-  await bus.start();
+// ── Error handler ─────────────────────────────────────────────────────────────
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[epistemology-engine] Error:', err);
+  res.status(500).json({ error: err.message });
+});
 
-  // Subscribe to task.completed events via bus
-  bus.on(EventType.TASK_COMPLETED, async (event) => {
-    const payload = event.payload as TaskCompletedPayload;
-    try {
-      const taskRes = await fetch(`${SIGNALFLOW_URL}/tasks/${payload.taskId}`);
-      if (taskRes.ok) {
-        const task = await taskRes.json() as any;
-        const rawVerdict2 = String(payload.result.verdict);
-        const verdict = (rawVerdict2 === 'confirmed' || rawVerdict2 === 'supported') ? 'confirmed' as const : 'denied' as const;
-        await applyEvidence(
-          task.subClaimId as SubClaimId,
-          verdict,
-          payload.result.confidence,
-          payload.validatorId,
-        );
-      }
-    } catch (err) {
-      console.error('[epistemology-engine] Error handling TASK_COMPLETED via bus:', err);
-    }
-  });
+// ─────────────────────────────────────────────────────────────────────────────
+//  Bootstrap
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function main(): Promise<void> {
+  await redis.connect();
+  console.log('[epistemology-engine] Redis connected');
+
+  await initDb();
 
   app.listen(PORT, () => {
-    console.log(`[epistemology-engine] listening on :${PORT}`);
+    console.log(`[epistemology-engine] Listening on port ${PORT}`);
   });
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('[epistemology-engine] Fatal startup error:', err);
   process.exit(1);
 });
-
-export default app;
