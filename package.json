@@ -18,7 +18,11 @@
     "packages/temporal",
     "packages/token-economy",
     "packages/credentials",
-    "packages/ecosystem"
+    "packages/ecosystem",
+    "packages/homeflow",
+    "packages/grantflow-discovery",
+    "packages/grantflow-proposer",
+    "frontends/*"
   ],
   "scripts": {
     "build": "npm run build --workspaces",
@@ -35,12 +39,16 @@
     "build:economy": "npm run build -w packages/token-economy",
     "build:credentials": "npm run build -w packages/credentials",
     "build:ecosystem": "npm run build -w packages/ecosystem",
+    "build:homeflow": "npm run build -w packages/homeflow",
+    "build:grantflow-discovery": "npm run build -w packages/grantflow-discovery",
+    "build:grantflow-proposer": "npm run build -w packages/grantflow-proposer",
+    "build:frontends": "npm run build -w frontends/character-sheet && npm run build -w frontends/grantflow-ui && npm run build -w frontends/homeflow-ui",
     "dev": "docker compose up --build",
     "dev:services": "npm run dev --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "eslint packages/*/src/**/*.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "clean": "rm -rf packages/*/dist"
+    "clean": "rm -rf packages/*/dist frontends/*/dist"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
