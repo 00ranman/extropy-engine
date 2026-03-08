@@ -22,6 +22,7 @@
     "packages/homeflow",
     "packages/grantflow-discovery",
     "packages/grantflow-proposer",
+    "packages/ethics",
     "frontends/*"
   ],
   "scripts": {
