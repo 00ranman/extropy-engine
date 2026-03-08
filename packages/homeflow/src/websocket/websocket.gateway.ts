@@ -1,18 +1,19 @@
 /**
  * @module websocket/websocket.gateway
  * HomeFlow WebSocket Gateway
- *
- * Provides real-time bidirectional communication for:
- * - Device state changes (IoT sensors, smart switches)
- * - Chore completion events with live XP updates
- * - Household entropy score broadcasts
- * - Shopping list and inventory sync
- * - Health metric streaming
  */
 
 import { Server as HttpServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
-import { EventBusService, HomeFlowEvent } from '../services/event-bus.service';
+import type { IncomingMessage } from 'http';
+import { EventBusService } from '../services/event-bus.service.js';
+
+/** Internal event shape used by the event bus bridge */
+interface HomeFlowEvent {
+  householdId: string;
+  data: unknown;
+  timestamp: string;
+}
 
 export type WsEventType =
   | 'device:state'
@@ -41,10 +42,6 @@ interface ConnectedClient {
   connectedAt: string;
 }
 
-/**
- * HomeFlow WebSocket Gateway
- * Attaches to an existing HTTP server and upgrades connections.
- */
 export class HomeFlowWebSocketGateway {
   private wss: WebSocketServer;
   private clients: Map<string, ConnectedClient> = new Map();
@@ -57,7 +54,7 @@ export class HomeFlowWebSocketGateway {
   }
 
   private init(): void {
-    this.wss.on('connection', (ws: WebSocket, req) => {
+    this.wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
       const params = new URLSearchParams(req.url?.split('?')[1] ?? '');
       const householdId = params.get('householdId') ?? 'unknown';
       const userId = params.get('userId') ?? 'anonymous';
@@ -70,28 +67,51 @@ export class HomeFlowWebSocketGateway {
         connectedAt: new Date().toISOString(),
       });
 
-      this.send(ws, { type: 'system:ping', payload: { status: 'connected', clientId }, timestamp: new Date().toISOString() });
+      this.send(ws, {
+        type: 'system:ping',
+        payload: { status: 'connected', clientId },
+        timestamp: new Date().toISOString()
+      });
 
-      ws.on('message', (data) => this.handleMessage(clientId, data.toString()));
+      ws.on('message', (data: Buffer) => this.handleMessage(clientId, data.toString()));
       ws.on('close', () => this.clients.delete(clientId));
-      ws.on('error', (err) => console.error(`[WS] Client ${clientId} error:`, err));
+      ws.on('error', (err: Error) => console.error(`[WS] Client ${clientId} error:`, err));
     });
 
     // Bridge extropy-engine EventBus events to WebSocket clients
-    this.eventBus.on('device:state_changed', (event: HomeFlowEvent) => {
-      this.broadcastToHousehold(event.householdId, { type: 'device:state', payload: event.data, timestamp: event.timestamp });
+    this.eventBus.on('device:state_changed', (event: any) => {
+      const e = event.payload as HomeFlowEvent;
+      this.broadcastToHousehold(e.householdId, {
+        type: 'device:state', payload: e.data, timestamp: e.timestamp
+      });
     });
-    this.eventBus.on('chore:completed', (event: HomeFlowEvent) => {
-      this.broadcastToHousehold(event.householdId, { type: 'chore:completed', payload: event.data, timestamp: event.timestamp });
+
+    this.eventBus.on('chore:completed', (event: any) => {
+      const e = event.payload as HomeFlowEvent;
+      this.broadcastToHousehold(e.householdId, {
+        type: 'chore:completed', payload: e.data, timestamp: e.timestamp
+      });
     });
-    this.eventBus.on('xp:awarded', (event: HomeFlowEvent) => {
-      this.broadcastToHousehold(event.householdId, { type: 'xp:awarded', payload: event.data, timestamp: event.timestamp });
+
+    this.eventBus.on('xp:awarded', (event: any) => {
+      const e = event.payload as HomeFlowEvent;
+      this.broadcastToHousehold(e.householdId, {
+        type: 'xp:awarded', payload: e.data, timestamp: e.timestamp
+      });
     });
-    this.eventBus.on('entropy:recalculated', (event: HomeFlowEvent) => {
-      this.broadcastToHousehold(event.householdId, { type: 'entropy:update', payload: event.data, timestamp: event.timestamp });
+
+    this.eventBus.on('entropy:recalculated', (event: any) => {
+      const e = event.payload as HomeFlowEvent;
+      this.broadcastToHousehold(e.householdId, {
+        type: 'entropy:update', payload: e.data, timestamp: e.timestamp
+      });
     });
-    this.eventBus.on('inventory:low_stock', (event: HomeFlowEvent) => {
-      this.broadcastToHousehold(event.householdId, { type: 'inventory:low_stock', payload: event.data, timestamp: event.timestamp });
+
+    this.eventBus.on('inventory:low_stock', (event: any) => {
+      const e = event.payload as HomeFlowEvent;
+      this.broadcastToHousehold(e.householdId, {
+        type: 'inventory:low_stock', payload: e.data, timestamp: e.timestamp
+      });
     });
   }
 
@@ -100,7 +120,9 @@ export class HomeFlowWebSocketGateway {
       const msg: WsMessage = JSON.parse(raw);
       if (msg.type === 'system:ping') {
         const client = this.clients.get(clientId);
-        if (client) this.send(client.ws, { type: 'system:ping', payload: { pong: true }, timestamp: new Date().toISOString() });
+        if (client) this.send(client.ws, {
+          type: 'system:ping', payload: { pong: true }, timestamp: new Date().toISOString()
+        });
       }
     } catch {
       console.warn(`[WS] Malformed message from ${clientId}`);
@@ -113,7 +135,6 @@ export class HomeFlowWebSocketGateway {
     }
   }
 
-  /** Broadcast to all connected clients belonging to a household */
   broadcastToHousehold(householdId: string, msg: Omit<WsMessage, 'householdId'>): void {
     for (const [, client] of this.clients) {
       if (client.householdId === householdId) {
@@ -122,7 +143,6 @@ export class HomeFlowWebSocketGateway {
     }
   }
 
-  /** Broadcast to ALL connected clients (system-wide announcements) */
   broadcastGlobal(msg: Omit<WsMessage, 'householdId'>): void {
     for (const [, client] of this.clients) {
       this.send(client.ws, { ...msg });
