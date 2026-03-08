@@ -1,0 +1,45 @@
+# ═══════════════════════════════════════════════════════════════════
+#  HomeFlow — Docker Compose Service Addition
+# ═══════════════════════════════════════════════════════════════════
+#
+#  Add this service block to the root docker-compose.yml:
+#
+#    docker compose -f docker-compose.yml -f packages/homeflow/docker-compose.homeflow.yaml up --build
+#
+#  Or merge this into the root docker-compose.yml services section.
+#
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  homeflow:
+    build:
+      context: ../..
+      dockerfile: packages/homeflow/Dockerfile
+    ports:
+      - "4015:4015"
+    environment:
+      PORT: 4015
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=homeflow
+      REDIS_URL: redis://redis:6379
+      EPISTEMOLOGY_URL: http://epistemology-engine:4001
+      SIGNALFLOW_URL: http://signalflow:4002
+      LOOP_LEDGER_URL: http://loop-ledger:4003
+      REPUTATION_URL: http://reputation:4004
+      XP_MINT_URL: http://xp-mint:4005
+      GOVERNANCE_URL: http://governance:4006
+      DFAO_REGISTRY_URL: http://dfao-registry:4007
+      TEMPORAL_URL: http://temporal:4008
+      TOKEN_ECONOMY_URL: http://token-economy:4009
+      CREDENTIALS_URL: http://credentials:4010
+      DAG_SUBSTRATE_URL: http://dag-substrate:4011
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4015/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped

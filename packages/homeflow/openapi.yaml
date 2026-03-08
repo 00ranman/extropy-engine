@@ -1,0 +1,1154 @@
+openapi: 3.1.0
+info:
+  title: HomeFlow — Extropy Engine IoT Smart Home Service
+  version: 1.0.0
+  description: |
+    HomeFlow is an IoT-integrated smart home/building management service
+    built on top of the Extropy Engine. It measures thermodynamic entropy
+    reduction from home automation actions and mints XP through the
+    verification loop.
+
+    Core formula: XP = R × F × ΔS × (w · E) × log(1/Tₛ)
+
+    HomeFlow operates in the THERMODYNAMIC entropy domain and interoperates
+    with all 13+ ecosystem apps via the shared EventPayloadMap and a
+    plugin/adapter interoperability layer.
+  contact:
+    name: Extropy Engine
+    url: https://github.com/00ranman/extropy-engine
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:4015
+    description: Local development
+  - url: http://homeflow:4015
+    description: Docker Compose internal
+
+tags:
+  - name: Health
+    description: Service health monitoring
+  - name: Households
+    description: Household management
+  - name: Zones
+    description: Zone management within households
+  - name: Devices
+    description: IoT device CRUD and command interface
+  - name: Entropy
+    description: Entropy measurement and claim generation
+  - name: Governance
+    description: Household DFAO creation and governance
+  - name: Schedules
+    description: Time-based and seasonal automation schedules
+  - name: Tokens
+    description: Energy credits and household contribution tokens
+  - name: Credentials
+    description: Verifiable energy efficiency credentials
+  - name: Reputation
+    description: THERMODYNAMIC domain reputation tracking
+  - name: DAG
+    description: DAG substrate verification loop records
+  - name: Interop
+    description: Ecosystem interoperability and cross-domain aggregation
+  - name: Events
+    description: Webhook endpoint for inter-service events
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Service health check
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is unhealthy
+
+  /events:
+    post:
+      tags: [Events]
+      summary: Receive inter-service events (webhook)
+      description: |
+        Standardized webhook endpoint for receiving events from any
+        ecosystem service. Supports all EventPayloadMap event types
+        plus HomeFlow-specific events.
+      operationId: receiveEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncomingWebhookEvent'
+      responses:
+        '200':
+          description: Event processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                  processed:
+                    type: boolean
+                  crossDomainData:
+                    $ref: '#/components/schemas/CrossDomainEntropyData'
+                  aggregation:
+                    type: object
+                    properties:
+                      compositeDeltaS:
+                        type: number
+                      compositeXP:
+                        type: number
+        '400':
+          description: Invalid event format
+
+  /api/v1/households:
+    post:
+      tags: [Households]
+      summary: Create a household
+      operationId: createHousehold
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHouseholdRequest'
+      responses:
+        '201':
+          description: Household created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Household'
+
+  /api/v1/households/{id}:
+    get:
+      tags: [Households]
+      summary: Get household details
+      operationId: getHousehold
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Household details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Household'
+        '404':
+          description: Household not found
+    patch:
+      tags: [Households]
+      summary: Update household
+      operationId: updateHousehold
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated household
+    delete:
+      tags: [Households]
+      summary: Delete household
+      operationId: deleteHousehold
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+
+  /api/v1/zones:
+    post:
+      tags: [Zones]
+      summary: Create a zone
+      operationId: createZone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateZoneRequest'
+      responses:
+        '201':
+          description: Zone created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+    get:
+      tags: [Zones]
+      summary: List zones for household
+      operationId: listZones
+      parameters:
+        - name: householdId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Zones list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedZones'
+
+  /api/v1/devices:
+    post:
+      tags: [Devices]
+      summary: Register a new IoT device
+      operationId: registerDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeviceRequest'
+      responses:
+        '201':
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+    get:
+      tags: [Devices]
+      summary: List devices for household
+      operationId: listDevices
+      parameters:
+        - name: householdId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/DeviceType'
+      responses:
+        '200':
+          description: Devices list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDevices'
+
+  /api/v1/devices/{id}:
+    get:
+      tags: [Devices]
+      summary: Get device details
+      operationId: getDevice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Device details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '404':
+          description: Device not found
+    patch:
+      tags: [Devices]
+      summary: Update device
+      operationId: updateDevice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated device
+    delete:
+      tags: [Devices]
+      summary: Delete device
+      operationId: deleteDevice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+
+  /api/v1/devices/{id}/commands:
+    post:
+      tags: [Devices]
+      summary: Issue a command to a device
+      description: |
+        Send a command to an IoT device (e.g., set thermostat to 72°F,
+        turn off lights, change HVAC mode). The command is confirmed
+        immediately in dev mode.
+      operationId: issueCommand
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueCommandRequest'
+            examples:
+              setThermostat:
+                summary: Set thermostat to 72°F
+                value:
+                  commandType: set_temperature
+                  parameters:
+                    temperatureF: 72
+                  issuedBy: validator-001
+              toggleLight:
+                summary: Turn off lights
+                value:
+                  commandType: toggle_power
+                  parameters:
+                    on: false
+                  issuedBy: validator-001
+      responses:
+        '201':
+          description: Command issued and confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceCommand'
+    get:
+      tags: [Devices]
+      summary: Get command history for device
+      operationId: getCommandHistory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Command history
+
+  /api/v1/entropy/snapshot:
+    post:
+      tags: [Entropy]
+      summary: Take an entropy snapshot
+      description: |
+        Reads all device states for a household and computes aggregate
+        thermodynamic entropy (S = Q/T in J/K).
+      operationId: takeSnapshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [householdId]
+              properties:
+                householdId:
+                  type: string
+      responses:
+        '201':
+          description: Snapshot taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeEntropySnapshot'
+
+  /api/v1/entropy/measure:
+    post:
+      tags: [Entropy]
+      summary: Measure entropy reduction and auto-generate claim
+      description: |
+        Compares the latest two entropy snapshots. If ΔS > 0, automatically
+        generates a claim to the Epistemology Engine and opens a loop in
+        the Loop Ledger.
+
+        ΔS breakdown:
+        - Energy savings (kWh reduction → J/K)
+        - Temperature optimization (deviation from setpoint)
+        - Resource efficiency (solar utilization)
+      operationId: measureReduction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [householdId]
+              properties:
+                householdId:
+                  type: string
+                causalCommandIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Entropy reduction measured and claim generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reduction:
+                    $ref: '#/components/schemas/HomeEntropyReduction'
+                  claim:
+                    type: object
+                    properties:
+                      claimId:
+                        type: string
+                      loopId:
+                        type: string
+
+  /api/v1/entropy/{householdId}/history:
+    get:
+      tags: [Entropy]
+      summary: Get entropy reduction history
+      operationId: getEntropyHistory
+      parameters:
+        - name: householdId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Entropy history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HomeEntropyReduction'
+                  cumulativeDeltaS:
+                    type: number
+
+  /api/v1/entropy/claims/{householdId}:
+    get:
+      tags: [Entropy]
+      summary: Get claims history for household
+      operationId: getClaimsHistory
+      parameters:
+        - name: householdId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Claims history
+
+  /api/v1/governance/dfao:
+    post:
+      tags: [Governance]
+      summary: Create a household DFAO
+      description: |
+        Creates a NANO-scale DFAO for the household via the DFAO Registry.
+        The DFAO governs energy policies, automation rules, and contribution
+        distribution.
+      operationId: createHouseholdDFAO
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [householdId, householdName, founderValidatorId]
+              properties:
+                householdId:
+                  type: string
+                householdName:
+                  type: string
+                founderValidatorId:
+                  type: string
+      responses:
+        '201':
+          description: DFAO created
+
+  /api/v1/schedules:
+    post:
+      tags: [Schedules]
+      summary: Create an automation schedule
+      operationId: createSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScheduleRequest'
+      responses:
+        '201':
+          description: Schedule created
+    get:
+      tags: [Schedules]
+      summary: List schedules
+      operationId: listSchedules
+      parameters:
+        - name: householdId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Schedules list
+
+  /api/v1/tokens/{householdId}:
+    get:
+      tags: [Tokens]
+      summary: Get token balances for household
+      operationId: getTokenBalances
+      parameters:
+        - name: householdId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Token balances
+
+  /api/v1/credentials/{householdId}:
+    get:
+      tags: [Credentials]
+      summary: Get credentials for household
+      operationId: getCredentials
+      parameters:
+        - name: householdId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credentials list
+
+  /api/v1/reputation/{validatorId}:
+    get:
+      tags: [Reputation]
+      summary: Get THERMODYNAMIC reputation for validator
+      operationId: getReputation
+      parameters:
+        - name: validatorId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reputation data
+
+  /api/v1/dag/{householdId}:
+    get:
+      tags: [DAG]
+      summary: Get DAG vertex references for household
+      operationId: getDAGReferences
+      parameters:
+        - name: householdId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: DAG references
+
+  /api/v1/interop/manifest:
+    get:
+      tags: [Interop]
+      summary: Get interop manifest for auto-discovery
+      description: |
+        Returns the HomeFlow interop manifest, declaring capabilities,
+        event subscriptions, API surface, and registered adapters.
+        Any future ecosystem app can use this for auto-discovery.
+      operationId: getInteropManifest
+      responses:
+        '200':
+          description: Interop manifest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InteropManifest'
+
+  /api/v1/interop/adapters:
+    get:
+      tags: [Interop]
+      summary: List registered ecosystem adapters
+      operationId: listAdapters
+      responses:
+        '200':
+          description: Adapters list
+    post:
+      tags: [Interop]
+      summary: Register a new ecosystem adapter at runtime
+      operationId: registerAdapter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [appId, appName]
+              properties:
+                appId:
+                  type: string
+                appName:
+                  type: string
+                entropyDomains:
+                  type: array
+                  items:
+                    type: string
+                publishedEvents:
+                  type: array
+                  items:
+                    type: string
+                subscribedEvents:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Adapter registered
+
+  /api/v1/interop/aggregations:
+    get:
+      tags: [Interop]
+      summary: Get cross-domain aggregation history
+      operationId: getAggregations
+      parameters:
+        - name: householdId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Aggregation history
+
+  /api/v1/temporal/patterns:
+    get:
+      tags: [Schedules]
+      summary: Detect seasonal patterns
+      operationId: detectPatterns
+      parameters:
+        - name: householdId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detected patterns
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        service:
+          type: string
+          const: homeflow
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        version:
+          type: string
+        uptime:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        port:
+          type: integer
+        adapters:
+          type: integer
+
+    DeviceType:
+      type: string
+      enum:
+        - thermostat
+        - temperature_sensor
+        - humidity_sensor
+        - lighting
+        - hvac
+        - energy_monitor
+        - smart_plug
+        - occupancy_sensor
+        - water_meter
+        - solar_panel
+        - battery_storage
+        - air_quality
+
+    CommandType:
+      type: string
+      enum:
+        - set_temperature
+        - set_brightness
+        - set_hvac_mode
+        - set_fan_speed
+        - toggle_power
+        - set_schedule
+        - trigger_scene
+
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+        householdId:
+          type: string
+        zoneId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        manufacturer:
+          type: string
+        model:
+          type: string
+        firmwareVersion:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, error, pairing, updating]
+        capabilities:
+          type: array
+          items:
+            type: object
+        state:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+        lastSeenAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Household:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        dfaoId:
+          type: string
+          nullable: true
+        validatorId:
+          type: string
+        memberValidatorIds:
+          type: array
+          items:
+            type: string
+        address:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+        area_sqft:
+          type: number
+          nullable: true
+        zoneIds:
+          type: array
+          items:
+            type: string
+        energyBaselineKwh:
+          type: number
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Zone:
+      type: object
+      properties:
+        id:
+          type: string
+        householdId:
+          type: string
+        name:
+          type: string
+        floor:
+          type: integer
+        area_sqft:
+          type: integer
+        deviceIds:
+          type: array
+          items:
+            type: string
+        targetTemperatureF:
+          type: number
+          nullable: true
+        targetHumidityPct:
+          type: number
+          nullable: true
+        isOccupied:
+          type: boolean
+
+    DeviceCommand:
+      type: object
+      properties:
+        id:
+          type: string
+        deviceId:
+          type: string
+        type:
+          $ref: '#/components/schemas/CommandType'
+        parameters:
+          type: object
+        status:
+          type: string
+          enum: [pending, sent, confirmed, failed, timeout]
+        issuedBy:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+        previousState:
+          type: object
+        newState:
+          type: object
+
+    HomeEntropySnapshot:
+      type: object
+      properties:
+        householdId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        totalPowerWatts:
+          type: number
+        energyConsumedWh:
+          type: number
+        avgIndoorTempF:
+          type: number
+        outdoorTempF:
+          type: number
+          nullable: true
+        avgHumidityPct:
+          type: number
+        solarGeneratedWh:
+          type: number
+        occupiedZones:
+          type: integer
+        totalZones:
+          type: integer
+        entropyJoulePerKelvin:
+          type: number
+
+    HomeEntropyReduction:
+      type: object
+      properties:
+        householdId:
+          type: string
+        deltaS:
+          type: number
+          description: 'Entropy reduction in J/K (must be > 0 for XP)'
+        breakdown:
+          type: object
+          properties:
+            energySavingsJK:
+              type: number
+            temperatureOptimizationJK:
+              type: number
+            resourceEfficiencyJK:
+              type: number
+        causalCommandIds:
+          type: array
+          items:
+            type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        measuredAt:
+          type: string
+          format: date-time
+
+    IncomingWebhookEvent:
+      type: object
+      required: [eventId, type, source, payload, correlationId, timestamp, version]
+      properties:
+        eventId:
+          type: string
+        type:
+          type: string
+        source:
+          type: string
+        payload:
+          type: object
+        correlationId:
+          type: string
+        timestamp:
+          type: string
+        version:
+          type: integer
+
+    CrossDomainEntropyData:
+      type: object
+      nullable: true
+      properties:
+        sourceApp:
+          type: string
+        sourceDomain:
+          type: string
+        sourceDeltaS:
+          type: number
+        timestamp:
+          type: string
+
+    InteropManifest:
+      type: object
+      properties:
+        appId:
+          type: string
+        appName:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+        port:
+          type: integer
+        healthEndpoint:
+          type: string
+        eventsEndpoint:
+          type: string
+        apiBase:
+          type: string
+        entropyDomains:
+          type: array
+          items:
+            type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        publishedEvents:
+          type: array
+          items:
+            type: string
+        subscribedEvents:
+          type: array
+          items:
+            type: string
+        apiEndpoints:
+          type: array
+          items:
+            type: object
+            properties:
+              method:
+                type: string
+              path:
+                type: string
+              description:
+                type: string
+        crossDomainAggregation:
+          type: object
+          properties:
+            supported:
+              type: boolean
+            weight:
+              type: number
+            description:
+              type: string
+        registeredAdapters:
+          type: array
+          items:
+            type: object
+            properties:
+              appId:
+                type: string
+              appName:
+                type: string
+              entropyDomains:
+                type: array
+                items:
+                  type: string
+
+    RegisterDeviceRequest:
+      type: object
+      required: [householdId, name, type, manufacturer, model, firmwareVersion]
+      properties:
+        householdId:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        manufacturer:
+          type: string
+        model:
+          type: string
+        firmwareVersion:
+          type: string
+        zoneId:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: object
+        metadata:
+          type: object
+
+    IssueCommandRequest:
+      type: object
+      required: [commandType, issuedBy]
+      properties:
+        commandType:
+          $ref: '#/components/schemas/CommandType'
+        parameters:
+          type: object
+        issuedBy:
+          type: string
+
+    CreateHouseholdRequest:
+      type: object
+      required: [name, validatorId]
+      properties:
+        name:
+          type: string
+        validatorId:
+          type: string
+        address:
+          type: string
+        timezone:
+          type: string
+          default: America/Chicago
+        area_sqft:
+          type: number
+        energyBaselineKwh:
+          type: number
+
+    CreateZoneRequest:
+      type: object
+      required: [householdId, name, floor, area_sqft]
+      properties:
+        householdId:
+          type: string
+        name:
+          type: string
+        floor:
+          type: integer
+        area_sqft:
+          type: integer
+        targetTemperatureF:
+          type: number
+        targetHumidityPct:
+          type: number
+
+    CreateScheduleRequest:
+      type: object
+      required: [householdId, name, type, actions]
+      properties:
+        householdId:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [time_based, occupancy, seasonal, solar_aware, price_aware]
+        cronExpression:
+          type: string
+        seasonId:
+          type: string
+        conditions:
+          type: array
+          items:
+            type: object
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              deviceId:
+                type: string
+              commandType:
+                type: string
+              parameters:
+                type: object
+
+    PaginatedDevices:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+        total:
+          type: integer
+
+    PaginatedZones:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Zone'
+        total:
+          type: integer
