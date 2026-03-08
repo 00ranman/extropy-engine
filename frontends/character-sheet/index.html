@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+
+<!-- Perplexity Computer Attribution — SEO Meta Tags -->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XP Character Sheet — Randall Gossett | Extropy Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ===== TOP NAV BAR ===== -->
+<header class="topbar">
+  <div class="topbar-left">
+    <svg class="topbar-logo" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true">
+      <polygon points="14,2 26,8 26,20 14,26 2,20 2,8" fill="none" stroke="#00d4aa" stroke-width="1.5"/>
+      <polygon points="14,6 22,10 22,18 14,22 6,18 6,10" fill="#00d4aa" opacity="0.15"/>
+      <circle cx="14" cy="14" r="3" fill="#00d4aa"/>
+    </svg>
+    <div class="topbar-brand">
+      <span class="topbar-title">Extropy <span class="brand-accent">XP</span></span>
+      <span class="topbar-version">ENGINE V0.9</span>
+    </div>
+  </div>
+  <nav class="topbar-nav">
+    <a href="#" class="nav-link">Dashboard</a>
+    <a href="#" class="nav-link active">Character Sheet</a>
+    <a href="#" class="nav-link">Loops</a>
+    <a href="#" class="nav-link">Governance</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="xp-badge">
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><polygon points="8,1 10,6 16,6 11,10 13,15 8,12 3,15 5,10 0,6 6,6" fill="#FFC553"/></svg>
+      <span class="xp-badge-value">42,847 XP</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-scroll">
+  <div class="page-container">
+
+    <!-- ===== 1. HERO / IDENTITY ===== -->
+    <section class="hero section-animate" id="hero">
+      <div class="hero-inner">
+        <div class="hero-avatar">
+          <svg viewBox="0 0 120 120" width="120" height="120" class="avatar-svg" role="img" aria-label="Geometric avatar for Randall Gossett">
+            <defs>
+              <linearGradient id="avatar-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#00d4aa"/>
+                <stop offset="100%" stop-color="#0a6e5c"/>
+              </linearGradient>
+              <filter id="avatar-glow">
+                <feGaussianBlur stdDeviation="4" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <polygon points="60,5 110,30 110,90 60,115 10,90 10,30" fill="none" stroke="url(#avatar-grad)" stroke-width="2" filter="url(#avatar-glow)"/>
+            <polygon points="60,20 95,38 95,82 60,100 25,82 25,38" fill="url(#avatar-grad)" opacity="0.12"/>
+            <polygon points="60,35 80,47 80,73 60,85 40,73 40,47" fill="url(#avatar-grad)" opacity="0.25"/>
+            <text x="60" y="67" text-anchor="middle" fill="#00d4aa" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700">RG</text>
+          </svg>
+          <div class="avatar-ring-pulse"></div>
+        </div>
+        <div class="hero-info">
+          <div class="hero-name-row">
+            <h1 class="hero-name">Randall Gossett</h1>
+            <span class="hero-type-badge">HUMAN</span>
+          </div>
+          <div class="hero-title-row">
+            <span class="hero-title">Authority</span>
+            <span class="hero-separator">·</span>
+            <span class="hero-subtitle">Genesis Architect</span>
+            <span class="hero-separator">·</span>
+            <span class="hero-season">Season 1</span>
+          </div>
+          <div class="rep-level-bar">
+            <div class="rep-level-info">
+              <span class="rep-level-label">Reputation Level 7 — Authority</span>
+              <span class="rep-level-numbers"><span class="rep-current" data-count="14900">0</span> / <span class="rep-target">20,000</span></span>
+            </div>
+            <div class="rep-bar-track">
+              <div class="rep-bar-fill" data-width="74.5"></div>
+            </div>
+            <span class="rep-next-label">Next: Level 8 — Luminary (20,000 aggregate)</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-stats-row">
+        <div class="hero-stat">
+          <span class="hero-stat-value gold" data-count="42847">0</span>
+          <span class="hero-stat-label">Total XP</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value teal" data-count="14900">0</span>
+          <span class="hero-stat-label">Aggregate Rep</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value" data-count="8">0</span>
+          <span class="hero-stat-label">Domains Active</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-value" data-count="47">0</span>
+          <span class="hero-stat-label">Loops Joined</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 2. DOMAIN RADAR ===== -->
+    <section class="section-card section-animate" id="domain-radar">
+      <h2 class="section-heading">Domain Reputation Radar</h2>
+      <p class="section-subheading">Entropy reduction across 8 domains</p>
+      <div class="radar-container">
+        <svg id="radarChart" viewBox="0 0 500 500" class="radar-svg" role="img" aria-label="Radar chart showing domain reputation: CODE 4800, COGNITIVE 3200, INFORMATIONAL 2100, GOVERNANCE 1800, THERMODYNAMIC 1200, SOCIAL 800, ECONOMIC 600, TEMPORAL 400">
+          <title>Domain Reputation Radar</title>
+          <desc>8-axis radar chart showing Randall Gossett's reputation across all domains.</desc>
+        </svg>
+        <div class="radar-legend" id="radarLegend"></div>
+      </div>
+    </section>
+
+    <!-- ===== MIDDLE ROW: Tokens + Achievements ===== -->
+    <div class="two-col-grid">
+
+      <!-- ===== 3. TOKEN INVENTORY ===== -->
+      <section class="section-card section-animate" id="tokens">
+        <h2 class="section-heading">Token Inventory</h2>
+        <p class="section-subheading">6-token economy balances</p>
+        <div class="token-grid">
+          <div class="token-item">
+            <div class="token-icon token-xp">
+              <svg viewBox="0 0 24 24" width="24" height="24"><polygon points="12,2 15,9 22,9 16,14 18,21 12,17 6,21 8,14 2,9 9,9" fill="currentColor"/></svg>
+            </div>
+            <div class="token-info">
+              <span class="token-name">XP</span>
+              <span class="token-desc">Experience Points</span>
+            </div>
+            <span class="token-value gold" data-count="42847">0</span>
+            <span class="token-tag">NON-TRANSFERABLE</span>
+          </div>
+          <div class="token-item">
+            <div class="token-icon token-ct">
+              <svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3.5 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="token-info">
+              <span class="token-name">CT</span>
+              <span class="token-desc">Contribution Tokens</span>
+            </div>
+            <span class="token-value" data-count="12450">0</span>
+            <span class="token-tag">2-WEEK LOCKUP</span>
+          </div>
+          <div class="token-item">
+            <div class="token-icon token-cat">
+              <svg viewBox="0 0 24 24" width="24" height="24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 9h10M7 13h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="token-info">
+              <span class="token-name">CAT</span>
+              <span class="token-desc">Certifications</span>
+            </div>
+            <span class="token-value teal" data-count="3">0</span>
+            <span class="token-tag">CREDENTIALS</span>
+          </div>
+          <div class="token-item">
+            <div class="token-icon token-it">
+              <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+            <div class="token-info">
+              <span class="token-name">IT</span>
+              <span class="token-desc">Influence Tokens</span>
+            </div>
+            <span class="token-value" data-count="1800">0</span>
+            <span class="token-tag">GOVERNANCE</span>
+          </div>
+          <div class="token-item">
+            <div class="token-icon token-dt">
+              <svg viewBox="0 0 24 24" width="24" height="24"><polygon points="12,2 22,8 22,16 12,22 2,16 2,8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+            <div class="token-info">
+              <span class="token-name">DT</span>
+              <span class="token-desc">Domain Tokens</span>
+            </div>
+            <span class="token-value" data-count="2400">0</span>
+            <span class="token-tag">CODE + COGNITIVE</span>
+          </div>
+          <div class="token-item token-inactive">
+            <div class="token-icon token-ep">
+              <svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"/></svg>
+            </div>
+            <div class="token-info">
+              <span class="token-name">EP</span>
+              <span class="token-desc">Emergence Points</span>
+            </div>
+            <span class="token-value dim">0</span>
+            <span class="token-tag">NOT YET ACTIVE</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 5. ACHIEVEMENTS ===== -->
+      <section class="section-card section-animate" id="achievements">
+        <h2 class="section-heading">Achievements</h2>
+        <p class="section-subheading">Earned badges and titles</p>
+        <div class="achievement-grid">
+          <div class="achievement-item legendary">
+            <div class="achievement-icon">
+              <svg viewBox="0 0 32 32" width="32" height="32"><polygon points="16,2 20,12 30,12 22,19 25,29 16,23 7,29 10,19 2,12 12,12" fill="#FFC553"/></svg>
+            </div>
+            <span class="achievement-name">Genesis Architect</span>
+            <span class="achievement-desc">Founded the Extropy Engine</span>
+          </div>
+          <div class="achievement-item epic">
+            <div class="achievement-icon">
+              <svg viewBox="0 0 32 32" width="32" height="32"><path d="M16 4L4 16l12 12 12-12L16 4z" fill="none" stroke="#ff6b6b" stroke-width="2"/><path d="M16 10l-6 6 6 6 6-6-6-6z" fill="#ff6b6b" opacity="0.3"/><circle cx="16" cy="16" r="3" fill="#ff6b6b"/></svg>
+            </div>
+            <span class="achievement-name">Red Team Survivor</span>
+            <span class="achievement-desc">Withstood 8-vector adversarial attack</span>
+          </div>
+          <div class="achievement-item rare">
+            <div class="achievement-icon">
+              <svg viewBox="0 0 32 32" width="32" height="32"><circle cx="16" cy="16" r="12" fill="none" stroke="#00d4aa" stroke-width="2"/><path d="M10 16h12M16 10v12M10 10l12 12M22 10l-12 12" stroke="#00d4aa" stroke-width="1.5" opacity="0.6"/><circle cx="16" cy="16" r="4" fill="#00d4aa" opacity="0.3"/></svg>
+            </div>
+            <span class="achievement-name">Cross-Domain Pioneer</span>
+            <span class="achievement-desc">Closed loops across 4+ domains</span>
+          </div>
+          <div class="achievement-item uncommon">
+            <div class="achievement-icon">
+              <svg viewBox="0 0 32 32" width="32" height="32"><rect x="6" y="6" width="20" height="20" rx="3" fill="none" stroke="#7c83ff" stroke-width="2"/><text x="16" y="20" text-anchor="middle" fill="#7c83ff" font-family="JetBrains Mono, monospace" font-size="12" font-weight="700">S1</text></svg>
+            </div>
+            <span class="achievement-name">Season 1 Pioneer</span>
+            <span class="achievement-desc">Active in the first season</span>
+          </div>
+          <div class="achievement-item legendary">
+            <div class="achievement-icon">
+              <svg viewBox="0 0 32 32" width="32" height="32"><polygon points="16,3 28,10 28,22 16,29 4,22 4,10" fill="none" stroke="#FFC553" stroke-width="2"/><text x="16" y="20" text-anchor="middle" fill="#FFC553" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700">L7</text></svg>
+            </div>
+            <span class="achievement-name">Authority</span>
+            <span class="achievement-desc">Reputation Level 7</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== 4. SKILL TREE / CAT CERTIFICATIONS ===== -->
+    <section class="section-card section-animate" id="certifications">
+      <h2 class="section-heading">CAT Certifications</h2>
+      <p class="section-subheading">Credential Attestation Tokens earned through validated performance</p>
+      <div class="cert-grid">
+        <div class="cert-card cert-level-3">
+          <div class="cert-header">
+            <div class="cert-domain-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 4h16v16H4z" fill="none" stroke="currentColor" stroke-width="2" rx="2"/><path d="M8 8h2v8H8zM14 12h2v4h-2zM11 10h2v6h-2z" fill="currentColor"/></svg>
+            </div>
+            <div class="cert-domain-info">
+              <span class="cert-domain-name">CODE</span>
+              <span class="cert-level">Level 3 — Practitioner</span>
+            </div>
+            <div class="cert-level-badge level-3">L3</div>
+          </div>
+          <div class="cert-bar-track">
+            <div class="cert-bar-fill" data-width="90"></div>
+          </div>
+          <div class="cert-meta">
+            <span>90+ validated performances</span>
+            <span class="cert-rep">4,800 rep</span>
+          </div>
+        </div>
+        <div class="cert-card cert-level-2">
+          <div class="cert-header">
+            <div class="cert-domain-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 13c-5 0-9 2.5-9 5.5V21h18v-2.5c0-3-4-5.5-9-5.5z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+            <div class="cert-domain-info">
+              <span class="cert-domain-name">COGNITIVE</span>
+              <span class="cert-level">Level 2 — Apprentice</span>
+            </div>
+            <div class="cert-level-badge level-2">L2</div>
+          </div>
+          <div class="cert-bar-track">
+            <div class="cert-bar-fill" data-width="65"></div>
+          </div>
+          <div class="cert-meta">
+            <span>30+ validated performances</span>
+            <span class="cert-rep">3,200 rep</span>
+          </div>
+        </div>
+        <div class="cert-card cert-level-1">
+          <div class="cert-header">
+            <div class="cert-domain-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 3L2 9l10 6 10-6-10-6z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 15l10 6 10-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+            <div class="cert-domain-info">
+              <span class="cert-domain-name">GOVERNANCE</span>
+              <span class="cert-level">Level 1 — Initiate</span>
+            </div>
+            <div class="cert-level-badge level-1">L1</div>
+          </div>
+          <div class="cert-bar-track">
+            <div class="cert-bar-fill" data-width="35"></div>
+          </div>
+          <div class="cert-meta">
+            <span>15+ validated performances</span>
+            <span class="cert-rep">1,800 rep</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== BOTTOM ROW: Loop Stats + Season ===== -->
+    <div class="two-col-grid">
+
+      <!-- ===== 6. LOOP STATS ===== -->
+      <section class="section-card section-animate" id="loop-stats">
+        <h2 class="section-heading">Loop History</h2>
+        <p class="section-subheading">Validation loop participation and outcomes</p>
+        <div class="loop-stats-grid">
+          <div class="loop-stat">
+            <span class="loop-stat-value" data-count="47">0</span>
+            <span class="loop-stat-label">Total Loops</span>
+          </div>
+          <div class="loop-stat">
+            <span class="loop-stat-value teal" data-count="41">0</span>
+            <span class="loop-stat-label">Loops Closed</span>
+          </div>
+          <div class="loop-stat">
+            <span class="loop-stat-value gold" data-count-decimal="87.2">0</span>
+            <span class="loop-stat-label">Success Rate %</span>
+          </div>
+          <div class="loop-stat">
+            <span class="loop-stat-value" data-count-decimal="847.3">0</span>
+            <span class="loop-stat-label">Total ΔS Generated</span>
+          </div>
+          <div class="loop-stat">
+            <span class="loop-stat-value" data-count-decimal="2.4">0</span>
+            <span class="loop-stat-label">Avg Settlement (hrs)</span>
+          </div>
+          <div class="loop-stat">
+            <span class="loop-stat-value teal" data-count="8">0</span>
+            <span class="loop-stat-label">Domains Touched</span>
+          </div>
+        </div>
+        <div class="loop-timeline">
+          <h3 class="mini-heading">Recent Loops</h3>
+          <div class="timeline-items">
+            <div class="timeline-item closed">
+              <span class="timeline-status">CLOSED</span>
+              <span class="timeline-desc">CODE domain — Type system validation</span>
+              <span class="timeline-delta">ΔS 24.7</span>
+              <span class="timeline-time">2h 10m</span>
+            </div>
+            <div class="timeline-item closed">
+              <span class="timeline-status">CLOSED</span>
+              <span class="timeline-desc">COGNITIVE — Feedback V4 theorem proof</span>
+              <span class="timeline-delta">ΔS 31.2</span>
+              <span class="timeline-time">3h 45m</span>
+            </div>
+            <div class="timeline-item closed">
+              <span class="timeline-status">CLOSED</span>
+              <span class="timeline-desc">GOVERNANCE — DFAO framework audit</span>
+              <span class="timeline-delta">ΔS 18.9</span>
+              <span class="timeline-time">1h 20m</span>
+            </div>
+            <div class="timeline-item open">
+              <span class="timeline-status">OPEN</span>
+              <span class="timeline-desc">INFORMATIONAL — Documentation review</span>
+              <span class="timeline-delta">ΔS —</span>
+              <span class="timeline-time">In progress</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 7. SEASON PROGRESS ===== -->
+      <section class="section-card section-animate" id="season">
+        <h2 class="section-heading">Season 1 Progress</h2>
+        <p class="section-subheading">Current season stats and ranking</p>
+        <div class="season-hero">
+          <div class="season-number">
+            <span class="season-label">SEASON</span>
+            <span class="season-num">01</span>
+          </div>
+          <div class="season-dates">
+            <span class="season-date-label">Active Period</span>
+            <span class="season-date-value">Jan 15, 2026 — Jul 15, 2026</span>
+          </div>
+        </div>
+        <div class="season-stats">
+          <div class="season-stat">
+            <span class="season-stat-label">Season Rank</span>
+            <span class="season-stat-value gold">#1</span>
+          </div>
+          <div class="season-stat">
+            <span class="season-stat-label">Season XP</span>
+            <span class="season-stat-value" data-count="42847">0</span>
+          </div>
+          <div class="season-stat">
+            <span class="season-stat-label">Days Active</span>
+            <span class="season-stat-value" data-count="51">0</span>
+          </div>
+          <div class="season-stat">
+            <span class="season-stat-label">Loops This Season</span>
+            <span class="season-stat-value" data-count="47">0</span>
+          </div>
+        </div>
+        <div class="season-progress-bar">
+          <div class="season-progress-info">
+            <span>Season Progress</span>
+            <span>28%</span>
+          </div>
+          <div class="season-bar-track">
+            <div class="season-bar-fill" data-width="28"></div>
+          </div>
+          <span class="season-days-left">132 days remaining</span>
+        </div>
+        <div class="season-decay-notice">
+          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v4M8 11v0.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>Temporal decay active — reputation decays 2% per inactive week</span>
+        </div>
+      </section>
+    </div>
+
+  </div><!-- .page-container -->
+
+  <footer class="site-footer">
+    <span class="footer-system">Extropy Engine v0.9 · DAG Substrate</span>
+    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer" class="footer-attribution">Created with Perplexity Computer</a>
+  </footer>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>

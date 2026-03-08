@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+
+<!-- Perplexity Computer Attribution — SEO Meta Tags -->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrantFlow — Grant Discovery &amp; Management | Extropy Engine</title>
+<meta name="description" content="GrantFlow grant discovery, tracking, and auto-application assistant. Earn XP for grant activity. Part of the Extropy Engine.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="/grantflow/" class="logo-link">
+          <svg class="logo-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" aria-label="GrantFlow Logo">
+            <rect x="2" y="2" width="28" height="28" rx="4" stroke="#00d4aa" stroke-width="2"/>
+            <path d="M10 22 L10 14 L16 10 L22 14 L22 22" fill="none" stroke="#00d4aa" stroke-width="1.5" opacity="0.6"/>
+            <path d="M13 22 L13 17 L19 17 L19 22" fill="#00d4aa" opacity="0.2"/>
+            <circle cx="16" cy="10" r="2.5" fill="#00d4aa" opacity="0.8"/>
+            <line x1="16" y1="12.5" x2="16" y2="17" stroke="#00d4aa" stroke-width="1" opacity="0.5"/>
+            <line x1="8" y1="26" x2="24" y2="26" stroke="#00d4aa" stroke-width="1.5" opacity="0.4"/>
+            <path d="M6 8 L10 6 L14 8" fill="none" stroke="#00d4aa" stroke-width="1" opacity="0.3"/>
+            <path d="M18 8 L22 6 L26 8" fill="none" stroke="#00d4aa" stroke-width="1" opacity="0.3"/>
+          </svg>
+          <div class="logo-text">
+            <span class="logo-name">GrantFlow</span>
+            <span class="logo-sub">ENGINE v1.0</span>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">OVERVIEW</div>
+        <a href="#home" class="nav-item active" data-view="home">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Dashboard</span>
+        </a>
+
+        <div class="nav-section-label">GRANTS</div>
+        <a href="#discover" class="nav-item" data-view="discover">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Discovery</span>
+        </a>
+        <a href="#pipeline" class="nav-item" data-view="pipeline">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          <span>Pipeline</span>
+        </a>
+
+        <div class="nav-section-label">TOOLS</div>
+        <a href="#proposals" class="nav-item" data-view="proposals">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>Proposals</span>
+        </a>
+        <a href="#analytics" class="nav-item" data-view="analytics">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Analytics</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="sidebar-footer-text" id="sidebarGrantCount">0 grants tracked</span>
+        <span class="sidebar-footer-text">grantflow:engine</span>
+      </div>
+    </aside>
+
+    <!-- Mobile header -->
+    <div class="mobile-header" id="mobileHeader">
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="mobile-title">GrantFlow</span>
+      <div class="xp-badge-mobile" id="xpBadgeMobile">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#00d4aa" stroke="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <span id="xpCountMobile">0 XP</span>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <!-- Top bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="xp-badge" id="xpBadge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#00d4aa" stroke="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span id="xpCount">0 XP</span>
+          </div>
+          <button class="topbar-icon-btn" id="notifBtn" aria-label="Notifications">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </button>
+          <a href="/" class="topbar-icon-btn" title="Back to Extropy Engine" aria-label="Main Dashboard">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 7l-5 5 5 5"/><line x1="7" y1="12" x2="21" y2="12"/></svg>
+          </a>
+        </div>
+      </header>
+
+      <!-- Overlay for mobile sidebar -->
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+      <!-- View: Dashboard (#home) -->
+      <section class="view active" id="view-home">
+        <div class="kpi-row">
+          <div class="kpi-card kpi-primary">
+            <div class="kpi-label">Grant XP Earned</div>
+            <div class="kpi-value">
+              <span class="kpi-number" id="kpiTotalXP">0</span>
+              <span class="kpi-unit">XP</span>
+            </div>
+            <div class="kpi-delta positive" id="kpiXPDelta">Lifetime GrantFlow XP</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Total Applied</div>
+            <div class="kpi-value">
+              <span class="kpi-number" id="kpiTotalApplied">0</span>
+            </div>
+            <div class="kpi-delta neutral">applications</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Win Rate</div>
+            <div class="kpi-value">
+              <span class="kpi-number" id="kpiWinRate">0</span>
+              <span class="kpi-unit">%</span>
+            </div>
+            <div class="kpi-delta neutral" id="kpiWinDelta">success rate</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Proposals Drafted</div>
+            <div class="kpi-value">
+              <span class="kpi-number" id="kpiProposals">0</span>
+            </div>
+            <div class="kpi-delta neutral">sections completed</div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Mini Kanban Pipeline -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Application Pipeline</h3>
+              <a href="#pipeline" class="card-badge" style="text-decoration:none;cursor:pointer;">View All</a>
+            </div>
+            <div id="miniPipeline" class="mini-pipeline"></div>
+          </div>
+
+          <!-- Upcoming Deadlines -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Upcoming Deadlines</h3>
+            </div>
+            <div class="deadlines-list" id="deadlinesList">
+              <div class="activity-empty">No upcoming deadlines</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Recent Activity</h3>
+          </div>
+          <div class="activity-list" id="activityList">
+            <div class="activity-empty">No recent activity. Discover grants to get started.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- View: Grant Discovery (#discover) -->
+      <section class="view" id="view-discover">
+        <div class="view-header">
+          <h2>Grant Discovery</h2>
+          <span class="card-badge" id="searchResultCount">0 results</span>
+        </div>
+
+        <!-- Integration Card -->
+        <div class="integration-card">
+          <div class="integration-card-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v-2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+          </div>
+          <div class="integration-card-text">
+            <h4>Connect your Academia.edu profile</h4>
+            <p>Auto-match grants to your research in entropy, information theory, IoT, and decentralized systems</p>
+          </div>
+          <button class="btn-accent btn-sm">Connect</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+          <input type="text" class="search-input" id="grantSearch" placeholder="Search grants... (e.g., technology, AI, energy)">
+          <button class="btn-primary" id="btnSearch">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Search Grants.gov
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-row">
+          <select class="filter-select" id="filterAgency">
+            <option value="">All Agencies</option>
+            <option value="NSF">NSF</option>
+            <option value="DOE">DOE</option>
+            <option value="HHS">HHS / NIH</option>
+            <option value="DOD">DOD / DARPA</option>
+            <option value="NASA">NASA</option>
+            <option value="USDA">USDA</option>
+          </select>
+          <select class="filter-select" id="filterStatus">
+            <option value="">All Statuses</option>
+            <option value="posted">Posted</option>
+            <option value="forecasted">Forecasted</option>
+          </select>
+          <select class="filter-select" id="filterCategory">
+            <option value="">All Categories</option>
+            <option value="ST">Science &amp; Technology</option>
+            <option value="ED">Education</option>
+            <option value="HL">Health</option>
+            <option value="EN">Energy</option>
+            <option value="IS">Information Systems</option>
+          </select>
+        </div>
+
+        <!-- Results -->
+        <div class="grant-results" id="grantResults">
+          <div class="empty-state">Search for grants or browse recommended opportunities below</div>
+        </div>
+      </section>
+
+      <!-- View: Application Pipeline (#pipeline) -->
+      <section class="view" id="view-pipeline">
+        <div class="view-header">
+          <h2>Application Pipeline</h2>
+          <div class="view-header-actions">
+            <button class="btn-accent" id="btnAddPipelineItem">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Grant
+            </button>
+          </div>
+        </div>
+        <div class="kanban-board" id="kanbanBoard"></div>
+      </section>
+
+      <!-- View: Proposal Workshop (#proposals) -->
+      <section class="view" id="view-proposals">
+        <div class="view-header">
+          <h2>Proposal Workshop</h2>
+          <span class="card-badge" id="proposalXPBadge">0 XP earned</span>
+        </div>
+
+        <div class="proposal-sections" id="proposalSections"></div>
+      </section>
+
+      <!-- View: Analytics (#analytics) -->
+      <section class="view" id="view-analytics">
+        <div class="view-header">
+          <h2>Analytics</h2>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card kpi-primary">
+            <div class="kpi-label">Total Funding Won</div>
+            <div class="kpi-value">
+              <span class="kpi-unit">$</span>
+              <span class="kpi-number" id="kpiFundingWon">0</span>
+            </div>
+            <div class="kpi-delta positive">from awarded grants</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Grants Discovered</div>
+            <div class="kpi-value">
+              <span class="kpi-number" id="kpiDiscovered">0</span>
+            </div>
+            <div class="kpi-delta neutral">total tracked</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Success Rate</div>
+            <div class="kpi-value">
+              <span class="kpi-number" id="kpiSuccessRate">0</span>
+              <span class="kpi-unit">%</span>
+            </div>
+            <div class="kpi-delta neutral">by category</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Active Pipeline</div>
+            <div class="kpi-value">
+              <span class="kpi-number" id="kpiActivePipeline">0</span>
+            </div>
+            <div class="kpi-delta neutral">in progress</div>
+          </div>
+        </div>
+
+        <div class="analytics-grid">
+          <!-- Activity Over Time -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Grant Activity Over Time</h3>
+              <span class="card-badge">last 6 months</span>
+            </div>
+            <div class="chart-container" id="activityChart"></div>
+          </div>
+
+          <!-- Token Distribution -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Token Distribution</h3>
+              <span class="card-badge">6-token economy</span>
+            </div>
+            <div class="radar-container" id="tokenRadar"></div>
+          </div>
+        </div>
+
+        <div class="analytics-grid">
+          <!-- Deadline Calendar -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Deadline Calendar</h3>
+              <span class="card-badge" id="calendarMonth"></span>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+          </div>
+
+          <!-- Funding Funnel -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Funding Funnel</h3>
+            </div>
+            <div class="funnel-container" id="fundingFunnel"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Toast container -->
+      <div class="toast-container" id="toastContainer"></div>
+
+      <!-- Proposal Editor Overlay -->
+      <div class="proposal-editor-overlay" id="proposalEditorOverlay">
+        <div class="proposal-editor">
+          <div class="proposal-editor-header">
+            <span class="proposal-editor-title" id="editorTitle">Section Editor</span>
+            <button class="btn-ghost" id="btnCloseEditor">&times;</button>
+          </div>
+          <div class="proposal-editor-body">
+            <textarea id="editorTextarea" placeholder="Start writing your proposal section..."></textarea>
+          </div>
+          <div class="proposal-editor-footer">
+            <button class="btn-accent" id="btnGenerateSection">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              Generate with AI
+            </button>
+            <button class="btn-primary" id="btnSaveSection">Save Section</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="app-footer">
+    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">
+      Created with Perplexity Computer
+    </a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
