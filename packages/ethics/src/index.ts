@@ -8,15 +8,19 @@
  */
 
 // Core types and constants
-export { EthicsValidator, ValidationResult, ActionContext, PrincipleViolation } from './validator';
-export { EthicalPrinciple, CORE_PRINCIPLES, PrincipleCategory } from './principles';
+export { EthicsValidator } from './validator';
+export type { ValidationResult, ActionContext, PrincipleViolation } from './validator';
+export { CORE_PRINCIPLES } from './principles';
+export type { EthicalPrinciple, PrincipleCategory } from './principles';
 
 // Convenience evaluate function
 export { evaluate } from './validator';
 
 // HTTP service layer
-export { createApp, ServiceOptions } from './service';
+export { createApp } from './service';
+export type { ServiceOptions } from './service';
 export { router } from './routes';
 
 // Database / audit log
-export { initDb, insertAuditRecord, queryAuditLog, closePool, AuditRecord } from './db';
+export { initDb, insertAuditRecord, queryAuditLog, closePool } from './db';
+export type { AuditRecord } from './db';
