@@ -13,7 +13,7 @@
 services:
   homeflow:
     build:
-      context: ../..
+      context: .
       dockerfile: packages/homeflow/Dockerfile
     ports:
       - "4015:4015"
