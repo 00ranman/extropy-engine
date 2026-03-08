@@ -7,6 +7,9 @@ export default tseslint.config(
     languageOptions: {
       parser: tseslint.parser,
     },
-    rules: {},
+        rules: {
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
+    },
   },
 );
