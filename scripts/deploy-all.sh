@@ -139,11 +139,33 @@ echo "  ✓ All migrations applied"
 echo ""
 echo "▶ [PHASE 5] Building and starting all backend services..."
 
-# Build everything (core + grantflow)
-docker compose -f docker-compose.yml -f docker-compose.grantflow.yml build 2>&1 | tail -20
+# Build only services that have Dockerfiles (explicitly named to avoid missing Dockerfile errors)
+echo "  Building core services..."
+docker compose build \
+  epistemology-engine \
+  signalflow \
+  loop-ledger \
+  reputation \
+  xp-mint 2>&1 | tail -20
 
-echo "  Starting services..."
-docker compose -f docker-compose.yml -f docker-compose.grantflow.yml up -d
+echo "  Building homeflow..."
+docker compose -f docker-compose.yml -f packages/homeflow/docker-compose.homeflow.yaml build homeflow 2>&1 | tail -10
+
+echo "  Building grantflow services..."
+docker compose -f docker-compose.yml -f docker-compose.grantflow.yml build \
+  grantflow-discovery \
+  grantflow-proposer \
+  academia-bridge 2>&1 | tail -20
+
+echo "  Starting all services..."
+docker compose -f docker-compose.yml \
+  -f packages/homeflow/docker-compose.homeflow.yaml \
+  -f docker-compose.grantflow.yml \
+  up -d \
+  postgres redis \
+  epistemology-engine signalflow loop-ledger reputation xp-mint \
+  homeflow \
+  grantflow-discovery grantflow-proposer academia-bridge
 
 echo "  Waiting 20 seconds for services to initialize..."
 sleep 20
