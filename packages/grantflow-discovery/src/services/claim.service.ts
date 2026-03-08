@@ -336,7 +336,7 @@ export class ClaimService {
           evidence:   params.evidence,
           source:     'grantflow-discovery',
           validatorId: this.config.validatorId,
-        } as Parameters<typeof this.eventBus.emit>[2],
+        } as unknown as Parameters<typeof this.eventBus.emit>[2],
       );
     } catch (err) {
       console.warn(
