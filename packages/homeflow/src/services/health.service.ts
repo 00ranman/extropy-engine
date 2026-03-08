@@ -1,5 +1,5 @@
 /**
- * HomeFlow — Health Service
+ * HomeFlow - Health Service
  *
  * Family health profiles, wellness tracking, activity logging, and XP.
  * Ported from standalone homeflow_service.py health endpoints.
@@ -51,7 +51,7 @@ export class HealthService {
       'SELECT * FROM hf_health_profiles WHERE household_id = $1 ORDER BY user_id',
       [householdId]
     );
-    return result.rows.map((r: Record<string, unknown>) => ({
+    return result.rows.map((r: any) => ({
       ...r,
       dietary_restrictions: JSON.parse((r.dietary_restrictions as string) || '[]'),
       health_goals: JSON.parse((r.health_goals as string) || '[]'),
@@ -97,6 +97,7 @@ export class HealthService {
       familyWellness: 0.85,
       longTermImpact: 1.0
     });
+
     const result = await this.db.query(
       `INSERT INTO hf_health_activities (
         id, household_id, user_id, activity_type, description,
@@ -111,16 +112,24 @@ export class HealthService {
         xp
       ]
     );
+
     await this.eventBus.publish(EventType.CLAIM_SUBMITTED, {
-      source: 'homeflow', action: 'health.activity_tracked',
-      householdId, userId, activityId: id, xpEarned: xp, deltaS: 0.12
+      source: 'homeflow',
+      action: 'health.activity_tracked',
+      householdId,
+      userId,
+      activityId: id,
+      xpEarned: xp,
+      deltaS: 0.12
     });
+
     return result.rows[0];
   }
 
   async getRecommendations(householdId: string): Promise<Record<string, unknown>[]> {
     const profiles = await this.getProfiles(householdId);
     const recs: Record<string, unknown>[] = [];
+
     for (const p of profiles) {
       if (p.activity_level === 'sedentary') {
         recs.push({ userId: p.user_id, type: 'exercise', message: 'Increase daily movement to 30 min' });
@@ -129,12 +138,16 @@ export class HealthService {
         recs.push({ userId: p.user_id, type: 'nutrition', message: 'Consider higher protein meals' });
       }
     }
+
     return recs;
   }
 
   private calculateHealthXP(p: {
-    baseEntropy: number; dietaryImprovement: number; exerciseIntegration: number;
-    familyWellness: number; longTermImpact: number;
+    baseEntropy: number;
+    dietaryImprovement: number;
+    exerciseIntegration: number;
+    familyWellness: number;
+    longTermImpact: number;
   }): number {
     const xp = p.baseEntropy * p.dietaryImprovement * p.exerciseIntegration *
                p.familyWellness * p.longTermImpact;
