@@ -149,7 +149,7 @@ class FamilyTaskPlannerAdapter extends GenericAppAdapter {
   async handleEvent(event: DomainEvent): Promise<CrossDomainEntropyData | null> {
     const payload = event.payload as Record<string, unknown>;
     // Family tasks that overlap with home automation (e.g., "turn off lights when leaving")
-    if (event.type === 'family.chore.verified' && typeof payload.deltaS === 'number') {
+    if ((event.type as string) === 'family.chore.verified' && typeof payload.deltaS === 'number') {
       return {
         sourceApp: this.appId,
         sourceDomain: EntropyDomain.SOCIAL,
