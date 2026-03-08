@@ -139,33 +139,82 @@ echo "  ✓ All migrations applied"
 echo ""
 echo "▶ [PHASE 5] Building and starting all backend services..."
 
-# Build only services that have Dockerfiles (explicitly named to avoid missing Dockerfile errors)
-echo "  Building core services..."
-docker compose build \
-  epistemology-engine \
-  signalflow \
-  loop-ledger \
-  reputation \
-  xp-mint 2>&1 | tail -20
+# Build each service individually using 'docker build' to avoid docker-compose.yml
+# validation errors from services that don't have Dockerfiles yet (dag-substrate, etc.)
+BUILD_TARGETS=(
+  "epistemology-engine:packages/epistemology-engine/Dockerfile"
+  "signalflow:packages/signalflow/Dockerfile"
+  "loop-ledger:packages/loop-ledger/Dockerfile"
+  "reputation:packages/reputation/Dockerfile"
+  "xp-mint:packages/xp-mint/Dockerfile"
+  "homeflow:packages/homeflow/Dockerfile"
+  "grantflow-discovery:packages/grantflow-discovery/Dockerfile"
+  "grantflow-proposer:packages/grantflow-proposer/Dockerfile"
+  "academia-bridge:packages/academia-bridge/Dockerfile"
+)
 
-echo "  Building homeflow..."
-docker compose -f docker-compose.yml -f packages/homeflow/docker-compose.homeflow.yaml build homeflow 2>&1 | tail -10
+for TARGET in "${BUILD_TARGETS[@]}"; do
+  SVC="${TARGET%%:*}"
+  DFILE="${TARGET##*:}"
+  printf "  %-24s" "${SVC}"
+  if docker build -q -t "extropy-engine-${SVC}" -f "${DFILE}" . > /dev/null 2>&1; then
+    echo "built"
+  else
+    echo "FAILED"
+    echo "    Retrying with output..."
+    docker build -t "extropy-engine-${SVC}" -f "${DFILE}" . 2>&1 | tail -10
+  fi
+done
 
-echo "  Building grantflow services..."
-docker compose -f docker-compose.yml -f docker-compose.grantflow.yml build \
-  grantflow-discovery \
-  grantflow-proposer \
-  academia-bridge 2>&1 | tail -20
+echo ""
+echo "  Starting infrastructure..."
+docker compose up -d postgres redis 2>&1 | tail -3
+sleep 8
 
-echo "  Starting all services..."
-docker compose -f docker-compose.yml \
-  -f packages/homeflow/docker-compose.homeflow.yaml \
-  -f docker-compose.grantflow.yml \
-  up -d \
-  postgres redis \
-  epistemology-engine signalflow loop-ledger reputation xp-mint \
-  homeflow \
-  grantflow-discovery grantflow-proposer academia-bridge
+# Start services using docker run (bypasses broken docker-compose.yml entirely)
+DOCKER_NETWORK="extropy-engine_default"
+docker network create "$DOCKER_NETWORK" 2>/dev/null || true
+
+start_service() {
+  local NAME=$1 PORT=$2 SCHEMA=$3
+  local ENV_EXTRA="${4:-}"
+  
+  # Stop and remove existing container
+  docker rm -f "$NAME" 2>/dev/null || true
+  
+  docker run -d \
+    --name "$NAME" \
+    --network "$DOCKER_NETWORK" \
+    --restart unless-stopped \
+    -p "${PORT}:${PORT}" \
+    -e "PORT=${PORT}" \
+    -e "DATABASE_URL=postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=${SCHEMA}" \
+    -e "REDIS_URL=redis://redis:6379" \
+    -e "EPISTEMOLOGY_URL=http://epistemology-engine:4001" \
+    -e "SIGNALFLOW_URL=http://signalflow:4002" \
+    -e "LOOP_LEDGER_URL=http://loop-ledger:4003" \
+    -e "REPUTATION_URL=http://reputation:4004" \
+    -e "XP_MINT_URL=http://xp-mint:4005" \
+    ${ENV_EXTRA} \
+    "extropy-engine-${NAME}" > /dev/null 2>&1
+  
+  printf "  %-24s started on port %s\n" "$NAME" "$PORT"
+}
+
+echo "  Starting core services..."
+start_service epistemology-engine 4001 epistemology
+start_service signalflow 4002 signalflow
+start_service loop-ledger 4003 ledger
+start_service reputation 4004 reputation
+start_service xp-mint 4005 mint
+
+echo "  Starting homeflow..."
+start_service homeflow 4015 homeflow
+
+echo "  Starting grantflow services..."
+start_service grantflow-discovery 4020 grantflow "-e GRANTFLOW_PROPOSER_URL=http://grantflow-proposer:4021"
+start_service grantflow-proposer 4021 proposer "-e GRANTFLOW_DISCOVERY_URL=http://grantflow-discovery:4020 -e ACADEMIA_BRIDGE_URL=http://academia-bridge:4022"
+start_service academia-bridge 4022 academia "-e ACADEMIA_PROFILE_NAME=Randall_Gossett"
 
 echo "  Waiting 20 seconds for services to initialize..."
 sleep 20
