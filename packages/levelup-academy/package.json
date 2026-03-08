@@ -1,0 +1,17 @@
+{
+  "name": "@extropy/levelup-academy",
+  "version": "1.0.0",
+  "description": "Physics-based adaptive learning platform with entropy-reduction XP rewards and skill-based progression",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/server.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@extropy/xp-formula": "workspace:*",
+    "express": "^4.18.0"
+  },
+  "license": "MIT"
+}
