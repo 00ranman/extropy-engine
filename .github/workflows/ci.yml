@@ -15,17 +15,14 @@ jobs:
         node-version: [20.x, 22.x]
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm -r tsc --noEmit
-      - run: pnpm -r test --if-present
-      - run: pnpm -r build --if-present
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test --workspaces --if-present
+      - run: npm run build --workspaces --if-present
 
   ethics-validation:
     name: Ethics Package Validation
@@ -33,30 +30,24 @@ jobs:
     needs: build-and-test
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @extropy/ethics test
+          cache: npm
+      - run: npm ci
+      - run: npm test --workspace=packages/ethics
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm -r lint --if-present
+          cache: npm
+      - run: npm ci
+      - run: npm run lint --workspaces --if-present
 
   docker-build:
     name: Docker Build Check
