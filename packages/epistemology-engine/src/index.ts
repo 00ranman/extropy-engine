@@ -22,7 +22,7 @@
 
 import express, { Request, Response, NextFunction } from 'express';
 import { Pool } from 'pg';
-import { createClient } from 'redis';
+import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 
 import type {
@@ -36,16 +36,30 @@ import type {
   EntropyDomain,
   BayesianPrior,
   BayesianUpdate,
-  SubmitClaimRequest,
-  SubmitClaimResponse,
-  DomainEvent,
 } from '@extropy/contracts';
 
 import {
   ClaimStatus,
   SubClaimStatus,
-  EVENT_TYPES,
+  EventType,
+  ServiceName,
 } from '@extropy/contracts';
+
+// ── Local request/response types (not part of shared contracts) ──────────────
+
+interface SubmitClaimRequest {
+  loopId: string;
+  statement: string;
+  domain: string;
+  submitterId: string;
+  initialPrior?: number;
+}
+
+interface SubmitClaimResponse {
+  claim: Claim;
+  estimatedSubClaims: number;
+  estimatedValidationTimeSeconds: number;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Configuration
@@ -107,16 +121,26 @@ async function initDb(): Promise<void> {
 //  Redis Event Bus
 // ─────────────────────────────────────────────────────────────────────────────
 
-const redis = createClient({ url: REDIS_URL });
+const redis = new Redis(REDIS_URL);
+
+interface SimpleEvent {
+  eventId: string;
+  aggregateId: string;
+  type: string;
+  data: unknown;
+  occurredAt: string;
+  source: string;
+  schemaVersion: number;
+}
 
 async function publishEvent<T>(type: string, aggregateId: string, data: T): Promise<void> {
-  const event: DomainEvent<T> = {
+  const event: SimpleEvent = {
     eventId: uuidv4(),
     aggregateId,
     type,
     data,
     occurredAt: new Date().toISOString(),
-    source: 'epistemology-engine',
+    source: ServiceName.EPISTEMOLOGY_ENGINE,
     schemaVersion: 1,
   };
   await redis.publish('extropy:events', JSON.stringify(event));
@@ -369,7 +393,7 @@ app.post('/claims', async (req: Request, res: Response, next: NextFunction) => {
     );
 
     if (godelReason) {
-      await publishEvent(EVENT_TYPES.CLAIM_SUBMITTED, claimId, {
+      await publishEvent(EventType.CLAIM_SUBMITTED, claimId, {
         claimId, loopId: claim.loopId, domain: claim.domain, statement: claim.statement,
       });
       res.status(201).json({ claim, estimatedSubClaims: 0, estimatedValidationTimeSeconds: 0 } as SubmitClaimResponse);
@@ -404,10 +428,10 @@ app.post('/claims', async (req: Request, res: Response, next: NextFunction) => {
     );
 
     // Publish events
-    await publishEvent(EVENT_TYPES.CLAIM_SUBMITTED, claimId, {
+    await publishEvent(EventType.CLAIM_SUBMITTED, claimId, {
       claimId, loopId: claim.loopId, domain: claim.domain, statement: claim.statement,
     });
-    await publishEvent(EVENT_TYPES.CLAIM_DECOMPOSED, claimId, {
+    await publishEvent(EventType.CLAIM_DECOMPOSED, claimId, {
       claimId, loopId: claim.loopId, subClaimIds,
       estimatedValidationTimeSeconds: subClaimDrafts.length * 30,
     });
@@ -513,13 +537,13 @@ app.patch('/sub-claims/:id/resolve', async (req: Request, res: Response, next: N
 
     if (allResolved) {
       await publishEvent(
-        truthScore >= 0.6 ? EVENT_TYPES.CLAIM_VERIFIED : EVENT_TYPES.CLAIM_FALSIFIED,
+        EventType.CLAIM_EVALUATED,
         claimId,
-        { claimId, loopId: scRows[0].loop_id, truthScore },
+        { claimId, loopId: scRows[0].loop_id, truthScore, status: claimStatus },
       );
     }
 
-    await publishEvent(EVENT_TYPES.SUBCLAIM_RESOLVED, req.params.id, {
+    await publishEvent(EventType.SUBCLAIM_UPDATED, req.params.id, {
       subClaimId: req.params.id, claimId, loopId: scRows[0].loop_id,
       status: newStatus,
       result: { verdict, confidence, evidenceMeasurementIds: [], justification, validationDurationSeconds },
@@ -548,7 +572,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  await redis.connect();
+  await redis.ping();
   console.log('[epistemology-engine] Redis connected');
 
   await initDb();
