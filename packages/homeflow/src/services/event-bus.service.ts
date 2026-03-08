@@ -1,13 +1,7 @@
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- *  HomeFlow — Event Bus Service
- * ═══════════════════════════════════════════════════════════════════════════════
+ * HomeFlow - Event Bus Service
  *
- *  Wraps Redis pub/sub for type-safe event publishing and subscribing.
- *  Publishes to the shared `extropy:events` channel and subscribes to
- *  both core EventPayloadMap and HomeFlow-specific events.
- *
- * ═══════════════════════════════════════════════════════════════════════════════
+ * Wraps Redis pub/sub for type-safe event publishing and subscribing.
  */
 
 import { createClient, type RedisClientType } from 'redis';
@@ -53,22 +47,34 @@ export class EventBusService {
 
   /**
    * Publish a typed event to the shared bus.
+   * Supports both 2-arg (type, payload) and 3-arg (type, correlationId, payload) forms.
    */
-  async publish<T extends HomeFlowEventType>(
-    type: T,
-    correlationId: LoopId | string,
-    payload: HomeFlowEventPayloadMap[T],
+  async publish(
+    type: string,
+    correlationIdOrPayload: LoopId | string | Record<string, unknown>,
+    maybePayload?: unknown,
   ): Promise<string> {
+    let correlationId: string;
+    let payload: unknown;
+    if (maybePayload !== undefined) {
+      correlationId = correlationIdOrPayload as string;
+      payload = maybePayload;
+    } else {
+      correlationId = '';
+      payload = correlationIdOrPayload;
+    }
+
     const eventId = uuidv4();
     const event: DomainEvent = {
       eventId,
-      type: type as string,
-      payload: payload as unknown,
+      type: type as any,
+      payload: payload as any,
       source: 'homeflow' as any,
       correlationId: correlationId as LoopId,
       timestamp: new Date().toISOString(),
       version: 1,
     };
+
     await this.publisher.publish(CHANNEL, JSON.stringify(event));
     return eventId;
   }
@@ -87,22 +93,17 @@ export class EventBusService {
       timestamp: new Date().toISOString(),
       version: 1,
     };
+
     await this.publisher.publish(CHANNEL, JSON.stringify(event));
     return eventId;
   }
 
-  /**
-   * Subscribe to a specific event type.
-   */
   on(eventType: string, handler: EventHandler): void {
     const existing = this.handlers.get(eventType) ?? [];
     existing.push(handler);
     this.handlers.set(eventType, existing);
   }
 
-  /**
-   * Subscribe to multiple event types.
-   */
   onMany(eventTypes: string[], handler: EventHandler): void {
     for (const et of eventTypes) {
       this.on(et, handler);
@@ -122,7 +123,6 @@ export class EventBusService {
       }
     }
 
-    // Also dispatch to wildcard handlers
     const wildcardHandlers = this.handlers.get('*') ?? [];
     for (const handler of wildcardHandlers) {
       try {
