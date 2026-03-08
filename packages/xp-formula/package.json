@@ -1,0 +1,13 @@
+{
+  "name": "@extropy/xp-formula",
+  "version": "1.0.0",
+  "description": "Canonical XP = R × F × ΔS × (w · E) × log(1/Tₛ) formula — single source of truth for xp-mint and xp-dag-mesh",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "keywords": ["xp", "entropy", "formula", "extropy"],
+  "license": "MIT"
+}
