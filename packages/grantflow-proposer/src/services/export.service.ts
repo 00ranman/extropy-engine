@@ -306,7 +306,7 @@ export class ExportService {
 
   /**
    * Strip common Markdown formatting from text.
-   * Removes headers (#), bold/italic (*/_), inline code (`), links, and tables.
+   * Removes headers (#), bold/italic (*/_), inline code (backtick), links, and tables.
    */
   private stripMarkdown(content: string): string {
     return content
@@ -323,7 +323,7 @@ export class ExportService {
       .replace(/__(.+?)__/g, '$1')
       .replace(/_(.+?)_/g, '$1')
       // Remove inline code
-      .replace(/`(.+?)`/g, '$1')
+      .replace(new RegExp('`(.+?)`', 'g'), '$1')
       // Convert links to text
       .replace(/\[(.+?)\]\(.+?\)/g, '$1')
       // Remove markdown table pipes (convert to spaced columns)
