@@ -49,7 +49,7 @@ interface RoutingConfig {
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-const PORT = process.env.PORT || 4003;
+const PORT = process.env.PORT || 4002;
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const TASK_TTL = parseInt(process.env.TASK_TTL || '86400'); // 24 hours
 const TASK_EXPIRY_MS = parseInt(process.env.TASK_EXPIRY_MS || '3600000'); // 1 hour
