@@ -1,0 +1,17 @@
+{
+  "name": "@extropy/extropialingo",
+  "version": "1.0.0",
+  "description": "Revolutionary gamified Extropian language learning with physics-based XP rewards and entropy reduction tracking",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/server.ts",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@extropy/xp-formula": "workspace:*",
+    "express": "^4.18.0"
+  },
+  "license": "MIT"
+}
