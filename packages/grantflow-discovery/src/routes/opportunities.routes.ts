@@ -120,11 +120,11 @@ export function createOpportunityRoutes(
       const scoreResult = matchingService.computeMatchScore(opportunity, profile);
 
       res.json({
+                ...scoreResult,
         opportunityId:   opportunity.id,
         profileId:       profile.id,
         opportunityTitle: opportunity.title,
         profileName:     profile.name,
-        ...scoreResult,
       });
     } catch (err) {
       next(err);
