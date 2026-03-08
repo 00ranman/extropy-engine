@@ -306,7 +306,7 @@ export class ExportService {
 
   /**
    * Strip common Markdown formatting from text.
-   * Removes headers (#), bold/italic (*/_), inline code (backtick), links, and tables.
+   * Removes headers (#), bold/italic, inline code, links, and tables.
    */
   private stripMarkdown(content: string): string {
     return content
