@@ -4,6 +4,8 @@ This document maps every repository in the 00ranman GitHub organization to its
 role in the Extropy Engine monorepo. Standalone repos are the original Python/Rust
 implementations; the deployed TypeScript packages live under `packages/`.
 
+**Project Board:** [Extropy Ecosystem Tracker](https://github.com/users/00ranman/projects/1) — Kanban board tracking all integration, infrastructure, and feature work across the ecosystem.
+
 ## Standalone → Monorepo Mapping
 
 | Standalone Repo | Lang | Port | Monorepo Package | Port | Status |
