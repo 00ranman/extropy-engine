@@ -59,7 +59,7 @@ jobs:
           if [ -f packages/${{ matrix.service }}/Dockerfile ]; then
             docker build -t extropy/${{ matrix.service }}:${{ github.sha }} \
               -f packages/${{ matrix.service }}/Dockerfile \
-              packages/${{ matrix.service }}
+                            .
           else
             echo "No Dockerfile found for ${{ matrix.service }}, skipping"
           fi
