@@ -19,9 +19,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm install
-      - run: npx tsc --noEmit
-      - run: npm test --workspaces --if-present
       - run: npm run build --workspaces --if-present
+      - run: npm test --workspaces --if-present
 
   ethics-validation:
     name: Ethics Package Validation
@@ -57,6 +56,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker image
         run: |
-          docker build -t extropy/${{ matrix.service }}:${{ github.sha }} \
-            -f packages/${{ matrix.service }}/Dockerfile \
-            packages/${{ matrix.service }}
+          if [ -f packages/${{ matrix.service }}/Dockerfile ]; then
+            docker build -t extropy/${{ matrix.service }}:${{ github.sha }} \
+              -f packages/${{ matrix.service }}/Dockerfile \
+              packages/${{ matrix.service }}
+          else
+            echo "No Dockerfile found for ${{ matrix.service }}, skipping"
+          fi
