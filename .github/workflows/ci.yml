@@ -1,0 +1,74 @@
+name: Extropy Engine CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & Test Monorepo
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r tsc --noEmit
+      - run: pnpm -r test --if-present
+      - run: pnpm -r build --if-present
+
+  ethics-validation:
+    name: Ethics Package Validation
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @extropy/ethics test
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r lint --if-present
+
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        service: [homeflow, xp-mint, signalflow, dag-substrate, credentials]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: |
+          docker build -t extropy/${{ matrix.service }}:${{ github.sha }} \
+            -f packages/${{ matrix.service }}/Dockerfile \
+            packages/${{ matrix.service }}
