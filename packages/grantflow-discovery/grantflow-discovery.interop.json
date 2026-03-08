@@ -1,0 +1,276 @@
+{
+  "appId": "grantflow-discovery",
+  "name": "GrantFlow Discovery",
+  "description": "Autonomous grant discovery and submission pipeline service. Searches Grants.gov for relevant opportunities, matches them against researcher profiles, manages the application pipeline, and emits Extropy Engine claims for each entropy-reducing action.",
+  "version": "1.0.0",
+  "port": 4020,
+  "baseUrl": "http://localhost:4020",
+  "healthEndpoint": "/health",
+  "eventsEndpoint": "/events",
+
+  "entropyDomains": ["informational", "economic"],
+
+  "validatorId": "grantflow-discovery-v1",
+
+  "capabilities": [
+    {
+      "id": "grant-discovery",
+      "name": "Autonomous Grant Discovery",
+      "description": "Periodic search of Grants.gov REST API for open and forecasted grant opportunities matching researcher profile keywords",
+      "domain": "informational",
+      "scheduledCycleHours": 6
+    },
+    {
+      "id": "profile-matching",
+      "name": "Grant-Profile Matching",
+      "description": "Computes match scores (0-100) between discovered grants and researcher profiles based on keyword overlap, domain alignment, and award amount fit",
+      "domain": "informational"
+    },
+    {
+      "id": "submission-pipeline",
+      "name": "Submission Pipeline Management",
+      "description": "Tracks application lifecycle from discovered → researching → drafting → review → submitted → awarded/declined",
+      "domain": "economic"
+    },
+    {
+      "id": "s2s-submission",
+      "name": "Grants.gov S2S SOAP Submission",
+      "description": "Prepares SF-424 XML packages and submits applications via Grants.gov System-to-System SOAP API (requires AOR credentials)",
+      "domain": "economic",
+      "requiresCredentials": true
+    },
+    {
+      "id": "claim-emission",
+      "name": "Extropy Engine Claim Emission",
+      "description": "Generates and submits claims to the Epistemology Engine for each grant lifecycle event, opening verification loops for XP minting",
+      "domain": "informational"
+    }
+  ],
+
+  "publishedEvents": [
+    {
+      "type": "CLAIM_SUBMITTED",
+      "description": "Emitted when a grant discovery or submission action triggers a new Extropy Engine claim",
+      "domain": "informational",
+      "subtypes": [
+        "grantflow.grant.discovered",
+        "grantflow.grant.matched",
+        "grantflow.submission.prepared",
+        "grantflow.submission.submitted"
+      ]
+    }
+  ],
+
+  "subscribedEvents": [
+    {
+      "type": "TASK_ASSIGNED",
+      "description": "Handles tasks routed by SignalFlow for informational and economic domain validation",
+      "domains": ["informational", "economic"]
+    },
+    {
+      "type": "LOOP_CLOSED",
+      "description": "Updates local claim status when a verification loop closes with ΔS > 0",
+      "handler": "claimService.handleLoopClosed"
+    },
+    {
+      "type": "XP_MINTED_PROVISIONAL",
+      "description": "Records XP mint value against the corresponding claim record",
+      "handler": "claimService.handleXpMinted"
+    }
+  ],
+
+  "apiEndpoints": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "description": "Health check — returns service status, scheduler state, and dependencies"
+    },
+    {
+      "method": "POST",
+      "path": "/events",
+      "description": "HTTP webhook for receiving Extropy Engine domain events"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/info",
+      "description": "Service info — returns all endpoints and capabilities"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/profiles",
+      "description": "Create a new researcher profile",
+      "body": { "name": "string", "keywords": "string[]", "domains": "string[]", "expertise": "string[]" }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/profiles",
+      "description": "List all researcher profiles"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/profiles/:id",
+      "description": "Get a specific researcher profile by UUID"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/profiles/:id",
+      "description": "Partially update a researcher profile"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/profiles/:id",
+      "description": "Delete a researcher profile"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/opportunities",
+      "description": "List cached grant opportunities from the database",
+      "queryParams": ["limit", "offset", "status"]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/opportunities/:id",
+      "description": "Get a single grant opportunity by internal UUID"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/opportunities/:id/match",
+      "description": "Compute match score between an opportunity and a profile",
+      "body": { "profileId": "string" }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/matches",
+      "description": "List all grant-profile matches above the minimum score threshold",
+      "queryParams": ["profileId", "minScore", "limit", "offset"]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/matches/top/:profileId",
+      "description": "Get top N matches for a specific profile"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/submissions",
+      "description": "Create a new submission pipeline entry",
+      "body": { "opportunityId": "string", "profileId": "string", "notes": "string?" }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions",
+      "description": "List submissions with optional filtering",
+      "queryParams": ["profileId", "opportunityId", "status", "limit", "offset"]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/submissions/:id",
+      "description": "Get a single submission by UUID"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/submissions/:id",
+      "description": "Update submission status in the pipeline",
+      "body": { "status": "GfSubmissionStatus", "notes": "string?", "actorId": "string?" }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/submissions/:id/prepare",
+      "description": "Prepare an S2S XML package for Grants.gov SOAP submission"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/submissions/:id/propose",
+      "description": "Request proposal generation from grantflow-proposer service"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/submissions/:id/submit",
+      "description": "Submit application to Grants.gov via S2S SOAP (requires GRANTS_GOV_S2S_USER/PASS)"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/search",
+      "description": "Trigger a manual Grants.gov search",
+      "body": { "keyword": "string?", "rows": "number?", "oppStatuses": "string?" }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/search-runs",
+      "description": "Get search run history (scheduled + manual cycles)"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/scheduler/status",
+      "description": "Get scheduler status (active, lastRunAt, nextRunAt)"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/scheduler/run",
+      "description": "Manually trigger a full discovery cycle (search → match → claim)",
+      "body": { "keyword": "string?" }
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/scheduler/start",
+      "description": "Start the automated discovery scheduler"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/scheduler/stop",
+      "description": "Stop the automated discovery scheduler"
+    }
+  ],
+
+  "environmentVariables": {
+    "required": [
+      "PORT",
+      "DATABASE_URL",
+      "REDIS_URL"
+    ],
+    "optional": [
+      "EPISTEMOLOGY_URL",
+      "SIGNALFLOW_URL",
+      "LOOP_LEDGER_URL",
+      "REPUTATION_URL",
+      "XP_MINT_URL",
+      "GOVERNANCE_URL",
+      "DFAO_REGISTRY_URL",
+      "TEMPORAL_URL",
+      "TOKEN_ECONOMY_URL",
+      "CREDENTIALS_URL",
+      "DAG_SUBSTRATE_URL",
+      "GRANTFLOW_PROPOSER_URL",
+      "GRANTS_GOV_S2S_USER",
+      "GRANTS_GOV_S2S_PASS",
+      "GRANTS_GOV_CERT_PATH",
+      "VALIDATOR_ID",
+      "DISCOVERY_INTERVAL_MS"
+    ]
+  },
+
+  "externalApis": [
+    {
+      "name": "Grants.gov REST API v2",
+      "baseUrl": "https://api.grants.gov/v2",
+      "authRequired": false,
+      "endpoints": [
+        "POST /opportunities/search",
+        "GET /opportunities/{id}"
+      ]
+    },
+    {
+      "name": "Grants.gov S2S SOAP API v2",
+      "baseUrl": "https://apply07.grants.gov/grantsws/services/v2/ApplicantWebServicesSoapPort",
+      "authRequired": true,
+      "authType": "WS-Security UsernameToken + AOR Certificate",
+      "note": "Required for actual application submission. Credentials are optional — service functions without them for discovery and matching."
+    }
+  ],
+
+  "defaultProfile": {
+    "name": "Randall Gossett",
+    "email": "00ranman@gmail.com",
+    "domains": ["entropy/information theory", "IoT", "decentralized systems", "smart home automation", "thermodynamic computation"],
+    "note": "Pre-populated at service startup via profileService.ensureDefaultProfile()"
+  }
+}

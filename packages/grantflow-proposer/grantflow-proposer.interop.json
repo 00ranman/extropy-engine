@@ -1,0 +1,148 @@
+{
+  "appId": "grantflow-proposer",
+  "displayName": "GrantFlow Proposer",
+  "description": "AI-powered grant proposal generation and refinement service. Generates structured proposal sections from templates or OpenAI GPT-4, tracks quality scores, and emits COGNITIVE and INFORMATIONAL domain claims to the Extropy Engine verification loop.",
+  "version": "1.0.0",
+  "port": 4021,
+  "baseUrl": "http://localhost:4021",
+  "healthEndpoint": "/health",
+  "eventsEndpoint": "/events",
+
+  "entropyDomains": ["cognitive", "informational"],
+
+  "capabilities": [
+    "proposal-generation",
+    "section-refinement",
+    "template-management",
+    "quality-scoring",
+    "proposal-export",
+    "claim-emission"
+  ],
+
+  "xpEvents": [
+    {
+      "eventType": "grantflow.proposal.drafted",
+      "domain": "cognitive",
+      "description": "Drafted proposal for a grant opportunity",
+      "deltaS": 0.3,
+      "claimTemplate": "Drafted proposal for \"{opportunityTitle}\" ({agency})"
+    },
+    {
+      "eventType": "grantflow.proposal.refined",
+      "domain": "cognitive",
+      "description": "Refined a section of a grant proposal — each pass reduces cognitive entropy",
+      "deltaS": "variable (0.01–0.50, proportional to quality improvement)",
+      "claimTemplate": "Refined section {sectionId} for \"{opportunityTitle}\" — ΔQ={qualityDelta}"
+    },
+    {
+      "eventType": "grantflow.proposal.section_completed",
+      "domain": "informational",
+      "description": "Completed a proposal section — converts requirements into structured documentation",
+      "deltaS": 0.15,
+      "claimTemplate": "Completed {sectionType} for \"{opportunityTitle}\""
+    },
+    {
+      "eventType": "grantflow.proposal.exported",
+      "domain": "informational",
+      "description": "Exported a proposal as a submission-ready document",
+      "deltaS": 0.2,
+      "claimTemplate": "Exported proposal for \"{opportunityTitle}\" ({agency}) — Quality: {qualityScore}/100"
+    }
+  ],
+
+  "eventSubscriptions": [
+    {
+      "eventType": "signalflow.task.assigned",
+      "description": "Handle validation tasks routed to cognitive/informational domains"
+    },
+    {
+      "eventType": "ledger.loop.closed",
+      "description": "Update local claim status when a verification loop closes with ΔS > 0"
+    },
+    {
+      "eventType": "mint.xp.provisional",
+      "description": "Record XP value earned when a loop settles"
+    },
+    {
+      "eventType": "grantflow.grant.matched",
+      "description": "Auto-create proposal stub when grantflow-discovery matches a grant to a researcher profile"
+    }
+  ],
+
+  "apiRoutes": [
+    { "method": "GET",   "path": "/health",                                            "description": "Health check" },
+    { "method": "POST",  "path": "/events",                                            "description": "Webhook receiver for Epistemology Engine callbacks" },
+    { "method": "GET",   "path": "/api/v1/info",                                       "description": "Service info and integration links" },
+    { "method": "POST",  "path": "/api/v1/proposals",                                  "description": "Create a grant proposal" },
+    { "method": "GET",   "path": "/api/v1/proposals",                                  "description": "List proposals (optional filters: submissionId, status, agency)" },
+    { "method": "GET",   "path": "/api/v1/proposals/:id",                              "description": "Get proposal with all sections" },
+    { "method": "PATCH", "path": "/api/v1/proposals/:id",                              "description": "Update proposal metadata" },
+    { "method": "POST",  "path": "/api/v1/proposals/:id/sections",                     "description": "Add a section to a proposal" },
+    { "method": "PATCH", "path": "/api/v1/proposals/:id/sections/:sectionId",          "description": "Update section content" },
+    { "method": "POST",  "path": "/api/v1/proposals/:id/generate",                     "description": "Generate all 7 sections (async, returns 202)" },
+    { "method": "POST",  "path": "/api/v1/proposals/:id/generate/:sectionType",        "description": "Generate a single section" },
+    { "method": "POST",  "path": "/api/v1/proposals/:id/refine",                       "description": "Refine a section with instructions" },
+    { "method": "GET",   "path": "/api/v1/proposals/:id/export",                       "description": "Export proposal (format=markdown|text)" },
+    { "method": "GET",   "path": "/api/v1/proposals/:id/quality",                      "description": "Get quality report with section breakdown" },
+    { "method": "GET",   "path": "/api/v1/proposals/:id/claims",                       "description": "List claims emitted for this proposal" },
+    { "method": "GET",   "path": "/api/v1/proposals/:id/sections/:sectionId/refinements", "description": "Refinement history for a section" },
+    { "method": "GET",   "path": "/api/v1/templates",                                  "description": "List templates (optional filter: ?sectionType=)" },
+    { "method": "POST",  "path": "/api/v1/templates",                                  "description": "Create a reusable template" },
+    { "method": "GET",   "path": "/api/v1/templates/:id",                              "description": "Get a template by ID" },
+    { "method": "GET",   "path": "/api/v1/templates/default/:sectionType",             "description": "Get the default template for a section type" }
+  ],
+
+  "sectionTypes": [
+    "EXECUTIVE_SUMMARY",
+    "PROJECT_NARRATIVE",
+    "BUDGET_JUSTIFICATION",
+    "EVALUATION_PLAN",
+    "ORGANIZATIONAL_CAPACITY",
+    "LETTERS_OF_SUPPORT",
+    "REFERENCES"
+  ],
+
+  "integrations": {
+    "epistemologyEngine": {
+      "url": "http://localhost:4001",
+      "usage": "Submit claims for entropy reduction events"
+    },
+    "loopLedger": {
+      "url": "http://localhost:4003",
+      "usage": "Track loop lifecycle for claims"
+    },
+    "reputationService": {
+      "url": "http://localhost:4004",
+      "usage": "Report successful entropy reductions"
+    },
+    "xpMint": {
+      "url": "http://localhost:4005",
+      "usage": "Receive XP_MINTED_PROVISIONAL events"
+    },
+    "grantflowDiscovery": {
+      "url": "http://localhost:4020",
+      "usage": "Receive matched grant opportunities and submission data"
+    },
+    "academiaBridge": {
+      "url": "http://localhost:4022",
+      "usage": "Forward exported proposals for academia.edu upload"
+    }
+  },
+
+  "environmentVariables": {
+    "required": [
+      "DATABASE_URL",
+      "REDIS_URL"
+    ],
+    "optional": [
+      "PORT",
+      "EPISTEMOLOGY_URL",
+      "LOOP_LEDGER_URL",
+      "REPUTATION_URL",
+      "XP_MINT_URL",
+      "GRANTFLOW_DISCOVERY_URL",
+      "ACADEMIA_BRIDGE_URL",
+      "OPENAI_API_KEY"
+    ]
+  }
+}

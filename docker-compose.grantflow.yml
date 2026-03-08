@@ -1,0 +1,102 @@
+# ===============================================================================
+#  EXTROPY ENGINE — GrantFlow Services (extends main docker-compose.yml)
+# ===============================================================================
+#
+#  Usage:
+#    docker compose -f docker-compose.yml -f docker-compose.grantflow.yml up --build
+#
+#  Or merge into the main docker-compose.yml directly.
+#
+# ===============================================================================
+
+services:
+  # -- GrantFlow Discovery (port 4020) -----------------------------------------
+  grantflow-discovery:
+    build:
+      context: .
+      dockerfile: packages/grantflow-discovery/Dockerfile
+    ports:
+      - "4020:4020"
+    environment:
+      PORT: 4020
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=grantflow
+      REDIS_URL: redis://redis:6379
+      EPISTEMOLOGY_URL: http://epistemology-engine:4001
+      SIGNALFLOW_URL: http://signalflow:4002
+      LOOP_LEDGER_URL: http://loop-ledger:4003
+      REPUTATION_URL: http://reputation:4004
+      XP_MINT_URL: http://xp-mint:4005
+      GOVERNANCE_URL: http://governance:4006
+      DFAO_REGISTRY_URL: http://dfao-registry:4007
+      TEMPORAL_URL: http://temporal:4008
+      TOKEN_ECONOMY_URL: http://token-economy:4009
+      CREDENTIALS_URL: http://credentials:4010
+      DAG_SUBSTRATE_URL: http://dag-substrate:4011
+      GRANTFLOW_PROPOSER_URL: http://grantflow-proposer:4021
+      # S2S Submission (optional)
+      GRANTS_GOV_S2S_USER: ${GRANTS_GOV_S2S_USER:-}
+      GRANTS_GOV_S2S_PASS: ${GRANTS_GOV_S2S_PASS:-}
+      GRANTS_GOV_CERT_PATH: ${GRANTS_GOV_CERT_PATH:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # -- GrantFlow Proposer (port 4021) ------------------------------------------
+  grantflow-proposer:
+    build:
+      context: .
+      dockerfile: packages/grantflow-proposer/Dockerfile
+    ports:
+      - "4021:4021"
+    environment:
+      PORT: 4021
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=proposer
+      REDIS_URL: redis://redis:6379
+      EPISTEMOLOGY_URL: http://epistemology-engine:4001
+      SIGNALFLOW_URL: http://signalflow:4002
+      LOOP_LEDGER_URL: http://loop-ledger:4003
+      REPUTATION_URL: http://reputation:4004
+      XP_MINT_URL: http://xp-mint:4005
+      GRANTFLOW_DISCOVERY_URL: http://grantflow-discovery:4020
+      ACADEMIA_BRIDGE_URL: http://academia-bridge:4022
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # -- Academia Bridge (port 4022) ---------------------------------------------
+  academia-bridge:
+    build:
+      context: .
+      dockerfile: packages/academia-bridge/Dockerfile
+    ports:
+      - "4022:4022"
+    environment:
+      PORT: 4022
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=academia
+      REDIS_URL: redis://redis:6379
+      EPISTEMOLOGY_URL: http://epistemology-engine:4001
+      SIGNALFLOW_URL: http://signalflow:4002
+      LOOP_LEDGER_URL: http://loop-ledger:4003
+      REPUTATION_URL: http://reputation:4004
+      XP_MINT_URL: http://xp-mint:4005
+      ACADEMIA_EMAIL: ${ACADEMIA_EMAIL:-}
+      ACADEMIA_PASSWORD: ${ACADEMIA_PASSWORD:-}
+      ACADEMIA_PROFILE_NAME: ${ACADEMIA_PROFILE_NAME:-Randall Gossett}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    # Playwright needs more memory for browser automation
+    deploy:
+      resources:
+        limits:
+          memory: 2G

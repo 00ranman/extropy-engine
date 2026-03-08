@@ -1,0 +1,131 @@
+{
+  "appId": "academia-bridge",
+  "displayName": "Academia Bridge",
+  "description": "Automated paper upload service for academia.edu — converts private research into public knowledge via browser automation. Each upload is a major entropy reduction event (private → public information).",
+  "version": "1.0.0",
+  "port": 4022,
+  "baseUrl": "http://localhost:4022",
+  "healthEndpoint": "/health",
+  "eventsEndpoint": "/events",
+  "entropyDomains": ["informational", "social"],
+  "xpEvents": [
+    {
+      "eventType": "academia.paper.queued",
+      "domain": "informational",
+      "deltaSFormula": "0.5 bits — intent/organization entropy reduction",
+      "description": "Paper queued for academia.edu upload"
+    },
+    {
+      "eventType": "academia.paper.uploaded",
+      "domains": ["informational", "social"],
+      "deltaSFormula": "log2(potential_audience) ≈ 13.29 bits",
+      "deltaSValue": 13.287712379549449,
+      "description": "Paper published to academia.edu — private knowledge becomes public (1 person → ~10,000 researchers)"
+    },
+    {
+      "eventType": "academia.paper.viewed",
+      "domain": "social",
+      "deltaSFormula": "log2(views) — proportional to social validation milestone",
+      "description": "Paper reached a view milestone (100, 500, 1K, 5K, 10K, 50K, 100K)"
+    }
+  ],
+  "api": {
+    "papers": {
+      "base": "/api/v1/papers",
+      "endpoints": [
+        { "method": "POST",   "path": "/",             "description": "Queue paper for upload" },
+        { "method": "GET",    "path": "/",             "description": "List papers" },
+        { "method": "GET",    "path": "/:id",          "description": "Get paper details" },
+        { "method": "PATCH",  "path": "/:id",          "description": "Update paper metadata" },
+        { "method": "DELETE", "path": "/:id",          "description": "Remove from queue" },
+        { "method": "POST",   "path": "/:id/upload",   "description": "Trigger academia.edu upload" }
+      ]
+    },
+    "uploads": {
+      "base": "/api/v1/uploads",
+      "endpoints": [
+        { "method": "GET",    "path": "/",             "description": "Upload history" },
+        { "method": "GET",    "path": "/:id",          "description": "Upload details" },
+        { "method": "GET",    "path": "/session/status", "description": "Credential status" }
+      ]
+    },
+    "metrics": {
+      "base": "/api/v1/metrics",
+      "endpoints": [
+        { "method": "GET",    "path": "/",             "description": "Aggregate metrics" },
+        { "method": "GET",    "path": "/:paperId",     "description": "Paper-specific metrics" },
+        { "method": "POST",   "path": "/:paperId/sync", "description": "Sync single paper metrics" }
+      ]
+    },
+    "scheduler": {
+      "base": "/api/v1/scheduler",
+      "endpoints": [
+        { "method": "POST",   "path": "/sync",         "description": "Trigger full metrics sync for all papers" }
+      ]
+    }
+  },
+  "subscribesTo": [
+    {
+      "eventType": "TASK_ASSIGNED",
+      "domains": ["informational", "social"],
+      "description": "Handle validation tasks routed by SignalFlow"
+    },
+    {
+      "eventType": "LOOP_CLOSED",
+      "description": "Track verified entropy reductions and report to Reputation service"
+    },
+    {
+      "eventType": "XP_MINTED_PROVISIONAL",
+      "description": "Monitor XP minted for uploaded papers"
+    },
+    {
+      "eventType": "PROPOSAL_EXPORTED",
+      "description": "Auto-queue papers when grantflow-proposer exports a proposal"
+    }
+  ],
+  "emits": [
+    {
+      "eventType": "CLAIM_SUBMITTED",
+      "description": "Entropy claim for paper queuing, upload, or view milestones"
+    },
+    {
+      "eventType": "CLAIM_VALIDATED",
+      "description": "Validation response for task assignments"
+    }
+  ],
+  "dependencies": {
+    "required": [
+      { "service": "postgresql", "schema": "academia", "description": "Paper queue, upload log, metrics cache" },
+      { "service": "redis",      "channel": "extropy:events", "description": "Event bus pub/sub" }
+    ],
+    "optional": [
+      { "service": "epistemology-engine", "url": "EPISTEMOLOGY_URL", "port": 4001, "description": "Claim ingestion" },
+      { "service": "loop-ledger",         "url": "LOOP_LEDGER_URL",  "port": 4003, "description": "ΔS verification" },
+      { "service": "reputation",          "url": "REPUTATION_URL",   "port": 4004, "description": "Reputation tracking" },
+      { "service": "xp-mint",             "url": "XP_MINT_URL",      "port": 4005, "description": "XP minting" }
+    ]
+  },
+  "environment": {
+    "required": [
+      { "key": "ACADEMIA_EMAIL",    "description": "academia.edu login email for Playwright automation" },
+      { "key": "ACADEMIA_PASSWORD", "description": "academia.edu login password for Playwright automation" }
+    ],
+    "optional": [
+      { "key": "PORT",                  "default": "4022",                                "description": "HTTP server port" },
+      { "key": "DATABASE_URL",          "default": "postgresql://extropy:extropy_dev@localhost:5432/extropy_engine?schema=academia", "description": "PostgreSQL connection string" },
+      { "key": "REDIS_URL",             "default": "redis://localhost:6379",              "description": "Redis connection URL" },
+      { "key": "EPISTEMOLOGY_URL",      "default": "http://localhost:4001",               "description": "Epistemology Engine URL" },
+      { "key": "LOOP_LEDGER_URL",       "default": "http://localhost:4003",               "description": "Loop Ledger URL" },
+      { "key": "REPUTATION_URL",        "default": "http://localhost:4004",               "description": "Reputation service URL" },
+      { "key": "XP_MINT_URL",           "default": "http://localhost:4005",               "description": "XP Mint service URL" },
+      { "key": "ACADEMIA_PROFILE_NAME", "default": "Randall Gossett",                    "description": "Display name for the academia.edu account" }
+    ]
+  },
+  "browser": {
+    "engine": "playwright-chromium",
+    "mode": "headless",
+    "purpose": "academia.edu upload automation (no API available)",
+    "maxRetries": 3,
+    "retryStrategy": "exponential-backoff"
+  }
+}

@@ -1,0 +1,756 @@
+openapi: 3.1.0
+
+info:
+  title: GrantFlow Proposer API
+  description: |
+    AI-powered grant proposal generation and refinement service for the Extropy Engine.
+    
+    Each proposal is composed of up to 7 sections (Executive Summary, Project Narrative,
+    Budget Justification, Evaluation Plan, Organizational Capacity, Letters of Support,
+    References). Sections can be generated from templates or OpenAI GPT-4.
+    
+    Every generation, refinement, and export event emits a claim to the Epistemology Engine,
+    opening a verification Loop that mints XP when closed with ΔS > 0.
+  version: 1.0.0
+  contact:
+    name: Extropy Engine — GrantFlow Proposer
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:4021
+    description: Local development server
+
+tags:
+  - name: Proposals
+    description: Grant proposal CRUD, generation, refinement, and export
+  - name: Templates
+    description: Reusable section template management
+  - name: System
+    description: Health checks and service info
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Components
+# ─────────────────────────────────────────────────────────────────────────────
+
+components:
+  schemas:
+
+    SectionType:
+      type: string
+      enum:
+        - EXECUTIVE_SUMMARY
+        - PROJECT_NARRATIVE
+        - BUDGET_JUSTIFICATION
+        - EVALUATION_PLAN
+        - ORGANIZATIONAL_CAPACITY
+        - LETTERS_OF_SUPPORT
+        - REFERENCES
+      description: The seven canonical section types for a federal grant proposal.
+
+    ProposalStatus:
+      type: string
+      enum: [draft, generating, complete, exported]
+      description: Lifecycle status. draft → generating → complete → exported.
+
+    GfSection:
+      type: object
+      required: [id, proposalId, sectionType, content, version, qualityScore, isAiGenerated, createdAt, updatedAt]
+      properties:
+        id:             { type: string, format: uuid }
+        proposalId:     { type: string, format: uuid }
+        sectionType:    { $ref: '#/components/schemas/SectionType' }
+        content:        { type: string, description: Section content in markdown format }
+        version:        { type: integer, minimum: 1, description: Incremented on each update }
+        qualityScore:   { type: number, minimum: 0, maximum: 100, description: Quality score 0–100 }
+        isAiGenerated:  { type: boolean }
+        createdAt:      { type: string, format: date-time }
+        updatedAt:      { type: string, format: date-time }
+
+    GfProposal:
+      type: object
+      required: [id, submissionId, opportunityTitle, agency, status, qualityScore, sections, createdAt, updatedAt]
+      properties:
+        id:                     { type: string, format: uuid }
+        submissionId:           { type: string, description: References gf_submissions.id in grantflow-discovery }
+        opportunityTitle:       { type: string }
+        agency:                 { type: string }
+        opportunityNumber:      { type: string, nullable: true }
+        principalInvestigator:  { type: string, nullable: true }
+        requestedAmount:        { type: number, nullable: true, description: Requested funding in USD }
+        proposalDuration:       { type: string, nullable: true, example: '3 years' }
+        status:                 { $ref: '#/components/schemas/ProposalStatus' }
+        qualityScore:           { type: number, minimum: 0, maximum: 100 }
+        sections:               { type: array, items: { $ref: '#/components/schemas/GfSection' } }
+        createdAt:              { type: string, format: date-time }
+        updatedAt:              { type: string, format: date-time }
+
+    GfTemplate:
+      type: object
+      required: [id, name, sectionType, content, isDefault, createdAt]
+      properties:
+        id:          { type: string, format: uuid }
+        name:        { type: string }
+        sectionType: { $ref: '#/components/schemas/SectionType' }
+        content:     { type: string, description: Template content with {placeholder} variables }
+        isDefault:   { type: boolean }
+        createdAt:   { type: string, format: date-time }
+
+    GfRefinement:
+      type: object
+      required: [id, proposalId, sectionId, beforeContent, afterContent, qualityDelta, instructions, createdAt]
+      properties:
+        id:             { type: string, format: uuid }
+        proposalId:     { type: string, format: uuid }
+        sectionId:      { type: string, format: uuid }
+        beforeContent:  { type: string }
+        afterContent:   { type: string }
+        qualityDelta:   { type: number, description: Quality score improvement (positive = better) }
+        instructions:   { type: string }
+        createdAt:      { type: string, format: date-time }
+
+    QualityReport:
+      type: object
+      required: [overallScore, sectionScores, breakdown, recommendations]
+      properties:
+        overallScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        sectionScores:
+          type: object
+          additionalProperties: { type: number }
+          description: Per-section quality scores keyed by SectionType
+        breakdown:
+          type: object
+          properties:
+            completeness:  { type: number }
+            coherence:     { type: number }
+            specificity:   { type: number }
+            length:        { type: number }
+        recommendations:
+          type: array
+          items: { type: string }
+
+    OpportunityContext:
+      type: object
+      properties:
+        title:                   { type: string }
+        agency:                  { type: string }
+        opportunityNumber:       { type: string }
+        synopsis:                { type: string }
+        objectives:              { type: array, items: { type: string } }
+        eligibilityRequirements: { type: string }
+        awardAmount:             { type: number }
+        duration:                { type: string }
+        closeDate:               { type: string }
+        cfda:                    { type: string }
+
+    ProfileContext:
+      type: object
+      required: [principalInvestigator]
+      properties:
+        principalInvestigator: { type: string }
+        institution:           { type: string }
+        department:            { type: string }
+        expertise:             { type: array, items: { type: string } }
+        priorWork:             { type: string }
+        publications:          { type: array, items: { type: string } }
+        currentProjects:       { type: array, items: { type: string } }
+        budget:                { type: number }
+        duration:              { type: string }
+
+    GenerationContext:
+      type: object
+      properties:
+        opportunity:  { $ref: '#/components/schemas/OpportunityContext' }
+        profile:      { $ref: '#/components/schemas/ProfileContext' }
+        instructions: { type: string, description: Additional generation instructions }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:     { type: string }
+        code:      { type: string }
+        details:   { type: array, items: { type: object } }
+        timestamp: { type: string, format: date-time }
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Paths
+# ─────────────────────────────────────────────────────────────────────────────
+
+paths:
+
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Returns service health, uptime, and configuration status.
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:   { type: string, example: grantflow-proposer }
+                  status:    { type: string, example: healthy }
+                  version:   { type: string }
+                  uptime:    { type: number }
+                  timestamp: { type: string, format: date-time }
+                  port:      { type: integer }
+                  config:
+                    type: object
+                    properties:
+                      hasOpenAI: { type: boolean }
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/v1/info:
+    get:
+      tags: [System]
+      summary: Service info
+      description: Returns service metadata, endpoint list, and integration URLs.
+      operationId: getServiceInfo
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /events:
+    post:
+      tags: [System]
+      summary: Event webhook receiver
+      description: Receives DomainEvent callbacks from the Epistemology Engine (LOOP_CLOSED, etc.)
+      operationId: receiveEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: DomainEvent envelope
+      responses:
+        '200':
+          description: Event received
+        '400':
+          description: Invalid event payload
+
+  # ── Proposals ──────────────────────────────────────────────────────────────
+
+  /api/v1/proposals:
+    post:
+      tags: [Proposals]
+      summary: Create a proposal
+      description: Create a new grant proposal linked to a grantflow-discovery submission.
+      operationId: createProposal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [submissionId, opportunityTitle, agency]
+              properties:
+                submissionId:           { type: string }
+                opportunityTitle:       { type: string }
+                agency:                 { type: string }
+                opportunityNumber:      { type: string }
+                principalInvestigator:  { type: string }
+                requestedAmount:        { type: number }
+                proposalDuration:       { type: string }
+      responses:
+        '201':
+          description: Proposal created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  proposal: { $ref: '#/components/schemas/GfProposal' }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+    get:
+      tags: [Proposals]
+      summary: List proposals
+      operationId: listProposals
+      parameters:
+        - name: submissionId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/ProposalStatus' }
+        - name: agency
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 200 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: List of proposals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  proposals:
+                    type: array
+                    items: { $ref: '#/components/schemas/GfProposal' }
+                  count: { type: integer }
+
+  /api/v1/proposals/{id}:
+    get:
+      tags: [Proposals]
+      summary: Get proposal with sections
+      operationId: getProposal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Proposal with sections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  proposal: { $ref: '#/components/schemas/GfProposal' }
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+    patch:
+      tags: [Proposals]
+      summary: Update proposal metadata
+      operationId: updateProposal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                opportunityTitle:       { type: string }
+                agency:                 { type: string }
+                opportunityNumber:      { type: string }
+                principalInvestigator:  { type: string }
+                requestedAmount:        { type: number }
+                proposalDuration:       { type: string }
+                status:                 { $ref: '#/components/schemas/ProposalStatus' }
+      responses:
+        '200':
+          description: Updated proposal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  proposal: { $ref: '#/components/schemas/GfProposal' }
+        '404':
+          description: Not found
+
+  /api/v1/proposals/{id}/sections:
+    post:
+      tags: [Proposals]
+      summary: Add a section
+      operationId: addSection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sectionType, content]
+              properties:
+                sectionType:   { $ref: '#/components/schemas/SectionType' }
+                content:       { type: string }
+                isAiGenerated: { type: boolean }
+      responses:
+        '201':
+          description: Section added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  section: { $ref: '#/components/schemas/GfSection' }
+        '400':
+          description: Validation error
+        '404':
+          description: Proposal not found
+
+  /api/v1/proposals/{id}/sections/{sectionId}:
+    patch:
+      tags: [Proposals]
+      summary: Update section content
+      operationId: updateSection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: sectionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string }
+      responses:
+        '200':
+          description: Updated section
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  section: { $ref: '#/components/schemas/GfSection' }
+        '404':
+          description: Section not found
+
+  /api/v1/proposals/{id}/sections/{sectionId}/refinements:
+    get:
+      tags: [Proposals]
+      summary: Get section refinement history
+      operationId: getSectionRefinements
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: sectionId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Refinement history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refinements:
+                    type: array
+                    items: { $ref: '#/components/schemas/GfRefinement' }
+                  count: { type: integer }
+
+  /api/v1/proposals/{id}/generate:
+    post:
+      tags: [Proposals]
+      summary: Generate all sections (async)
+      description: |
+        Trigger generation of all 7 proposal sections. Returns 202 immediately —
+        generation runs asynchronously. Poll GET /proposals/:id to check status.
+        Status transitions: draft → generating → complete.
+      operationId: generateFullProposal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                context:     { $ref: '#/components/schemas/GenerationContext' }
+                validatorId: { type: string }
+      responses:
+        '202':
+          description: Generation started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:    { type: string }
+                  proposalId: { type: string }
+                  status:     { type: string, example: generating }
+        '404':
+          description: Proposal not found
+
+  /api/v1/proposals/{id}/generate/{sectionType}:
+    post:
+      tags: [Proposals]
+      summary: Generate a single section
+      operationId: generateSection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: sectionType
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/SectionType' }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                context: { $ref: '#/components/schemas/GenerationContext' }
+      responses:
+        '201':
+          description: Section generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  section: { $ref: '#/components/schemas/GfSection' }
+        '400':
+          description: Invalid section type
+        '404':
+          description: Proposal not found
+
+  /api/v1/proposals/{id}/refine:
+    post:
+      tags: [Proposals]
+      summary: Refine a section
+      description: |
+        Apply AI or template-based refinement to a section.
+        Records a GfRefinement with before/after content and quality delta.
+        Emits a COGNITIVE domain claim to the Epistemology Engine.
+      operationId: refineSection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sectionId, instructions]
+              properties:
+                sectionId:    { type: string, format: uuid }
+                instructions: { type: string, description: Refinement instructions }
+                validatorId:  { type: string }
+      responses:
+        '200':
+          description: Refinement applied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refinement: { $ref: '#/components/schemas/GfRefinement' }
+                  proposal:   { $ref: '#/components/schemas/GfProposal' }
+        '400':
+          description: Validation error
+        '404':
+          description: Proposal or section not found
+
+  /api/v1/proposals/{id}/export:
+    get:
+      tags: [Proposals]
+      summary: Export proposal
+      description: |
+        Export the proposal as a formatted document for submission.
+        Returns file content with appropriate Content-Type header.
+        Also updates proposal status to 'exported' and emits an INFORMATIONAL claim.
+      operationId: exportProposal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [markdown, text]
+            default: markdown
+      responses:
+        '200':
+          description: Proposal document
+          content:
+            text/markdown:
+              schema: { type: string }
+            text/plain:
+              schema: { type: string }
+        '400':
+          description: Invalid format
+        '404':
+          description: Proposal not found
+
+  /api/v1/proposals/{id}/quality:
+    get:
+      tags: [Proposals]
+      summary: Get quality report
+      operationId: getQualityReport
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Quality report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  proposalId: { type: string }
+                  report:     { $ref: '#/components/schemas/QualityReport' }
+        '404':
+          description: Proposal not found
+
+  /api/v1/proposals/{id}/claims:
+    get:
+      tags: [Proposals]
+      summary: List claims for a proposal
+      operationId: getProposalClaims
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: List of claims
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  claims: { type: array, items: { type: object } }
+                  count:  { type: integer }
+
+  # ── Templates ──────────────────────────────────────────────────────────────
+
+  /api/v1/templates:
+    get:
+      tags: [Templates]
+      summary: List templates
+      operationId: listTemplates
+      parameters:
+        - name: sectionType
+          in: query
+          schema: { $ref: '#/components/schemas/SectionType' }
+      responses:
+        '200':
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  templates:
+                    type: array
+                    items: { $ref: '#/components/schemas/GfTemplate' }
+                  count: { type: integer }
+
+    post:
+      tags: [Templates]
+      summary: Create a template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, sectionType, content]
+              properties:
+                name:        { type: string }
+                sectionType: { $ref: '#/components/schemas/SectionType' }
+                content:     { type: string }
+                isDefault:   { type: boolean }
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  template: { $ref: '#/components/schemas/GfTemplate' }
+
+  /api/v1/templates/{id}:
+    get:
+      tags: [Templates]
+      summary: Get a template by ID
+      operationId: getTemplate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Template
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  template: { $ref: '#/components/schemas/GfTemplate' }
+        '404':
+          description: Not found
+
+  /api/v1/templates/default/{sectionType}:
+    get:
+      tags: [Templates]
+      summary: Get default template for a section type
+      operationId: getDefaultTemplate
+      parameters:
+        - name: sectionType
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/SectionType' }
+      responses:
+        '200':
+          description: Default template
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  template: { $ref: '#/components/schemas/GfTemplate' }
+        '404':
+          description: No default template found for this section type

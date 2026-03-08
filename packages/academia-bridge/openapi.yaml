@@ -1,0 +1,817 @@
+openapi: 3.1.0
+info:
+  title: Academia Bridge API
+  description: |
+    Extropy Engine — Academia Bridge Service
+
+    Automates uploading research papers to academia.edu via Playwright browser automation.
+    Each uploaded paper is an entropy reduction event: private knowledge becomes public knowledge.
+
+    **Entropy formula**: ΔS = log₂(potential_audience) − log₂(1) ≈ 13.29 bits per paper published
+
+    Academia.edu has no public API — all uploads are performed via headless Chromium automation.
+  version: 1.0.0
+  contact:
+    name: Extropy Engine
+  license:
+    name: Private
+
+servers:
+  - url: http://localhost:4022
+    description: Local development
+  - url: http://academia-bridge:4022
+    description: Docker Compose internal network
+
+tags:
+  - name: Papers
+    description: Paper upload queue management
+  - name: Uploads
+    description: Upload execution history
+  - name: Metrics
+    description: View/download performance tracking
+  - name: Scheduler
+    description: Scheduled operations (metrics sync)
+  - name: Health
+    description: Service health and status
+
+paths:
+  # ──────────────────────────────────────────────────────────────────────────
+  #  Health
+  # ──────────────────────────────────────────────────────────────────────────
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns service health, credential status, and aggregate stats
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                    example: academia-bridge
+                  status:
+                    type: string
+                    enum: [healthy, unhealthy]
+                  version:
+                    type: string
+                    example: 1.0.0
+                  uptime:
+                    type: number
+                    description: Process uptime in seconds
+                  timestamp:
+                    type: string
+                    format: date-time
+                  port:
+                    type: integer
+                    example: 4022
+                  credentials:
+                    type: object
+                    properties:
+                      configured:
+                        type: boolean
+                        description: Whether ACADEMIA_EMAIL and ACADEMIA_PASSWORD are set
+                      email:
+                        type: string
+                        nullable: true
+                  stats:
+                    type: object
+                    properties:
+                      totalPapers:
+                        type: integer
+                      totalViews:
+                        type: integer
+                      totalDownloads:
+                        type: integer
+        '503':
+          description: Service is unhealthy (database connection failed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ──────────────────────────────────────────────────────────────────────────
+  #  Papers
+  # ──────────────────────────────────────────────────────────────────────────
+
+  /api/v1/papers:
+    post:
+      tags: [Papers]
+      summary: Queue a paper for upload to academia.edu
+      description: |
+        Add a paper to the upload queue. Papers are not uploaded immediately —
+        call `POST /api/v1/papers/{id}/upload` to trigger the actual upload.
+
+        Either `filePath` or `content` must be provided.
+      operationId: createPaper
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaperDto'
+            examples:
+              pdf_file:
+                summary: Queue existing PDF file
+                value:
+                  title: "Entropy Reduction in Distributed Systems"
+                  abstract: "This paper explores thermodynamic entropy reduction..."
+                  coAuthors: ["Jane Smith", "Bob Jones"]
+                  tags: ["distributed systems", "entropy", "thermodynamics"]
+                  filePath: "/data/papers/entropy-paper.pdf"
+                  fileType: "pdf"
+              raw_content:
+                summary: Queue from raw text content
+                value:
+                  title: "Cognitive Load in AI-Assisted Research"
+                  abstract: "We investigate how AI tools reduce cognitive entropy..."
+                  coAuthors: []
+                  tags: ["AI", "cognitive science", "research methodology"]
+                  content: "# Introduction\n\nThis paper examines..."
+                  fileType: "pdf"
+      responses:
+        '201':
+          description: Paper queued successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbPaper'
+        '400':
+          description: Validation error (missing required fields, invalid status, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags: [Papers]
+      summary: List papers with optional filtering
+      operationId: listPapers
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [queued, uploading, uploaded, failed]
+          description: Filter by paper status
+          example: queued
+        - in: query
+          name: sourceProposalId
+          schema:
+            type: string
+            format: uuid
+          description: Filter by originating grantflow-proposer proposal ID
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+          description: Maximum number of results
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Pagination offset
+      responses:
+        '200':
+          description: List of papers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  papers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AbPaper'
+                  count:
+                    type: integer
+                    description: Number of papers in this response
+
+  /api/v1/papers/{id}:
+    get:
+      tags: [Papers]
+      summary: Get paper details
+      operationId: getPaper
+      parameters:
+        - $ref: '#/components/parameters/PaperIdPath'
+      responses:
+        '200':
+          description: Paper details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbPaper'
+        '404':
+          description: Paper not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags: [Papers]
+      summary: Update paper metadata
+      description: Partial update — only provided fields are changed.
+      operationId: updatePaper
+      parameters:
+        - $ref: '#/components/parameters/PaperIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePaperDto'
+      responses:
+        '200':
+          description: Updated paper
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbPaper'
+        '404':
+          description: Paper not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Papers]
+      summary: Remove paper from queue
+      description: Only papers in 'queued' or 'failed' status can be deleted. Returns 409 if upload is in progress.
+      operationId: deletePaper
+      parameters:
+        - $ref: '#/components/parameters/PaperIdPath'
+      responses:
+        '204':
+          description: Paper deleted
+        '404':
+          description: Paper not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Cannot delete — upload is in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/papers/{id}/upload:
+    post:
+      tags: [Papers]
+      summary: Trigger upload to academia.edu
+      description: |
+        Execute the Playwright browser automation workflow to upload the paper.
+
+        This is a **synchronous, long-running operation** (30–120 seconds).
+        The workflow:
+        1. Launch headless Chromium
+        2. Sign in to academia.edu
+        3. Select file (PDF/DOCX)
+        4. Fill in title, abstract, co-authors, tags
+        5. Save Paper Details → Post
+        6. Capture the resulting canonical URL
+
+        On success, emits an Extropy Engine claim with ΔS ≈ 13.29 bits
+        (private knowledge → public knowledge entropy reduction).
+
+        Requires ACADEMIA_EMAIL and ACADEMIA_PASSWORD environment variables.
+      operationId: uploadPaper
+      parameters:
+        - $ref: '#/components/parameters/PaperIdPath'
+      responses:
+        '200':
+          description: Upload result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  uploadId:
+                    type: string
+                    format: uuid
+                  academiaUrl:
+                    type: string
+                    format: uri
+                    description: Canonical academia.edu URL for the published paper
+                  retryCount:
+                    type: integer
+                  errorMessage:
+                    type: string
+                    nullable: true
+        '404':
+          description: Paper not found
+        '409':
+          description: Upload already in progress
+        '500':
+          description: Upload failed
+
+  # ──────────────────────────────────────────────────────────────────────────
+  #  Uploads
+  # ──────────────────────────────────────────────────────────────────────────
+
+  /api/v1/uploads:
+    get:
+      tags: [Uploads]
+      summary: List upload history
+      operationId: listUploads
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Upload history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploads:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AbUpload'
+                  count:
+                    type: integer
+
+  /api/v1/uploads/{id}:
+    get:
+      tags: [Uploads]
+      summary: Get upload record details
+      operationId: getUpload
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Upload record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbUpload'
+        '404':
+          description: Upload not found
+
+  /api/v1/uploads/session/status:
+    get:
+      tags: [Uploads]
+      summary: Get academia.edu credential/session status
+      description: Check whether ACADEMIA_EMAIL and ACADEMIA_PASSWORD are configured. Does not launch a browser.
+      operationId: getSessionStatus
+      responses:
+        '200':
+          description: Session status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionStatus'
+
+  # ──────────────────────────────────────────────────────────────────────────
+  #  Metrics
+  # ──────────────────────────────────────────────────────────────────────────
+
+  /api/v1/metrics:
+    get:
+      tags: [Metrics]
+      summary: Get aggregate metrics across all uploaded papers
+      operationId: getAggregateMetrics
+      responses:
+        '200':
+          description: Aggregate metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AggregateMetrics'
+
+  /api/v1/metrics/{paperId}:
+    get:
+      tags: [Metrics]
+      summary: Get cached metrics for a specific paper
+      operationId: getPaperMetrics
+      parameters:
+        - in: path
+          name: paperId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Paper metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbMetrics'
+        '404':
+          description: No metrics found (paper not uploaded or not yet synced)
+
+  /api/v1/metrics/{paperId}/sync:
+    post:
+      tags: [Metrics]
+      summary: Sync metrics for a single paper from academia.edu
+      operationId: syncPaperMetrics
+      parameters:
+        - in: path
+          name: paperId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Synced metrics with milestone info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metrics:
+                    $ref: '#/components/schemas/AbMetrics'
+                  milestoneCrossed:
+                    type: integer
+                    nullable: true
+                    description: View milestone reached during this sync (null if none)
+        '404':
+          description: Paper not found or not uploaded
+
+  # ──────────────────────────────────────────────────────────────────────────
+  #  Scheduler
+  # ──────────────────────────────────────────────────────────────────────────
+
+  /api/v1/scheduler/sync:
+    post:
+      tags: [Scheduler]
+      summary: Trigger full metrics sync for all uploaded papers
+      description: |
+        Scrapes view/download counts from academia.edu for every uploaded paper.
+        Papers are processed sequentially with 1.5s delays to avoid rate limiting.
+
+        Also detects view milestone crossings and emits Extropy Engine SOCIAL domain
+        claims for any milestones reached (100, 500, 1K, 5K, 10K, 50K, 100K views).
+
+        This operation can take several minutes for large paper libraries.
+      operationId: syncAllMetrics
+      responses:
+        '200':
+          description: Sync results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  synced:
+                    type: integer
+                    description: Number of papers successfully synced
+                  failed:
+                    type: integer
+                    description: Number of papers that failed to sync
+                  milestonesCrossed:
+                    type: integer
+                    description: Number of view milestones crossed during this sync
+
+  # ──────────────────────────────────────────────────────────────────────────
+  #  Events Webhook
+  # ──────────────────────────────────────────────────────────────────────────
+
+  /events:
+    post:
+      tags: [Health]
+      summary: Receive domain events via HTTP webhook
+      description: Accepts DomainEvent payloads from the Extropy Engine event bus
+      operationId: receiveEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainEvent'
+      responses:
+        '200':
+          description: Event received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+
+# ────────────────────────────────────────────────────────────────────────────
+#  Components
+# ────────────────────────────────────────────────────────────────────────────
+
+components:
+  parameters:
+    PaperIdPath:
+      in: path
+      name: id
+      required: true
+      description: Paper UUID
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    AbPaper:
+      type: object
+      description: A paper in the academia.edu upload queue
+      required: [id, title, abstract, coAuthors, tags, fileType, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Full paper title
+        abstract:
+          type: string
+          description: Paper abstract
+        coAuthors:
+          type: array
+          items:
+            type: string
+          description: Co-author full names
+        tags:
+          type: array
+          items:
+            type: string
+          description: Keywords/tags for discoverability
+        filePath:
+          type: string
+          nullable: true
+          description: Absolute path to an existing PDF/DOCX file
+        content:
+          type: string
+          nullable: true
+          description: Raw text/markdown content (written to temp file before upload)
+        fileType:
+          type: string
+          enum: [pdf, docx]
+          description: File format
+        status:
+          type: string
+          enum: [queued, uploading, uploaded, failed]
+          description: Current lifecycle status
+        academiaUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Public academia.edu URL (populated after successful upload)
+        sourceProposalId:
+          type: string
+          nullable: true
+          description: Back-reference to originating grantflow-proposer proposal
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AbUpload:
+      type: object
+      description: An upload execution record
+      required: [id, paperId, status, retryCount, startedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        paperId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, in_progress, success, failed]
+        academiaUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Canonical URL captured after successful upload
+        errorMessage:
+          type: string
+          nullable: true
+          description: Detailed error for debugging failed uploads
+        retryCount:
+          type: integer
+          minimum: 0
+          description: Number of retry attempts (max 3)
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    AbMetrics:
+      type: object
+      description: Cached performance metrics for an uploaded paper
+      required: [paperId, academiaUrl, views, downloads, citations, lastSyncedAt]
+      properties:
+        paperId:
+          type: string
+          format: uuid
+        academiaUrl:
+          type: string
+          format: uri
+        views:
+          type: integer
+          minimum: 0
+        downloads:
+          type: integer
+          minimum: 0
+        citations:
+          type: integer
+          minimum: 0
+        lastSyncedAt:
+          type: string
+          format: date-time
+
+    AggregateMetrics:
+      type: object
+      description: Aggregate metrics across all uploaded papers
+      required: [totalPapers, totalViews, totalDownloads, totalCitations]
+      properties:
+        totalPapers:
+          type: integer
+          minimum: 0
+        totalViews:
+          type: integer
+          minimum: 0
+        totalDownloads:
+          type: integer
+          minimum: 0
+        totalCitations:
+          type: integer
+          minimum: 0
+        lastSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SessionStatus:
+      type: object
+      description: Academia.edu credential status (does not reveal credentials)
+      required: [isAuthenticated, lastCheckedAt]
+      properties:
+        isAuthenticated:
+          type: boolean
+          description: Whether ACADEMIA_EMAIL and ACADEMIA_PASSWORD are both set
+        lastCheckedAt:
+          type: string
+          format: date-time
+        email:
+          type: string
+          nullable: true
+          description: Configured email address (for display only)
+
+    CreatePaperDto:
+      type: object
+      description: Payload for queuing a paper
+      required: [title, abstract]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        abstract:
+          type: string
+          minLength: 1
+        coAuthors:
+          type: array
+          items:
+            type: string
+          default: []
+        tags:
+          type: array
+          items:
+            type: string
+          default: []
+        filePath:
+          type: string
+          description: Path to existing PDF/DOCX file (mutually exclusive with content)
+        content:
+          type: string
+          description: Raw text content to write to temp file (mutually exclusive with filePath)
+        fileType:
+          type: string
+          enum: [pdf, docx]
+          default: pdf
+        sourceProposalId:
+          type: string
+          format: uuid
+          description: Link to originating grantflow-proposer proposal
+
+    UpdatePaperDto:
+      type: object
+      description: Partial update payload for a paper
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        abstract:
+          type: string
+        coAuthors:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        filePath:
+          type: string
+          nullable: true
+        content:
+          type: string
+          nullable: true
+        fileType:
+          type: string
+          enum: [pdf, docx]
+        status:
+          type: string
+          enum: [queued, uploading, uploaded, failed]
+        academiaUrl:
+          type: string
+          format: uri
+
+    DomainEvent:
+      type: object
+      description: Extropy Engine domain event
+      required: [eventId, type, payload, source, correlationId, timestamp, version]
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          description: EventType enum value
+        payload:
+          type: object
+          additionalProperties: true
+        source:
+          type: string
+          description: Originating service name
+        correlationId:
+          type: string
+          description: Loop ID for this event
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          default: 1
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code
+        details:
+          type: string
+          description: Additional error context
+        timestamp:
+          type: string
+          format: date-time

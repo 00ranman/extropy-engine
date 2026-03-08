@@ -1,0 +1,911 @@
+openapi: 3.1.0
+info:
+  title: GrantFlow Discovery API
+  description: |
+    Autonomous grant discovery and submission pipeline service for the Extropy Engine.
+    
+    Continuously discovers grant opportunities from Grants.gov, matches them against
+    researcher profiles, manages the application submission pipeline, and emits
+    Extropy Engine claims for each entropy-reducing action (opening verification loops
+    for XP minting).
+    
+    **Entropy Domains**: INFORMATIONAL, ECONOMIC
+    
+    **XP Events** (each opens a verification loop):
+    - `grantflow.grant.discovered` → INFORMATIONAL domain, ΔS ≈ 0.42
+    - `grantflow.grant.matched` → INFORMATIONAL domain, ΔS ≈ 0.28
+    - `grantflow.submission.prepared` → ECONOMIC domain, ΔS ≈ 0.65
+    - `grantflow.submission.submitted` → ECONOMIC domain, ΔS ≈ 1.20
+  version: 1.0.0
+  contact:
+    name: Extropy Engine
+    email: 00ranman@gmail.com
+
+servers:
+  - url: http://localhost:4020
+    description: Local development
+
+tags:
+  - name: Health
+    description: Service health and status
+  - name: Profiles
+    description: Researcher profile management
+  - name: Opportunities
+    description: Grant opportunity discovery and retrieval
+  - name: Matches
+    description: Grant-to-profile match scoring
+  - name: Submissions
+    description: Application submission pipeline
+  - name: Scheduler
+    description: Discovery cycle scheduling and management
+  - name: Events
+    description: Extropy Engine event webhook
+
+paths:
+
+  # ── Health ───────────────────────────────────────────────────────────────────
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns service health status, uptime, scheduler state, and dependency URLs
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service unhealthy (database unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthError'
+
+  /api/v1/info:
+    get:
+      tags: [Health]
+      summary: Service information
+      description: Returns all available endpoints and service capabilities
+      operationId: getInfo
+      responses:
+        '200':
+          description: Service information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:   { type: string }
+                  version:   { type: string }
+                  port:      { type: integer }
+                  endpoints: { type: array, items: { type: string } }
+
+  # ── Events Webhook ───────────────────────────────────────────────────────────
+
+  /events:
+    post:
+      tags: [Events]
+      summary: Receive domain events
+      description: |
+        HTTP webhook for receiving Extropy Engine domain events.
+        Handles LOOP_CLOSED and XP_MINTED_PROVISIONAL events to update claim records.
+      operationId: receiveEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainEvent'
+      responses:
+        '200':
+          description: Event received and processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:   { type: boolean }
+                  eventType:  { type: string }
+                  timestamp:  { type: string, format: date-time }
+
+  # ── Profiles ─────────────────────────────────────────────────────────────────
+
+  /api/v1/profiles:
+    post:
+      tags: [Profiles]
+      summary: Create a researcher profile
+      operationId: createProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileCreate'
+            example:
+              name: Randall Gossett
+              email: 00ranman@gmail.com
+              keywords: [entropy, IoT, decentralized systems]
+              domains: [entropy/information theory, IoT]
+              expertise: [Information entropy measurement, IoT device management]
+              minAwardAmount: 10000
+              maxAwardAmount: 1000000
+              eligibilityTypes: [individuals, small_businesses]
+      responses:
+        '201':
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+    get:
+      tags: [Profiles]
+      summary: List all researcher profiles
+      operationId: listProfiles
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: List of profiles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profiles: { type: array, items: { $ref: '#/components/schemas/Profile' } }
+                  count:    { type: integer }
+
+  /api/v1/profiles/{id}:
+    get:
+      tags: [Profiles]
+      summary: Get a researcher profile
+      operationId: getProfile
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Profile found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Profiles]
+      summary: Update a researcher profile
+      operationId: updateProfile
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdate'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Profiles]
+      summary: Delete a researcher profile
+      operationId: deleteProfile
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204':
+          description: Profile deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Opportunities ────────────────────────────────────────────────────────────
+
+  /api/v1/opportunities:
+    get:
+      tags: [Opportunities]
+      summary: List cached grant opportunities
+      operationId: listOpportunities
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: status
+          in: query
+          description: Filter by opportunity status
+          schema:
+            type: string
+            enum: [forecasted, posted, closed, archived]
+      responses:
+        '200':
+          description: List of opportunities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  opportunities: { type: array, items: { $ref: '#/components/schemas/Opportunity' } }
+                  count:         { type: integer }
+
+  /api/v1/opportunities/{id}:
+    get:
+      tags: [Opportunities]
+      summary: Get a grant opportunity
+      operationId: getOpportunity
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Opportunity found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opportunity'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/opportunities/{id}/match:
+    post:
+      tags: [Opportunities, Matches]
+      summary: Compute match score
+      description: Compute (or recompute) the match score between an opportunity and a profile
+      operationId: computeMatchScore
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profileId]
+              properties:
+                profileId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Match score computed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Match'
+                  - type: object
+                    properties:
+                      opportunityTitle: { type: string }
+                      profileName:      { type: string }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Matches ──────────────────────────────────────────────────────────────────
+
+  /api/v1/matches:
+    get:
+      tags: [Matches]
+      summary: List all matches above threshold
+      operationId: listMatches
+      parameters:
+        - name: profileId
+          in: query
+          description: Filter by profile UUID
+          schema: { type: string, format: uuid }
+        - name: minScore
+          in: query
+          description: Minimum match score (default 20)
+          schema: { type: number, minimum: 0, maximum: 100, default: 20 }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: List of matches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matches: { type: array, items: { $ref: '#/components/schemas/Match' } }
+                  count:   { type: integer }
+
+  /api/v1/matches/top/{profileId}:
+    get:
+      tags: [Matches]
+      summary: Get top matches for a profile
+      operationId: getTopMatches
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          description: Max matches to return (default 10)
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        '200':
+          description: Top matches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matches: { type: array, items: { $ref: '#/components/schemas/Match' } }
+                  count:   { type: integer }
+
+  # ── Submissions ──────────────────────────────────────────────────────────────
+
+  /api/v1/submissions:
+    post:
+      tags: [Submissions]
+      summary: Create a submission pipeline entry
+      operationId: createSubmission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [opportunityId, profileId]
+              properties:
+                opportunityId: { type: string, format: uuid }
+                profileId:     { type: string, format: uuid }
+                notes:         { type: string }
+      responses:
+        '201':
+          description: Submission created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+    get:
+      tags: [Submissions]
+      summary: List submissions
+      operationId: listSubmissions
+      parameters:
+        - name: profileId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: opportunityId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          description: Single status or comma-separated list
+          schema: { type: string }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissions: { type: array, items: { $ref: '#/components/schemas/Submission' } }
+                  count:       { type: integer }
+
+  /api/v1/submissions/{id}:
+    get:
+      tags: [Submissions]
+      summary: Get a submission
+      operationId: getSubmission
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Submission found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Submissions]
+      summary: Update submission status
+      description: |
+        Advance or revert the submission through the pipeline.
+        
+        Valid transitions:
+        - discovered → researching | withdrawn
+        - researching → drafting | withdrawn
+        - drafting → review | withdrawn
+        - review → submitted | drafting | withdrawn
+        - submitted → awarded | declined
+      operationId: updateSubmission
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [discovered, researching, drafting, review, submitted, awarded, declined, withdrawn]
+                notes:   { type: string }
+                actorId: { type: string }
+      responses:
+        '200':
+          description: Submission updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/submissions/{id}/prepare:
+    post:
+      tags: [Submissions]
+      summary: Prepare S2S XML package
+      description: Generates an SF-424 XML scaffold pre-filled with opportunity and profile data
+      operationId: prepareS2SPackage
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Package prepared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissionId: { type: string, format: uuid }
+                  xml:          { type: string, description: 'SF-424 XML content' }
+                  preparedAt:   { type: string, format: date-time }
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/submissions/{id}/propose:
+    post:
+      tags: [Submissions]
+      summary: Request proposal generation
+      description: Forwards the submission to grantflow-proposer to initiate AI-powered proposal creation
+      operationId: requestProposal
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Proposal generation requested
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissionId: { type: string, format: uuid }
+                  proposalId:   { type: string }
+                  requestedAt:  { type: string, format: date-time }
+
+  /api/v1/submissions/{id}/submit:
+    post:
+      tags: [Submissions]
+      summary: Submit via S2S to Grants.gov
+      description: |
+        Submits the application package via Grants.gov S2S SOAP API.
+        Requires `GRANTS_GOV_S2S_USER` and `GRANTS_GOV_S2S_PASS` environment variables.
+        Also emits a `grantflow.submission.submitted` claim to the Epistemology Engine.
+      operationId: submitApplication
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Application submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trackingNumber: { type: string }
+                  submittedAt:    { type: string, format: date-time }
+                  submission:     { $ref: '#/components/schemas/Submission' }
+        '503':
+          description: S2S credentials not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Scheduler / Search ───────────────────────────────────────────────────────
+
+  /api/v1/search:
+    post:
+      tags: [Scheduler]
+      summary: Trigger a manual grant search
+      description: Performs a Grants.gov search and persists discovered opportunities
+      operationId: triggerSearch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchParams'
+      responses:
+        '200':
+          description: Search completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  opportunities: { type: array, items: { $ref: '#/components/schemas/Opportunity' } }
+                  count:         { type: integer }
+                  searchedAt:    { type: string, format: date-time }
+                  params:        { $ref: '#/components/schemas/SearchParams' }
+
+  /api/v1/search-runs:
+    get:
+      tags: [Scheduler]
+      summary: Get search run history
+      operationId: getSearchHistory
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Search run history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runs:  { type: array, items: { $ref: '#/components/schemas/SearchRun' } }
+                  count: { type: integer }
+
+  /api/v1/scheduler/status:
+    get:
+      tags: [Scheduler]
+      summary: Get scheduler status
+      operationId: getSchedulerStatus
+      responses:
+        '200':
+          description: Scheduler status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active:     { type: boolean }
+                  lastRunAt:  { type: string, format: date-time, nullable: true }
+                  nextRunAt:  { type: string, format: date-time, nullable: true }
+                  timestamp:  { type: string, format: date-time }
+
+  /api/v1/scheduler/run:
+    post:
+      tags: [Scheduler]
+      summary: Trigger a discovery cycle
+      description: Manually trigger the full search → match → claim pipeline
+      operationId: triggerDiscoveryCycle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                keyword: { type: string, description: 'Override keyword for this run' }
+      responses:
+        '200':
+          description: Discovery cycle completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchRun'
+
+  /api/v1/scheduler/start:
+    post:
+      tags: [Scheduler]
+      summary: Start the scheduler
+      operationId: startScheduler
+      responses:
+        '200':
+          description: Scheduler started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active:    { type: boolean }
+                  message:   { type: string }
+                  nextRunAt: { type: string, format: date-time, nullable: true }
+
+  /api/v1/scheduler/stop:
+    post:
+      tags: [Scheduler]
+      summary: Stop the scheduler
+      operationId: stopScheduler
+      responses:
+        '200':
+          description: Scheduler stopped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  active:    { type: boolean }
+                  message:   { type: string }
+                  lastRunAt: { type: string, format: date-time, nullable: true }
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Components
+# ─────────────────────────────────────────────────────────────────────────────
+
+components:
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      description: UUID of the resource
+      schema: { type: string, format: uuid }
+
+    Limit:
+      name: limit
+      in: query
+      description: Maximum number of records to return (default 50, max 200)
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+
+    Offset:
+      name: offset
+      in: query
+      description: Pagination offset (default 0)
+      schema: { type: integer, minimum: 0, default: 0 }
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+
+    # ── Error ──────────────────────────────────────────────────────────────────
+    Error:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code
+          enum: [NOT_FOUND, VALIDATION_ERROR, INVALID_TRANSITION, INTERNAL_ERROR, CREDENTIALS_NOT_CONFIGURED]
+        timestamp:
+          type: string
+          format: date-time
+
+    # ── Health ─────────────────────────────────────────────────────────────────
+    HealthResponse:
+      type: object
+      properties:
+        service:   { type: string, example: grantflow-discovery }
+        status:    { type: string, enum: [healthy, unhealthy] }
+        version:   { type: string, example: 1.0.0 }
+        uptime:    { type: number }
+        timestamp: { type: string, format: date-time }
+        port:      { type: integer, example: 4020 }
+        scheduler:
+          type: object
+          properties:
+            active:    { type: boolean }
+            lastRunAt: { type: string, format: date-time, nullable: true }
+            nextRunAt: { type: string, format: date-time, nullable: true }
+
+    HealthError:
+      type: object
+      properties:
+        service: { type: string }
+        status:  { type: string, enum: [unhealthy] }
+        error:   { type: string }
+
+    # ── Profile ────────────────────────────────────────────────────────────────
+    Profile:
+      type: object
+      required: [id, name, keywords, domains, pastAwards, expertise, eligibilityTypes, createdAt, updatedAt]
+      properties:
+        id:               { type: string, format: uuid }
+        name:             { type: string }
+        email:            { type: string, format: email, nullable: true }
+        keywords:         { type: array, items: { type: string } }
+        domains:          { type: array, items: { type: string } }
+        pastAwards:       { type: array, items: { type: string } }
+        expertise:        { type: array, items: { type: string } }
+        minAwardAmount:   { type: number, nullable: true }
+        maxAwardAmount:   { type: number, nullable: true }
+        eligibilityTypes: { type: array, items: { type: string } }
+        createdAt:        { type: string, format: date-time }
+        updatedAt:        { type: string, format: date-time }
+
+    ProfileCreate:
+      type: object
+      required: [name]
+      properties:
+        name:             { type: string }
+        email:            { type: string, format: email }
+        keywords:         { type: array, items: { type: string } }
+        domains:          { type: array, items: { type: string } }
+        pastAwards:       { type: array, items: { type: string } }
+        expertise:        { type: array, items: { type: string } }
+        minAwardAmount:   { type: number }
+        maxAwardAmount:   { type: number }
+        eligibilityTypes: { type: array, items: { type: string } }
+
+    ProfileUpdate:
+      type: object
+      properties:
+        name:             { type: string }
+        email:            { type: string, format: email }
+        keywords:         { type: array, items: { type: string } }
+        domains:          { type: array, items: { type: string } }
+        pastAwards:       { type: array, items: { type: string } }
+        expertise:        { type: array, items: { type: string } }
+        minAwardAmount:   { type: number }
+        maxAwardAmount:   { type: number }
+        eligibilityTypes: { type: array, items: { type: string } }
+
+    # ── Opportunity ────────────────────────────────────────────────────────────
+    Opportunity:
+      type: object
+      required: [id, oppNumber, title, agency, description, eligibility, cfdaNumbers, status, rawData, discoveredAt, updatedAt]
+      properties:
+        id:                { type: string, format: uuid }
+        oppNumber:         { type: string, description: 'Grants.gov opportunity number' }
+        title:             { type: string }
+        agency:            { type: string }
+        agencyCode:        { type: string, nullable: true }
+        description:       { type: string }
+        awardCeiling:      { type: number, nullable: true, description: 'Maximum award in USD' }
+        awardFloor:        { type: number, nullable: true, description: 'Minimum award in USD' }
+        expectedAwards:    { type: integer, nullable: true }
+        openDate:          { type: string, format: date, nullable: true }
+        closeDate:         { type: string, format: date, nullable: true }
+        category:          { type: string, nullable: true }
+        fundingInstrument: { type: string, nullable: true }
+        eligibility:       { type: array, items: { type: string } }
+        cfdaNumbers:       { type: array, items: { type: string } }
+        status:
+          type: string
+          enum: [forecasted, posted, closed, archived]
+        rawData:           { type: object, additionalProperties: true }
+        discoveredAt:      { type: string, format: date-time }
+        updatedAt:         { type: string, format: date-time }
+
+    # ── Match ──────────────────────────────────────────────────────────────────
+    Match:
+      type: object
+      required: [id, opportunityId, profileId, score, matchReasons, keywordMatches, domainMatches, awardAmountFit, createdAt]
+      properties:
+        id:             { type: string, format: uuid }
+        opportunityId:  { type: string, format: uuid }
+        profileId:      { type: string, format: uuid }
+        score:          { type: number, minimum: 0, maximum: 100 }
+        matchReasons:   { type: array, items: { type: string } }
+        keywordMatches: { type: array, items: { type: string } }
+        domainMatches:  { type: array, items: { type: string } }
+        awardAmountFit: { type: boolean }
+        createdAt:      { type: string, format: date-time }
+
+    # ── Submission ────────────────────────────────────────────────────────────
+    StatusHistoryEntry:
+      type: object
+      required: [status, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [discovered, researching, drafting, review, submitted, awarded, declined, withdrawn]
+        timestamp: { type: string, format: date-time }
+        notes:     { type: string, nullable: true }
+        actorId:   { type: string, nullable: true }
+
+    Submission:
+      type: object
+      required: [id, opportunityId, profileId, status, statusHistory, createdAt, updatedAt]
+      properties:
+        id:                       { type: string, format: uuid }
+        opportunityId:            { type: string, format: uuid }
+        profileId:                { type: string, format: uuid }
+        proposalId:               { type: string, nullable: true }
+        status:
+          type: string
+          enum: [discovered, researching, drafting, review, submitted, awarded, declined, withdrawn]
+        statusHistory:
+          type: array
+          items: { $ref: '#/components/schemas/StatusHistoryEntry' }
+        s2sPackageXml:            { type: string, nullable: true }
+        submittedAt:              { type: string, format: date-time, nullable: true }
+        grantsGovTrackingNumber:  { type: string, nullable: true }
+        notes:                    { type: string, nullable: true }
+        createdAt:                { type: string, format: date-time }
+        updatedAt:                { type: string, format: date-time }
+
+    # ── Search Run ────────────────────────────────────────────────────────────
+    SearchRun:
+      type: object
+      required: [id, query, resultsCount, matchesFound, claimsEmitted, success, durationMs, executedAt]
+      properties:
+        id:            { type: string, format: uuid }
+        query:         { type: string }
+        resultsCount:  { type: integer }
+        matchesFound:  { type: integer }
+        claimsEmitted: { type: integer }
+        success:       { type: boolean }
+        errorMessage:  { type: string, nullable: true }
+        durationMs:    { type: integer }
+        executedAt:    { type: string, format: date-time }
+
+    # ── Search Params ─────────────────────────────────────────────────────────
+    SearchParams:
+      type: object
+      properties:
+        keyword:
+          type: string
+          description: Search keywords
+        oppStatuses:
+          type: string
+          default: forecasted|posted
+          description: Pipe-delimited status filter
+        rows:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 25
+        sortBy:
+          type: string
+          default: openDate|desc
+        startRecordNum:
+          type: integer
+          default: 0
+        awardCeilingMin:
+          type: number
+          description: Minimum award ceiling filter (USD)
+        awardCeilingMax:
+          type: number
+          description: Maximum award ceiling filter (USD)
+
+    # ── Domain Event ─────────────────────────────────────────────────────────
+    DomainEvent:
+      type: object
+      required: [eventId, type, payload, source, correlationId, timestamp, version]
+      properties:
+        eventId:       { type: string, format: uuid }
+        type:          { type: string }
+        payload:       { type: object, additionalProperties: true }
+        source:        { type: string }
+        correlationId: { type: string }
+        timestamp:     { type: string, format: date-time }
+        version:       { type: integer, default: 1 }
