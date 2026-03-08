@@ -5,9 +5,10 @@ version: '3.9'
 # ===============================================================================
 #
 #  Usage:
-#    docker compose up --build        # Start everything
-#    docker compose up postgres redis # Infrastructure only
-#    docker compose logs -f xp-mint   # Tail one service
+#    docker compose up --build           # Start everything
+#    docker compose up postgres redis    # Infrastructure only
+#    docker compose logs -f xp-mint      # Tail one service
+#    docker compose up --build homeflow  # Single service + deps
 #
 # ===============================================================================
 
@@ -40,7 +41,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # -- Services -------------------------------------------------------------
+  # -- Core Services --------------------------------------------------------
   epistemology-engine:
     build:
       context: .
@@ -126,6 +127,185 @@ services:
       REDIS_URL: redis://redis:6379
       LOOP_LEDGER_URL: http://loop-ledger:4003
       REPUTATION_URL: http://reputation:4004
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # -- Extended Services ----------------------------------------------------
+  dag-substrate:
+    build:
+      context: .
+      dockerfile: packages/dag-substrate/Dockerfile
+    ports:
+      - "4008:4008"
+    environment:
+      PORT: 4008
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=dag
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  dfao-registry:
+    build:
+      context: .
+      dockerfile: packages/dfao-registry/Dockerfile
+    ports:
+      - "4009:4009"
+    environment:
+      PORT: 4009
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=dfao
+      REDIS_URL: redis://redis:6379
+      DAG_SUBSTRATE_URL: http://dag-substrate:4008
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  governance:
+    build:
+      context: .
+      dockerfile: packages/governance/Dockerfile
+    ports:
+      - "4010:4010"
+    environment:
+      PORT: 4010
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=governance
+      REDIS_URL: redis://redis:6379
+      DFAO_REGISTRY_URL: http://dfao-registry:4009
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  temporal:
+    build:
+      context: .
+      dockerfile: packages/temporal/Dockerfile
+    ports:
+      - "4011:4011"
+    environment:
+      PORT: 4011
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=temporal
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  token-economy:
+    build:
+      context: .
+      dockerfile: packages/token-economy/Dockerfile
+    ports:
+      - "4012:4012"
+    environment:
+      PORT: 4012
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=economy
+      REDIS_URL: redis://redis:6379
+      XP_MINT_URL: http://xp-mint:4005
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  credentials:
+    build:
+      context: .
+      dockerfile: packages/credentials/Dockerfile
+    ports:
+      - "4013:4013"
+    environment:
+      PORT: 4013
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=credentials
+      REDIS_URL: redis://redis:6379
+      REPUTATION_URL: http://reputation:4004
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ecosystem:
+    build:
+      context: .
+      dockerfile: packages/ecosystem/Dockerfile
+    ports:
+      - "4014:4014"
+    environment:
+      PORT: 4014
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=ecosystem
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  homeflow:
+    build:
+      context: .
+      dockerfile: packages/homeflow/Dockerfile
+    ports:
+      - "4015:4015"
+    environment:
+      PORT: 4015
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=homeflow
+      REDIS_URL: redis://redis:6379
+      EPISTEMOLOGY_URL: http://epistemology-engine:4001
+      SIGNALFLOW_URL: http://signalflow:4002
+      LOOP_LEDGER_URL: http://loop-ledger:4003
+      REPUTATION_URL: http://reputation:4004
+      XP_MINT_URL: http://xp-mint:4005
+      DAG_SUBSTRATE_URL: http://dag-substrate:4008
+      DFAO_REGISTRY_URL: http://dfao-registry:4009
+      GOVERNANCE_URL: http://governance:4010
+      TEMPORAL_URL: http://temporal:4011
+      TOKEN_ECONOMY_URL: http://token-economy:4012
+      CREDENTIALS_URL: http://credentials:4013
+      ECOSYSTEM_URL: http://ecosystem:4014
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # -- GrantFlow Services ---------------------------------------------------
+  grantflow-discovery:
+    build:
+      context: .
+      dockerfile: packages/grantflow-discovery/Dockerfile
+    ports:
+      - "4020:4020"
+    environment:
+      PORT: 4020
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=grantflow
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  grantflow-proposer:
+    build:
+      context: .
+      dockerfile: packages/grantflow-proposer/Dockerfile
+    ports:
+      - "4021:4021"
+    environment:
+      PORT: 4021
+      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=grantflow
+      REDIS_URL: redis://redis:6379
+      GRANTFLOW_DISCOVERY_URL: http://grantflow-discovery:4020
     depends_on:
       postgres:
         condition: service_healthy
