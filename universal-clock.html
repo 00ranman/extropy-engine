@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universal Times Clock | Extropy Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#e0e0e0;font-family:'Space Grotesk',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;overflow:hidden}
+.stars{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.container{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px}
+h1{font-size:1.3rem;font-weight:300;letter-spacing:.3em;text-transform:uppercase;color:#5ce0d8;text-shadow:0 0 20px rgba(92,224,216,.3)}
+.clock-wrap{position:relative;width:380px;height:380px}
+canvas#clock{width:380px;height:380px;display:block}
+.digital{font-family:'JetBrains Mono',monospace;font-size:2.2rem;font-weight:500;color:#5ce0d8;text-shadow:0 0 15px rgba(92,224,216,.5);letter-spacing:.08em;text-align:center}
+.digital .label{font-size:.65rem;font-weight:300;color:#666;letter-spacing:.25em;text-transform:uppercase;margin-top:2px}
+.info-row{display:flex;gap:28px}
+.info-box{text-align:center}
+.info-box .val{font-family:'JetBrains Mono',monospace;font-size:.9rem;color:#b0b0b0}
+.info-box .lbl{font-size:.6rem;color:#555;letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+.legacy{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:#3a3a3a;margin-top:2px}
+.geo{font-size:.65rem;color:#444;font-family:'JetBrains Mono',monospace}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="container">
+<h1>Universal Times</h1>
+<div class="clock-wrap"><canvas id="clock" width="760" height="760"></canvas></div>
+<div class="digital"><div id="td">t:0:00:00</div><div class="label">Loop &middot; Arc &middot; Tick</div></div>
+<div class="info-row">
+<div class="info-box"><div class="val" id="phase">-</div><div class="lbl">Phase</div></div>
+<div class="info-box"><div class="val" id="dfrac">0.00000</div><div class="lbl">Day Fraction</div></div>
+<div class="info-box"><div class="val" id="qcount">-</div><div class="lbl">Quants (T)</div></div>
+</div>
+<div class="legacy" id="leg"></div>
+<div class="geo" id="geo">Locating...</div>
+</div>
+<script>
+(function(){
+const TICKS_PER_DAY=100000,LOOPS=10,ARCS=100,TPA=100;
+const EARTH_DAY_S=86400;
+const H_FREQ=1420405751.768;
+const phaseNames=['Deep Night','Late Night','Dawn','Early Morning','Morning',
+'Solar Noon','Afternoon','Late Afternoon','Evening','Night'];
+
+// Stars
+const sf=document.getElementById('stars');
+for(let i=0;i<120;i++){const s=document.createElement('div');s.style.cssText=`position:absolute;background:#fff;border-radius:50%;width:${Math.random()*2+1}px;height:${Math.random()*2+1}px;top:${Math.random()*100}%;left:${Math.random()*100}%;opacity:${Math.random()*.5+.1};animation:tw ${Math.random()*3+2}s ease-in-out infinite alternate`;sf.appendChild(s)}
+const twStyle=document.createElement('style');twStyle.textContent='@keyframes tw{0%{opacity:.1}100%{opacity:.7}}';document.head.appendChild(twStyle);
+
+// Geo
+let geoStr='';
+if(navigator.geolocation){
+  navigator.geolocation.getCurrentPosition(function(p){
+    const lat=p.coords.latitude,lon=p.coords.longitude;
+    fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=en')
+    .then(r=>r.json()).then(d=>{
+      geoStr=d.city+', '+d.principalSubdivision+', '+d.countryName;
+      document.getElementById('geo').textContent=geoStr+' ('+lat.toFixed(4)+', '+lon.toFixed(4)+')';
+    }).catch(()=>{
+      geoStr=lat.toFixed(4)+', '+lon.toFixed(4);
+      document.getElementById('geo').textContent=geoStr;
+    });
+  },function(){document.getElementById('geo').textContent='Location unavailable';});
+}else{document.getElementById('geo').textContent='Geolocation not supported';}
+
+const canvas=document.getElementById('clock');
+const ctx=canvas.getContext('2d');
+const W=760,C=W/2;
+
+function getUT(){
+  const now=new Date();
+  const ms=now.getHours()*3600000+now.getMinutes()*60000+now.getSeconds()*1000+now.getMilliseconds();
+  const frac=ms/(EARTH_DAY_S*1000);
+  const total=Math.floor(frac*TICKS_PER_DAY);
+  const clamped=Math.min(total,TICKS_PER_DAY-1);
+  const loop=Math.floor(clamped/(ARCS*TPA));
+  const rem=clamped%(ARCS*TPA);
+  const arc=Math.floor(rem/TPA);
+  const tick=rem%TPA;
+  return{loop,arc,tick,frac,total:clamped};
+}
+
+function draw(){
+  const ut=getUT();
+  ctx.clearRect(0,0,W,W);
+
+  // Outer glow ring
+  ctx.beginPath();ctx.arc(C,C,C-10,0,Math.PI*2);
+  ctx.strokeStyle='rgba(92,224,216,.08)';ctx.lineWidth=2;ctx.stroke();
+
+  // Loop ring (outermost) - 10 divisions
+  const R1=C-30;
+  for(let i=0;i<LOOPS;i++){
+    const a=-Math.PI/2+i*(Math.PI*2/LOOPS);
+    const x1=C+Math.cos(a)*(R1-15),y1=C+Math.sin(a)*(R1-15);
+    const x2=C+Math.cos(a)*(R1+5),y2=C+Math.sin(a)*(R1+5);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.strokeStyle=i===ut.loop?'#5ce0d8':'rgba(255,255,255,.15)';ctx.lineWidth=i===ut.loop?3:1.5;ctx.stroke();
+    // Loop number
+    const lx=C+Math.cos(a)*(R1+20),ly=C+Math.sin(a)*(R1+20);
+    ctx.font=i===ut.loop?'bold 14px JetBrains Mono':'12px JetBrains Mono';
+    ctx.fillStyle=i===ut.loop?'#5ce0d8':'rgba(255,255,255,.25)';
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i,lx,ly);
+  }
+
+  // Arc ring - 100 divisions (show every 10)
+  const R2=C-65;
+  for(let i=0;i<ARCS;i++){
+    const a=-Math.PI/2+i*(Math.PI*2/ARCS);
+    const isMajor=i%10===0;
+    const len=isMajor?12:5;
+    const x1=C+Math.cos(a)*(R2-len),y1=C+Math.sin(a)*(R2-len);
+    const x2=C+Math.cos(a)*R2,y2=C+Math.sin(a)*R2;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.strokeStyle=isMajor?'rgba(255,255,255,.2)':'rgba(255,255,255,.06)';ctx.lineWidth=isMajor?1.5:0.5;ctx.stroke();
+    if(isMajor){
+      const lx=C+Math.cos(a)*(R2-22),ly=C+Math.sin(a)*(R2-22);
+      ctx.font='10px JetBrains Mono';ctx.fillStyle='rgba(255,255,255,.2)';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(String(i).padStart(2,'0'),lx,ly);
+    }
+  }
+
+  // Tick ring - innermost fine marks (show every 10)
+  const R3=C-110;
+  for(let i=0;i<TPA;i+=5){
+    const a=-Math.PI/2+i*(Math.PI*2/TPA);
+    const isMajor=i%10===0;
+    const len=isMajor?8:4;
+    const x1=C+Math.cos(a)*(R3-len),y1=C+Math.sin(a)*(R3-len);
+    const x2=C+Math.cos(a)*R3,y2=C+Math.sin(a)*R3;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=isMajor?1:0.5;ctx.stroke();
+  }
+
+  // Center decoration
+  const grad=ctx.createRadialGradient(C,C,0,C,C,60);
+  grad.addColorStop(0,'rgba(92,224,216,.12)');grad.addColorStop(1,'rgba(92,224,216,0)');
+  ctx.beginPath();ctx.arc(C,C,60,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();ctx.arc(C,C,4,0,Math.PI*2);ctx.fillStyle='#5ce0d8';ctx.fill();
+
+  // Loop hand (short, thick)
+  const la=-Math.PI/2+(ut.loop+ut.arc/ARCS)*Math.PI*2/LOOPS;
+  ctx.save();ctx.translate(C,C);ctx.rotate(la);
+  ctx.beginPath();ctx.moveTo(-3,15);ctx.lineTo(0,-(R2-80));ctx.lineTo(3,15);ctx.closePath();
+  ctx.fillStyle='rgba(92,224,216,.9)';ctx.fill();
+  ctx.restore();
+
+  // Arc hand (longer, medium)
+  const aa=-Math.PI/2+(ut.arc+ut.tick/TPA)*Math.PI*2/ARCS;
+  ctx.save();ctx.translate(C,C);ctx.rotate(aa);
+  ctx.beginPath();ctx.moveTo(-2,12);ctx.lineTo(0,-(R2-30));ctx.lineTo(2,12);ctx.closePath();
+  ctx.fillStyle='rgba(180,220,255,.7)';ctx.fill();
+  ctx.restore();
+
+  // Tick hand (longest, thin)
+  const ta=-Math.PI/2+ut.tick*Math.PI*2/TPA;
+  ctx.save();ctx.translate(C,C);ctx.rotate(ta);
+  ctx.beginPath();ctx.moveTo(-1,18);ctx.lineTo(0,-(R3+10));ctx.lineTo(1,18);ctx.closePath();
+  ctx.fillStyle='rgba(255,100,100,.5)';ctx.fill();
+  ctx.restore();
+
+  // Digital readout
+  const tStr='t:'+ut.loop+':'+String(ut.arc).padStart(2,'0')+':'+String(ut.tick).padStart(2,'0');
+  document.getElementById('td').textContent=tStr;
+  document.getElementById('phase').textContent=phaseNames[ut.loop];
+  document.getElementById('dfrac').textContent=ut.frac.toFixed(5);
+  const quantsToday=BigInt(ut.total)*1228000000n;
+  const qs=quantsToday.toString();
+  document.getElementById('qcount').textContent=qs.length>12?qs.slice(0,-9)+'B':qs;
+
+  const now=new Date();
+  document.getElementById('leg').textContent='Legacy: '+now.toLocaleTimeString();
+
+  requestAnimationFrame(draw);
+}
+draw();
+})();
+</script>
+</body>
+</html>
