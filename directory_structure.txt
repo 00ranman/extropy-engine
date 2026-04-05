@@ -1,0 +1,137 @@
+/Users/ran/extropy-engine/
+├───.dockerignore
+├───.env.example
+├───.gitignore
+├───DEPENDENCY_GRAPH.md
+├───docker-compose.yml
+├───package-lock.json
+├───package.json
+├───README.md
+├───tsconfig.json
+├───.git/...
+├───dashboard/
+│   ├───base.css
+│   ├───index.html
+│   └───style.css
+├───packages/
+│   ├───contracts/
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       ├───db.ts
+│   │       ├───event-bus.ts
+│   │       ├───index.ts
+│   │       └───types.ts
+│   ├───credentials/
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   ├───dag-substrate/
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   ├───dfao-registry/
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   ├───ecosystem/
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   ├───epistemology-engine/
+│   │   ├───Dockerfile
+│   │   ├───openapi.yaml
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   ├───governance/
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   ├───homeflow/
+│   │   ├───docker-compose.homeflow.yaml
+│   │   ├───Dockerfile
+│   │   ├───homeflow.interop.json
+│   │   ├───openapi.yaml
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   ├───migrations/
+│   │   │   └───001_init_homeflow.sql
+│   │   ├───src/
+│   │   │   ├───index.ts
+│   │   │   ├───integrations/
+│   │   │   │   ├───credential.integration.ts
+│   │   │   │   ├───dag.integration.ts
+│   │   │   │   ├───governance.integration.ts
+│   │   │   │   ├───reputation.integration.ts
+│   │   │   │   ├───temporal.integration.ts
+│   │   │   │   └───token.integration.ts
+│   │   │   ├───interop/
+│   │   │   │   └───interop.service.ts
+│   │   │   ├───routes/
+│   │   │   │   ├───devices.routes.ts
+│   │   │   │   ├───entropy.routes.ts
+│   │   │   │   ├───households.routes.ts
+│   │   │   │   ├───integrations.routes.ts
+│   │   │   │   └───interop.routes.ts
+│   │   │   ├───services/
+│   │   │   │   ├───claim.service.ts
+│   │   │   │   ├───database.service.ts
+│   │   │   │   ├───device.service.ts
+│   │   │   │   ├───entropy.service.ts
+│   │   │   │   ├───event-bus.service.ts
+│   │   │   │   └───household.service.ts
+│   │   │   └───types/
+│   │   │       ├───homeflow.types.ts
+│   │   │       └───index.ts
+│   │   └───test/
+│   │       └───homeflow.test.sh
+│   ├───loop-ledger/
+│   │   ├───Dockerfile
+│   │   ├───openapi.yaml
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   ├───reputation/
+│   │   ├───Dockerfile
+│   │   ├───openapi.yaml
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   ├───signalflow/
+│   │   ├───Dockerfile
+│   │   ├───openapi.yaml
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   ├───temporal/
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   ├───token-economy/
+│   │   ├───package.json
+│   │   ├───tsconfig.json
+│   │   └───src/
+│   │       └───index.ts
+│   └───xp-mint/
+│       ├───Dockerfile
+│       ├───openapi.yaml
+│       ├───package.json
+│       ├───tsconfig.json
+│       └───src/
+│           └───index.ts
+└───scripts/
+    ├───init-db.sql
+    ├───run-integration-test.py
+    ├───start-extropy.sh
+    └───test-happy-path.sh
