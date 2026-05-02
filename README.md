@@ -1,3 +1,7 @@
+> **v3.1 (2026-05-01) is the canonical spec.** See [`docs/SPEC_v3.1.md`](docs/SPEC_v3.1.md), [`docs/CHANGELOG.md`](docs/CHANGELOG.md), and [`docs/GAPS.md`](docs/GAPS.md) (63 open engineering gaps across 13 categories).
+>
+> **What's new in v3.1:** Digital Autarky vision, personal-AI + handshake model, mandatory hybrid identity (OAuth + on-device KYC + ZKP DID), Personal Signed Local Log, micro-quest marketplace with dynamic reward escalation, native substrate decision, three borrowed Holochain patterns renamed (PSLL, Validation Neighborhoods, Rule Modules). Central `epistemology-engine` removed; decomposition moves to the edge.
+
 # Extropy Engine
 
 A physics-grounded value accounting protocol. The unit of value is entropy reduction.
