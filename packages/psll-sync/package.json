@@ -1,0 +1,27 @@
+{
+  "name": "@extropy/psll-sync",
+  "version": "0.1.0",
+  "description": "Personal Signed Local Log: append-only, hash-chained, signed provenance log per node. Anchored to DAG via Merkle commitments. v3.1.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@extropy/contracts": "*",
+    "express": "^4.19.0",
+    "uuid": "^10.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.4.0",
+    "tsx": "^4.7.0",
+    "vitest": "^2.0.0"
+  }
+}
