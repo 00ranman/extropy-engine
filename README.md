@@ -1,6 +1,8 @@
 > **v3.1 (2026-05-01) is the canonical spec.** See [`docs/SPEC_v3.1.md`](docs/SPEC_v3.1.md), [`docs/CHANGELOG.md`](docs/CHANGELOG.md), and [`docs/GAPS.md`](docs/GAPS.md) (63 open engineering gaps across 13 categories).
 >
-> **What's new in v3.1:** Digital Autarky vision, personal-AI + handshake model, mandatory hybrid identity (OAuth + on-device KYC + ZKP DID), Personal Signed Local Log, micro-quest marketplace with dynamic reward escalation, native substrate decision, three borrowed Holochain patterns renamed (PSLL, Validation Neighborhoods, Rule Modules). Central `epistemology-engine` removed; decomposition moves to the edge.
+> **What's new in v3.1:** Digital Autarky vision, personal-AI + handshake model, mandatory hybrid identity (OAuth + on-device KYC + ZKP DID), Personal Signed Local Log, micro-quest marketplace with dynamic reward escalation, native substrate decision, three borrowed Holochain patterns renamed (PSLL, Validation Neighborhoods, Rule Modules). The `epistemology-engine` is **redefined, not removed** — v3.0 read it as a central decomposition service; v3.1 recognizes it as the mesh's emergent peer-review witness layer. Decomposition itself moves to personal AI at the edge.
+>
+> **Sandbox testing:** [`packages/node-handshake/`](packages/node-handshake/) implements the proof-of-concept VPS↔local-laptop handshake. See [`docs/VPS_NODE.md`](docs/VPS_NODE.md).
 
 # Extropy Engine
 
@@ -49,7 +51,9 @@ packages/
 ├── contracts/          # Shared types, interfaces, enums (~72KB). Single source of truth.
 ├── xp-formula/         # Canonical formula implementation. Pure function, no side effects.
 ├── loop-ledger/        # Loop lifecycle: OPEN → CONSENSUS → CLOSED → SETTLED
-├── epistemology-engine # Claim intake, Bayesian sub-claim decomposition
+├── epistemology-engine # MESH OBSERVABILITY: aggregates emergent peer review,
+│                       # surfaces consensus drift, falsifiability stats, Sybil clusters.
+│                       # Redefined in v3.1 — NOT a central decomposition service.
 ├── signalflow/         # Validator routing: domain match × reputation × load × accuracy
 ├── xp-mint/            # Two-phase minting: provisional on close, confirmed or burned on settle
 ├── reputation/         # Per-domain reputation, 10 levels, decay mechanics
@@ -57,8 +61,15 @@ packages/
 ├── dfao-registry/      # Fractal org structure: MICRO(2-7) → ECOSYSTEM(1000+)
 ├── governance/         # Proposals, conviction voting, quorum, execution
 ├── token-economy/      # 6 token types: XP, CT, EP, IT, GT, RT
-└── temporal/           # Seasons, decay scheduling, loop timeouts
+├── temporal/           # Seasons, decay scheduling, loop timeouts
+├── identity/           # v3.1: OAuth + on-device KYC + DID + ZKP (BBS+ default)
+├── psll-sync/          # v3.1: Personal Signed Local Log maintenance + DAG anchoring
+├── quest-market/       # v3.1: Micro-quest marketplace + dynamic reward escalation
+├── validation-neighborhoods/ # v3.1: Sharded 1/10th blind-slice validation routing
+└── node-handshake/     # v3.1 sandbox: VPS↔local-laptop proof-of-concept handshake
 ```
+
+**v3.1 packages are skeletons.** Interface contracts are the source of truth; implementation is incremental. See each package's README for status.
 
 The 6-token economy exists specifically to prevent the failure mode that killed most Web3 governance: token conflation. XP (reputation) is non-transferable. IT (governance weight) is non-transferable and decays at 5%/month. You cannot buy influence. You have to earn it, and if you stop contributing it bleeds out.
 

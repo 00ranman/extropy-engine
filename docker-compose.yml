@@ -312,5 +312,57 @@ services:
       redis:
         condition: service_healthy
 
+  # ───────── v3.1 sandbox services ─────────
+  identity:
+    build:
+      context: .
+      dockerfile: packages/identity/Dockerfile
+    ports:
+      - "4101:4101"
+    environment:
+      PORT: 4101
+    profiles: ["v3.1", "sandbox"]
+
+  psll-sync:
+    build:
+      context: .
+      dockerfile: packages/psll-sync/Dockerfile
+    ports:
+      - "4102:4102"
+    environment:
+      PORT: 4102
+    profiles: ["v3.1", "sandbox"]
+
+  quest-market:
+    build:
+      context: .
+      dockerfile: packages/quest-market/Dockerfile
+    ports:
+      - "4103:4103"
+    environment:
+      PORT: 4103
+    profiles: ["v3.1", "sandbox"]
+
+  validation-neighborhoods:
+    build:
+      context: .
+      dockerfile: packages/validation-neighborhoods/Dockerfile
+    ports:
+      - "4104:4104"
+    environment:
+      PORT: 4104
+    profiles: ["v3.1", "sandbox"]
+
+  node-handshake:
+    build:
+      context: .
+      dockerfile: packages/node-handshake/Dockerfile
+    ports:
+      - "4200:4200"
+    environment:
+      PORT: 4200
+      NODE_ROLE: vps
+    profiles: ["v3.1", "sandbox", "node-handshake"]
+
 volumes:
   pgdata:

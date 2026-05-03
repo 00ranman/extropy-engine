@@ -23,6 +23,11 @@
     "packages/grantflow-discovery",
     "packages/grantflow-proposer",
     "packages/ethics",
+    "packages/identity",
+    "packages/psll-sync",
+    "packages/quest-market",
+    "packages/validation-neighborhoods",
+    "packages/node-handshake",
     "frontends/*"
   ],
   "scripts": {
