@@ -48,7 +48,7 @@
  * ════════════════════════════════════════════════════════════════════════════════
  */
 
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import { Pool } from 'pg';
 import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
@@ -72,6 +72,14 @@ import {
   aggregateLogOdds,
   aggregateGeometric,
 } from './bayesian';
+
+import {
+  selectBackend,
+  PostgresSource,
+  DagSubstrateSource,
+  type EpistemologySource,
+} from './observability/index.js';
+import { createMeshRouter } from './routes/mesh/index.js';
 
 import {
   ClaimStatus,
@@ -333,8 +341,22 @@ function detectGodelBoundary(statement: string): string | null {
 //  Express App
 // ─────────────────────────────────────────────────────────────────────────────
 
-const app = express();
+// ── EpistemologySource backend selection (v3.1 observability) ────────────────
+//
+//  EPISTEMOLOGY_SOURCE=postgres        → PostgresSource (default, v3.1.x)
+//  EPISTEMOLOGY_SOURCE=dag-substrate   → DagSubstrateSource (stub until DAG node API ships)
+//
+const epistemologyBackend = selectBackend();
+const epistemologySource: EpistemologySource =
+  epistemologyBackend === 'postgres'
+    ? new PostgresSource({ pool: db })
+    : new DagSubstrateSource();
+
+const app: Express = express();
 app.use(express.json());
+
+// Mount the v3.1 observability surface under /mesh.
+app.use('/mesh', createMeshRouter({ source: epistemologySource }));
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', async (_req: Request, res: Response) => {
@@ -603,6 +625,8 @@ async function main(): Promise<void> {
 
   await initDb();
 
+  // Initialize the observability source before binding the listener.
+  await epistemologySource.init();
   app.listen(PORT, () => {
     console.log(`[epistemology-engine] Listening on port ${PORT}`);
   });
