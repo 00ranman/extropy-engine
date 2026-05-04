@@ -105,8 +105,23 @@ export interface MeasurementSource {
 /**
  * A Bayesian prior attached to a claim or sub-claim.
  * The Epistemology Engine maintains and updates these as evidence arrives.
+ *
+ * v3.1: Beta(α, β) conjugate model is now first-class. Posterior mean is
+ * α/(α+β); CI is the 95% credible interval of the Beta posterior itself.
+ * Legacy point-estimate fields are preserved so persisted v3.0 records keep
+ * working until they roll forward on the next update.
  */
 export interface BayesianPrior {
+  // ── v3.1 Beta(α, β) conjugate model (canonical) ─────────────────────────────
+
+  /** Pseudo-count of "true" / confirming evidence (α). Optional for v3.0 compat. */
+  alpha?: number;
+
+  /** Pseudo-count of "false" / disconfirming evidence (β). Optional for v3.0 compat. */
+  beta?: number;
+
+  // ── Legacy v3.0 point-estimate fields (kept for backwards compatibility) ────
+
   /** P(claim is true) before observing new evidence */
   priorProbability: number;
 
@@ -116,13 +131,13 @@ export interface BayesianPrior {
   /** P(evidence | claim is false) — counter-likelihood */
   counterLikelihood: number;
 
-  /** P(claim is true | evidence) — computed posterior */
+  /** P(claim is true | evidence) — computed posterior. Under Beta, equals α/(α+β). */
   posteriorProbability: number;
 
   /** Number of evidence updates applied */
   updateCount: number;
 
-  /** Confidence interval [lower, upper] at 95% */
+  /** 95% credible interval [lower, upper]. Under Beta, the Beta(α,β) quantiles. */
   confidenceInterval: [number, number];
 
   /** History of updates for audit trail */
@@ -135,6 +150,16 @@ export interface BayesianUpdate {
   priorBefore: number;
   posteriorAfter: number;
   likelihoodRatio: number;
+  /** Beta α before this update (v3.1+). */
+  alphaBefore?: number;
+  /** Beta β before this update (v3.1+). */
+  betaBefore?: number;
+  /** Beta α after this update (v3.1+). */
+  alphaAfter?: number;
+  /** Beta β after this update (v3.1+). */
+  betaAfter?: number;
+  /** Confidence in [0,1]: how strongly the evidence confirms the claim. Splits into Δα and Δβ. */
+  evidenceConfidence?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

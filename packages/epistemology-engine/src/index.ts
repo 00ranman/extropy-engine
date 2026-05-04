@@ -63,8 +63,15 @@ import type {
   MeasurementId,
   EntropyDomain,
   BayesianPrior,
-  BayesianUpdate,
 } from '@extropy/contracts';
+
+import {
+  initBayesianPrior,
+  updateBayesianPrior,
+  ensureBeta,
+  aggregateLogOdds,
+  aggregateGeometric,
+} from './bayesian';
 
 import {
   ClaimStatus,
@@ -93,9 +100,19 @@ interface SubmitClaimResponse {
 //  Configuration
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PORT     = parseInt(process.env.PORT     ?? '3002', 10);
-const DB_URL   = process.env.DATABASE_URL      ?? 'postgresql://postgres:postgres@localhost:5433/epistemology';
-const REDIS_URL = process.env.REDIS_URL        ?? 'redis://localhost:6379';
+const PORT       = parseInt(process.env.PORT     ?? '3002', 10);
+const DB_URL     = process.env.DATABASE_URL      ?? 'postgresql://postgres:postgres@localhost:5433/epistemology';
+const REDIS_URL  = process.env.REDIS_URL         ?? 'redis://localhost:6379';
+
+/** Truth score above which a fully-resolved claim is marked VERIFIED. */
+const VERIFIED_THRESHOLD = parseFloat(process.env.VERIFIED_THRESHOLD ?? '0.6');
+
+/** Aggregator: 'logodds' (v3.1, default) or 'geometric' (legacy v3.0 ∏ p^w). */
+const AGGREGATOR = (process.env.TRUTH_AGGREGATOR ?? 'logodds') as 'logodds' | 'geometric';
+
+function aggregateTruthScore(parts: ReadonlyArray<{ probability: number; weight: number }>): number {
+  return AGGREGATOR === 'geometric' ? aggregateGeometric(parts) : aggregateLogOdds(parts);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Database
@@ -175,60 +192,14 @@ async function publishEvent<T>(type: string, aggregateId: string, data: T): Prom
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Bayesian Math
+//  Bayesian Math — see ./bayesian.ts for the Beta(α, β) implementation
 // ─────────────────────────────────────────────────────────────────────────────
-
-function computePosterior(prior: number, likelihood: number, counterLikelihood: number): number {
-  // Bayes: P(H|E) = P(E|H)·P(H) / [P(E|H)·P(H) + P(E|¬H)·P(¬H)]
-  const numerator   = likelihood * prior;
-  const denominator = numerator + counterLikelihood * (1 - prior);
-  return denominator === 0 ? prior : numerator / denominator;
-}
-
-function initBayesianPrior(initialProbability = 0.5): BayesianPrior {
-  return {
-    priorProbability:    initialProbability,
-    likelihood:          0.8,  // default: evidence is 4x more likely if claim is true
-    counterLikelihood:   0.2,
-    posteriorProbability: initialProbability,
-    updateCount:         0,
-    confidenceInterval:  [Math.max(0, initialProbability - 0.2), Math.min(1, initialProbability + 0.2)],
-    updateHistory:       [],
-  };
-}
-
-function updateBayesianPrior(
-  prior: BayesianPrior,
-  evidenceId: MeasurementId | SubClaimId,
-  newLikelihood?: number,
-  newCounterLikelihood?: number,
-): BayesianPrior {
-  const likelihood        = newLikelihood        ?? prior.likelihood;
-  const counterLikelihood = newCounterLikelihood ?? prior.counterLikelihood;
-  const posterior         = computePosterior(prior.posteriorProbability, likelihood, counterLikelihood);
-
-  const update: BayesianUpdate = {
-    timestamp:       new Date().toISOString(),
-    evidenceId,
-    priorBefore:     prior.posteriorProbability,
-    posteriorAfter:  posterior,
-    likelihoodRatio: likelihood / counterLikelihood,
-  };
-
-  const ci = 1.96 * Math.sqrt(posterior * (1 - posterior) / Math.max(1, prior.updateCount + 1));
-
-  return {
-    ...prior,
-    priorProbability:    prior.posteriorProbability,
-    likelihood,
-    counterLikelihood,
-    posteriorProbability: posterior,
-    updateCount:         prior.updateCount + 1,
-    confidenceInterval:  [Math.max(0, posterior - ci), Math.min(1, posterior + ci)],
-    updateHistory:       [...prior.updateHistory, update],
-  };
-}
-
+//
+//  v3.1: Bayesian math is now Beta(α, β) conjugate updates with proper Beta
+//  credible intervals and weighted log-odds aggregation. Helpers live in
+//  ./bayesian.ts so observability/test code can reuse them without dragging
+//  in the express + pg + redis runtime.
+//
 // ─────────────────────────────────────────────────────────────────────────────
 //  Claim Decomposition
 // ─────────────────────────────────────────────────────────────────────────────
@@ -496,8 +467,13 @@ app.get('/claims/:id/sub-claims', async (req: Request, res: Response, next: Next
 // ── PATCH /sub-claims/:id/evidence — record evidence for a sub-claim ──────────
 app.patch('/sub-claims/:id/evidence', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { measurementId, likelihood, counterLikelihood } = req.body as {
+    // Body shape (v3.1): { measurementId, evidenceConfidence: number in [0,1] }
+    //   1 = unambiguous confirmation, 0 = unambiguous refutation, 0.5 = uninformative
+    // Body shape (v3.0 legacy, still accepted): { measurementId, likelihood, counterLikelihood }
+    //   evidenceConfidence is derived as likelihood / (likelihood + counterLikelihood)
+    const { measurementId, evidenceConfidence, likelihood, counterLikelihood } = req.body as {
       measurementId: MeasurementId;
+      evidenceConfidence?: number;
       likelihood?: number;
       counterLikelihood?: number;
     };
@@ -505,12 +481,24 @@ app.patch('/sub-claims/:id/evidence', async (req: Request, res: Response, next: 
     const { rows } = await db.query('SELECT * FROM sub_claims WHERE id = $1', [req.params.id]);
     if (rows.length === 0) { res.status(404).json({ error: 'SubClaim not found' }); return; }
 
+    let confidence: number;
+    if (typeof evidenceConfidence === 'number') {
+      confidence = evidenceConfidence;
+    } else if (typeof likelihood === 'number' && typeof counterLikelihood === 'number') {
+      const total = likelihood + counterLikelihood;
+      confidence = total === 0 ? 0.5 : likelihood / total;
+    } else {
+      res.status(400).json({
+        error: 'Provide either evidenceConfidence (preferred) or both likelihood and counterLikelihood (legacy)',
+      });
+      return;
+    }
+
     const sc = rows[0];
     const updatedPrior = updateBayesianPrior(
       sc.bayesian_prior as BayesianPrior,
       measurementId,
-      likelihood,
-      counterLikelihood,
+      confidence,
     );
 
     await db.query(
@@ -546,16 +534,26 @@ app.patch('/sub-claims/:id/resolve', async (req: Request, res: Response, next: N
     const claimId = scRows[0].claim_id;
     const { rows: allSc } = await db.query('SELECT * FROM sub_claims WHERE claim_id=$1', [claimId]);
 
-    const truthScore = allSc.reduce((acc: number, sc: { weight: number; bayesian_prior: BayesianPrior }) => {
-      return acc * Math.pow(sc.bayesian_prior.posteriorProbability, sc.weight);
-    }, 1.0);
+    // v3.1: aggregate sub-claim posteriors via the configured aggregator
+    // (weighted log-odds by default; legacy geometric mean opt-in via env).
+    // Each sub-claim's posterior is read from its Beta posterior mean when
+    // present, else the legacy posteriorProbability field.
+    const truthScore = aggregateTruthScore(
+      allSc.map((sc: { weight: number; bayesian_prior: BayesianPrior }) => {
+        const p = sc.bayesian_prior;
+        const probability = (typeof p.alpha === 'number' && typeof p.beta === 'number')
+          ? p.alpha / (p.alpha + p.beta)
+          : (p.posteriorProbability ?? 0.5);
+        return { probability, weight: sc.weight };
+      }),
+    );
 
     const allResolved = allSc.every((sc: { status: string }) =>
       [SubClaimStatus.VERIFIED, SubClaimStatus.FALSIFIED, SubClaimStatus.UNDECIDABLE].includes(sc.status as SubClaimStatus)
     );
 
     const claimStatus = allResolved
-      ? (truthScore >= 0.6 ? ClaimStatus.VERIFIED : ClaimStatus.FALSIFIED)
+      ? (truthScore >= VERIFIED_THRESHOLD ? ClaimStatus.VERIFIED : ClaimStatus.FALSIFIED)
       : ClaimStatus.DECOMPOSED;
 
     await db.query(
