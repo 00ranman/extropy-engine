@@ -1,3 +1,4 @@
+# build output
 node_modules/
 dist/
 *.js
@@ -5,6 +6,28 @@ dist/
 *.js.map
 *.d.ts.map
 !packages/*/src/**
+
+# environment
 .env
+.env.*
+!.env.example
+
+# OS / editors
 .DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# data
 pgdata/
+
+# scratch / backups (do NOT commit)
+*.bak
+*.bak[0-9]
+*.bak[0-9][0-9]
+*~
+*.orig
+
+# pnpm-only
+.pnpm-store/
