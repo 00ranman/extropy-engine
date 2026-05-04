@@ -2,9 +2,11 @@
   "files": [],
   "references": [
     { "path": "./packages/academia-bridge" },
+    { "path": "./packages/bayesian" },
     { "path": "./packages/contracts" },
     { "path": "./packages/credentials" },
     { "path": "./packages/dag-substrate" },
+    { "path": "./packages/decomposition-kit" },
     { "path": "./packages/dfao-registry" },
     { "path": "./packages/ecosystem" },
     { "path": "./packages/epistemology-engine" },

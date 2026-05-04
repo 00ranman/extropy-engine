@@ -1,0 +1,29 @@
+{
+  "name": "@extropy/decomposition-kit",
+  "version": "3.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Portable claim decomposition helpers. Splits a top-level claim into atomic sub-claims and detects Godel-boundary self-reference. v3.1.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@extropy/bayesian": "workspace:*",
+    "@extropy/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

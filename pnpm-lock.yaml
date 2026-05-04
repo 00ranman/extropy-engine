@@ -70,6 +70,22 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
+  packages/bayesian:
+    dependencies:
+      '@extropy/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.39
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.39)
+
   packages/contracts:
     dependencies:
       ioredis:
@@ -169,6 +185,25 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.39)
 
+  packages/decomposition-kit:
+    dependencies:
+      '@extropy/bayesian':
+        specifier: workspace:*
+        version: link:../bayesian
+      '@extropy/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.39
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.39)
+
   packages/dfao-registry:
     dependencies:
       '@extropy/contracts':
@@ -251,9 +286,15 @@ importers:
 
   packages/epistemology-engine:
     dependencies:
+      '@extropy/bayesian':
+        specifier: workspace:*
+        version: link:../bayesian
       '@extropy/contracts':
         specifier: '*'
         version: link:../contracts
+      '@extropy/decomposition-kit':
+        specifier: workspace:*
+        version: link:../decomposition-kit
       express:
         specifier: ^4.19.0
         version: 4.22.1

@@ -12,7 +12,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@extropy/bayesian": "workspace:*",
     "@extropy/contracts": "*",
+    "@extropy/decomposition-kit": "workspace:*",
     "express": "^4.19.0",
     "ioredis": "^5.3.0",
     "pg": "^8.12.0",

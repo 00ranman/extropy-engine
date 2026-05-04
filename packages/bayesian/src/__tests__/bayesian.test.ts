@@ -20,7 +20,7 @@ import {
   aggregateLogOdds,
   aggregateGeometric,
   JEFFREYS_PRIOR,
-} from '../bayesian';
+} from '../index.js';
 import type { MeasurementId } from '@extropy/contracts';
 
 const evid = (n: number) => `m${n}` as MeasurementId;
