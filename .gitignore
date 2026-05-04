@@ -31,3 +31,4 @@ pgdata/
 
 # pnpm-only
 .pnpm-store/
+*.tsbuildinfo
