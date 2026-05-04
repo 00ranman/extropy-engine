@@ -1,49 +1,100 @@
-# Personal Signed Local Log (PSLL)
+# Personal Signed Local Log — PSLL.md
 
-**Status:** Mandatory per node · **Borrowed pattern:** Holochain source chain (re-implemented natively)
+**Package:** [`packages/psll-sync`](../packages/psll-sync)
+**Spec parent:** [`docs/SPEC_v3.1.md`](./SPEC_v3.1.md) §9
+**Status:** Skeleton; specification frozen for v3.1
 
-## Purpose
+## What it is
 
-Every node maintains an append-only, hash-chained, signed local event log of every personal-AI decision and action. Provenance + audit + portability — without exporting raw payloads to the network.
+The Personal Signed Local Log is the local append-only provenance log maintained by each participant's edge intelligence. The pattern is borrowed (with credit) from Holochain's source-chain concept and reimplemented natively.
 
-## Format
+## Why it exists
 
-- **Append-only**, hash-chained per entry.
-- **Signature:** Ed25519 default (governance-tunable).
-- **Storage:** local-only payloads.
-- **Anchoring:** only Merkle roots / receipts are anchored to the shared DAG via `psll-sync`.
+Without a local signed log, edge intelligence is hand-wavy. With PSLL, the system gains provenance without surrendering sovereignty. Participants can prove their own activity history under dispute without exposing their entire local state.
 
-## Contents
+## Required properties
 
-Every one of the following produces a PSLL entry:
+- **Append-only.** New entries only. No edits. No deletions.
+- **Hash-chained.** Each entry includes the hash of the previous entry.
+- **Cryptographically signed.** Every entry signed with the participant's DID key.
+- **Locally controlled.** Lives on the participant's device. The network never receives raw entries.
+- **Selectively disclosable.** Inclusion proofs and ZKP-based disclosures allow targeted reveal under dispute.
 
-- Personal-AI decisions (decomposition, prioritization, routing recommendations).
-- Claim submissions.
-- Quest acceptances and proof submissions.
-- Validation votes cast.
-- Identity proof issuances.
-- Reputation events.
+## Anchoring model
 
-## Privacy & disclosure
+The network does **not** ingest raw PSLL payloads. Instead:
 
-- Default: local-only.
-- Selective disclosure via **ZKP-of-inclusion**: a user can prove an entry exists in their PSLL without revealing surrounding entries.
-- Governance disputes can compel disclosure of specific entries via the same threshold mechanism as identity reveal (see `IDENTITY.md`).
+```
+Local PSLL entries (private, on-device)
+    │
+    ▼ periodic Merkle root computation
+    │
+    ▼ signed Merkle root commitment
+    │
+    ▼ anchored as DAG vertex (public, immutable)
+```
 
-## Portability
+Anchoring cadence: provisional default of one anchor per active session, tunable per DFAO.
 
-PSLL is exportable and importable across devices under the same DID. Re-anchoring receipts on import is automatic.
+## Disclosure under dispute
 
-## Anchoring service: `psll-sync`
+When the mesh needs to verify a participant's claim history (e.g., during governance review or contested validation):
 
-- Receives Merkle roots from clients.
-- Records anchor receipt vertices on the DAG.
-- Verifies ZKP-of-inclusion proofs on demand.
-- Cadence: provisional 1 anchor per loop close (governance-tunable).
+1. Participant produces a Merkle inclusion proof for the relevant entry
+2. Optionally wrapped in ZKP for selective disclosure (prove "I logged a claim of type X at time Y" without revealing entry content)
+3. Anchor commitment in DAG verifies the inclusion proof
 
-## Open gaps
+## Entry schema (minimum)
 
-See `GAPS.md`:
-- DAG Distributed Consensus #29 (PSLL-anchor receipt cadence)
-- Privacy and Access Control #46 (PSLL selective-disclosure protocol)
-- Performance and Scalability #56 (PSLL local-storage growth bounds)
+```ts
+interface PSLLEntry {
+  index: number;                    // monotonic
+  prevHash: string;                 // hash of previous entry (or genesis)
+  timestamp: ISO8601String;
+  did: DID;                         // participant's DID
+  entryType: 'claim_submitted'
+           | 'validation_performed'
+           | 'quest_accepted'
+           | 'quest_completed'
+           | 'decomposition'
+           | 'governance_vote'
+           | 'reputation_update'
+           | 'reveal_consent'
+           | 'custom';
+  payload: Record<string, unknown>;  // entry-type specific
+  signature: string;                 // sig over (index, prevHash, timestamp, did, entryType, payload)
+}
+```
+
+## What goes in the PSLL
+
+- Every claim submitted (with full context — what the personal AI saw, decomposition steps, decision rationale)
+- Every validation performed (which slice was reviewed, how it was scored, time spent)
+- Every quest accepted/completed
+- Every decomposition step performed by the personal AI
+- Every governance vote cast
+- Every reputation update received
+- Consent records for reveals or correlations
+
+## What does NOT go in the PSLL
+
+- Other participants' PSLL contents (each PSLL is single-author)
+- Raw network-side state (the DAG is the canonical record for that)
+- Personal context unrelated to Extropy activity
+
+## Sync
+
+PSLL is local-first. Optional sync between participant's own devices is supported via:
+- E2E encrypted device-to-device sync
+- Encrypted backup to participant-controlled storage (IPFS, S3, etc.)
+
+The package `psll-sync` handles the local maintenance, anchoring, and optional device-to-device sync. It does NOT participate in network gossip.
+
+## Open questions
+
+- Sync conflict resolution across multiple devices (CRDT-style merge vs strict serialization)
+- Long-term storage strategy (PSLL grows monotonically; pruning under what conditions?)
+- Pattern for participant-controlled selective backup
+- Anchoring cadence under intermittent connectivity
+
+Tracked in [`docs/GAPS.md`](./GAPS.md).

@@ -1,35 +1,85 @@
-# Identity & Accountability Layer (v3.1)
+# Identity Layer — IDENTITY.md
 
-**Status:** Mandatory · **Provisional defaults are governance-tunable**
+**Package:** [`packages/identity`](../packages/identity)
+**Spec parent:** [`docs/SPEC_v3.1.md`](./SPEC_v3.1.md) §8
+**Status:** Skeleton; specification frozen for v3.1
 
-## Goal
+## Purpose
 
-Sybil resistance + privacy + selective accountability, all backed by familiar onboarding.
+Establish strong Sybil resistance and selective accountability without exposing raw identity material to the network.
 
-## Onboarding flow
+## Design constraints (non-negotiable)
 
-1. **OAuth/OpenID local sign-in** — Google, Apple, email, phone, etc. Standard providers.
-2. **One-time on-device KYC binding** — government-ID scan + biometric, or trusted issuer attestation. Raw artifacts never leave the device.
-3. **Personal AI generates a DID + Verifiable Credential** — wrapped in zero-knowledge proofs. BBS+ default; zk-SNARKs acceptable for advanced use. (Final scheme is governance-selected.)
-4. **Network sees only the ZKP proof + per-context nullifier.** No raw PII is ever shared with the protocol or DAG.
+1. Easy onboarding for normal humans
+2. Strong resistance to one-person-many-identity abuse
+3. No raw PII exposure to the network DAG
+4. Selective reveal under governance conditions
+5. Compatibility with edge-native intelligence (personal AI handles identity locally)
 
-## Properties
+## Canonical flow
 
-- **Sybil resistance:** one human → one identity, enforced by KYC binding + nullifier uniqueness.
-- **Privacy:** zero raw PII on-DAG, ever. Existing OAuth login means no new credential burden.
-- **Selective accountability:** governance can compel reveal under defined conditions.
+```
+1. User signs in via OAuth/OpenID (familiar credentials)
+        │
+        ▼
+2. On-device KYC binding (ID scan / biometric / trusted issuer handoff)
+        │   [happens entirely on user device — network sees nothing]
+        ▼
+3. Personal AI generates DID + Verifiable Credential locally
+        │
+        ▼
+4. Credential wrapped in ZKP (BBS+ default; zk-SNARKs supported)
+        │
+        ▼
+5. Network receives:
+        - proof of uniqueness
+        - proof of valid onboarding
+        - per-context nullifier
+        - public DID
+   Network does NOT receive:
+        - raw documents
+        - full biometric material
+        - real-world identity tied to DID
+```
 
-## Governance reveal
+## Components
 
-Threshold-keyed escrow of the original credential.
+- **OAuth / OIDC bridge.** Familiar entry point. Issuers list governance-tunable.
+- **On-device KYC module.** ID document parse + liveness + biometric bind. Runs on participant hardware. Outputs a local-only attestation.
+- **DID generator.** Generates W3C DID + key material. Stored in local secure enclave or equivalent.
+- **Verifiable Credential issuer.** Local. Wraps the on-device attestation into a VC.
+- **ZKP wrapper.** Default scheme: BBS+ (selective disclosure friendly, smaller proofs). Alternate: zk-SNARK circuits for specific predicates (age, jurisdiction, etc.).
+- **Nullifier service.** Per-context nullifier derivation so the same DID cannot be cross-correlated across DFAOs without consent.
 
-**Provisional default:** 7-of-12 ecosystem-tier validators + cause-shown proposal.
-Governance-tunable from day one. See `GOVERNANCE_DEFAULTS.md`.
+## Threshold reveal escrow
 
-## Boundary with personal AI
+Under governance threshold, a DID can be linked back to enforceable real-world identity. The provisional default:
 
-The personal AI holds the DID + VC and produces ZKP proofs on demand. The protocol never sees private keys, biometrics, or unhashed identity data.
+- **7-of-12 ecosystem validators** must hold a valid governance proposal with cause shown
+- Threshold-keyed escrow holds the reveal material (Shamir-style or threshold encryption)
+- Tunable per ecosystem DFAO
 
-## Open gaps
+This is selective privacy under enforceable accountability. Not anonymous. Not surveillance.
 
-See `GAPS.md` → Privacy and Access Control (5 gaps, P2): ZKP scheme final selection, selective-reveal mechanics, nullifier collision proof, PSLL selective disclosure, cross-DFAO data isolation.
+## What this prevents
+
+- Sybil farms (KYC + biometric bind makes per-identity creation costly)
+- Reputation laundering (DID is sticky; you cannot mint a new identity to escape a bad reputation cheaply)
+- Unaccountable speech-acts (governance threshold can pierce the veil with cause)
+
+## What this preserves
+
+- Default privacy (network sees ZKPs, not documents)
+- Per-context unlinkability (nullifiers prevent cross-DFAO correlation)
+- User-side control (KYC happens on the user's device)
+- Future-proofing (BBS+ today, post-quantum-friendly schemes possible later)
+
+## Open questions
+
+- Bootstrap problem: who issues trusted KYC attestations before there's an ecosystem?
+  - Provisional answer: bootstrap through accredited issuers; transition to community-vouched models as DFAOs mature.
+- Reveal-threshold tuning: 7-of-12 is provisional. Real adversarial modeling needed.
+- Cross-jurisdictional KYC compatibility (especially EU AI Act, US state-level biometric laws).
+- Recovery of lost DIDs without reintroducing central authority.
+
+Tracked in [`docs/GAPS.md`](./GAPS.md).

@@ -3,19 +3,47 @@
  *  EXTROPY ENGINE — Epistemology Engine
  * ════════════════════════════════════════════════════════════════════════════════
  *
- *  The Epistemology Engine is responsible for:
- *    1. Receiving claims submitted by users/agents
- *    2. Decomposing claims into atomic, verifiable sub-claims (DAG)
- *    3. Maintaining Bayesian priors for each claim and sub-claim
- *    4. Detecting Gödel boundaries (self-referential / undecidable claims)
- *    5. Publishing events to the event bus for downstream services
- *    6. Providing the truth score for loop closure decisions
+ *  v3.1 REDEFINITION NOTICE
+ *  ─────────────────────────
+ *  The epistemology engine is NOT a central decomposition service. The reading
+ *  in v3.0 that placed claim decomposition here was a misunderstanding of what
+ *  this layer always was. Decomposition is a personal-AI responsibility at the
+ *  edge (see architecture/AUTARKY.md, docs/SPEC_v3.1.md §7).
+ *
+ *  In v3.1, the epistemology engine is recognized for what it is: the mesh's
+ *  EMERGENT PEER-REVIEW SYSTEM, witnessed and aggregated as a queryable
+ *  observability layer. The mesh, running on incentives alone, IS the engine.
+ *  This package surfaces what emerges. It does not arbitrate truth.
+ *
+ *  WHAT THIS PACKAGE DOES (target state, v3.1.x → v3.2):
+ *    1. Aggregates validation outcomes across the DAG
+ *    2. Surfaces consensus drift, dissent clusters, contested-claim patterns
+ *    3. Computes mesh-wide falsifiability statistics per domain/DFAO
+ *    4. Tracks reputation graph evolution; flags Sybil-suspicious clusters
+ *    5. Detects emergent ontologies (recurring claim patterns, naming drift)
+ *    6. Provides queryable hooks for governance
+ *    7. Surfaces Goodhart-pattern signals where XP correlates poorly with
+ *       independently-observed outcomes
+ *
+ *  WHAT THIS PACKAGE DOES NOT DO:
+ *    - Decompose claims (personal AI does this)
+ *    - Decide what is true (the mesh does this through validation)
+ *    - Hold a private world model
+ *    - Act as a single source of epistemic authority
+ *
+ *  v3.0 LEGACY ENDPOINTS:
+ *    The /claims POST + sub-claim atomization + Bayesian update endpoints below
+ *    are retained for backwards compatibility through v3.1.x. They will be
+ *    removed in v3.2 once observability endpoints are stable.
  *
  *  Architecture:
- *    - Express HTTP server (port 3002)
- *    - PostgreSQL database (claims + sub-claims)
- *    - Redis for event bus pub/sub
+ *    - Express HTTP server (port 4001)
+ *    - PostgreSQL database (mesh-state index, NOT a claim authority)
+ *    - Redis for event bus subscription (read-mostly)
  *    - Shares @extropy/contracts types
+ *    - Read-mostly: writes only metadata about network state
+ *    - Stateless under restart: rebuilt from DAG replay
+ *    - Multi-instance: no canonical engine instance, by design
  *
  * ════════════════════════════════════════════════════════════════════════════════
  */

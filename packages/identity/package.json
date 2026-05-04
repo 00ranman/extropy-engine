@@ -1,7 +1,7 @@
 {
-  "name": "@extropy/epistemology-engine",
+  "name": "@extropy/identity",
   "version": "0.1.0",
-  "description": "Mesh observability layer for the emergent peer-review system. Witnesses, aggregates, and surfaces the epistemology that arises from incentive-aligned validation across the network. Redefined in v3.1 — see README.",
+  "description": "Hybrid identity: OAuth + on-device KYC + DID + ZKP wrapper. Sybil-resistant, privacy-preserving, governance-revealable. v3.1.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
