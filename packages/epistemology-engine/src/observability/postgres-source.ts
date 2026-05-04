@@ -60,12 +60,8 @@ export class PostgresSource implements EpistemologySource {
   }
 
   // ── Validation observations ─────────────────────────────────────────────
-  // v3.1.x reads from sub_claims.measurement_ids as a per-claim activity
-  // proxy. The dedicated validation_observations table lands in commit 3
-  // alongside the validator co-edge graph. Until then this method returns
-  // empty; the routes that need it (Sybil) are still 501.
   async listValidationObservations(
-    _filter: MeshFilter & {
+    filter: MeshFilter & {
       claimId?: ClaimId;
       subClaimId?: SubClaimId;
       validatorDid?: string;
@@ -73,7 +69,66 @@ export class PostgresSource implements EpistemologySource {
     },
   ): Promise<ValidationObservation[]> {
     this.assertInit();
-    return [];
+    const params: unknown[] = [];
+    const conds: string[] = [];
+    if (filter.claimId) {
+      params.push(filter.claimId);
+      conds.push(`claim_id = $${params.length}`);
+    }
+    if (filter.subClaimId) {
+      params.push(filter.subClaimId);
+      conds.push(`sub_claim_id = $${params.length}`);
+    }
+    if (filter.validatorDid) {
+      params.push(filter.validatorDid);
+      conds.push(`validator_did = $${params.length}`);
+    }
+    if (filter.domain) {
+      params.push(filter.domain);
+      conds.push(`domain = $${params.length}`);
+    }
+    if (filter.range?.from) {
+      params.push(filter.range.from);
+      conds.push(`observed_at >= $${params.length}`);
+    }
+    if (filter.range?.to) {
+      params.push(filter.range.to);
+      conds.push(`observed_at <= $${params.length}`);
+    }
+    const limit = Math.min(filter.limit ?? 1000, 10000);
+    params.push(limit);
+    const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+    const sql = `
+      SELECT sub_claim_id, claim_id, validator_did, domain,
+             evidence_confidence, counter_confidence,
+             dag_receipt_digest, observed_at
+        FROM validation_observations
+        ${where}
+       ORDER BY observed_at DESC
+       LIMIT $${params.length}
+    `;
+    const { rows } = await this.pool.query(sql, params);
+    return rows.map(
+      (r: {
+        sub_claim_id: string;
+        claim_id: string;
+        validator_did: string;
+        domain: string;
+        evidence_confidence: number;
+        counter_confidence: number | null;
+        dag_receipt_digest: string | null;
+        observed_at: string | Date;
+      }) => ({
+        subClaimId: r.sub_claim_id as SubClaimId,
+        claimId: r.claim_id as ClaimId,
+        validatorDid: r.validator_did,
+        domain: r.domain as EntropyDomain,
+        evidenceConfidence: r.evidence_confidence,
+        counterConfidence: r.counter_confidence ?? undefined,
+        observedAt: toIso(r.observed_at),
+        dagReceiptDigest: r.dag_receipt_digest ?? undefined,
+      }),
+    );
   }
 
   // ── Consensus surface ───────────────────────────────────────────────────
@@ -273,15 +328,115 @@ export class PostgresSource implements EpistemologySource {
   }
 
   // ── Validator graph (Sybil + reputation inputs) ─────────────────────────
-  // Wired in commit 3 alongside the validation_observations table.
-  async listValidatorCoEdges(): Promise<ValidatorCoEdge[]> {
+  //
+  //  Co-edges are derived from validation_observations: two DIDs co-validate
+  //  whenever they both produce an observation on the same sub_claim_id.
+  //  We use a self-join with a < ordering so each unordered pair appears
+  //  once, with weight equal to the number of distinct sub-claims they
+  //  jointly touched and lastObservedAt = MAX(observed_at) across either side.
+  //
+  //  Cost note: this is an O(observations² / sub-claim) self-join. For the
+  //  v3.1.x sandbox volumes (≤ 1e6 observations) Postgres handles it. The
+  //  v3.2 dag-substrate source will derive the same edges from a streaming
+  //  receipt index without the join.
+  async listValidatorCoEdges(
+    filter: MeshFilter & {
+      seedDid?: string;
+      minWeight?: number;
+      limit?: number;
+    } = {},
+  ): Promise<ValidatorCoEdge[]> {
     this.assertInit();
-    return [];
+    const params: unknown[] = [];
+    const conds: string[] = [];
+    if (filter.domain) {
+      params.push(filter.domain);
+      conds.push(`a.domain = $${params.length}`);
+      params.push(filter.domain);
+      conds.push(`b.domain = $${params.length}`);
+    }
+    if (filter.range?.from) {
+      params.push(filter.range.from);
+      conds.push(`a.observed_at >= $${params.length}`);
+      params.push(filter.range.from);
+      conds.push(`b.observed_at >= $${params.length}`);
+    }
+    if (filter.range?.to) {
+      params.push(filter.range.to);
+      conds.push(`a.observed_at <= $${params.length}`);
+      params.push(filter.range.to);
+      conds.push(`b.observed_at <= $${params.length}`);
+    }
+    if (filter.seedDid) {
+      params.push(filter.seedDid);
+      conds.push(
+        `(a.validator_did = $${params.length} OR b.validator_did = $${params.length})`,
+      );
+    }
+    const minWeight = filter.minWeight ?? 1;
+    const limit = Math.min(filter.limit ?? 5000, 50000);
+    const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+    params.push(minWeight);
+    const minWeightParam = `$${params.length}`;
+    params.push(limit);
+    const limitParam = `$${params.length}`;
+    const sql = `
+      SELECT
+        a.validator_did                              AS from_did,
+        b.validator_did                              AS to_did,
+        COUNT(DISTINCT a.sub_claim_id)::int          AS weight,
+        MAX(GREATEST(a.observed_at, b.observed_at)) AS last_observed_at
+      FROM validation_observations a
+      JOIN validation_observations b
+        ON a.sub_claim_id = b.sub_claim_id
+       AND a.validator_did < b.validator_did
+      ${where}
+      GROUP BY a.validator_did, b.validator_did
+      HAVING COUNT(DISTINCT a.sub_claim_id) >= ${minWeightParam}
+      ORDER BY weight DESC, last_observed_at DESC
+      LIMIT ${limitParam}
+    `;
+    const { rows } = await this.pool.query(sql, params);
+    return rows.map(
+      (r: {
+        from_did: string;
+        to_did: string;
+        weight: number;
+        last_observed_at: string | Date;
+      }) => ({
+        fromDid: r.from_did,
+        toDid: r.to_did,
+        weight: r.weight,
+        lastObservedAt: toIso(r.last_observed_at),
+      }),
+    );
   }
 
-  async listValidatorDids(): Promise<string[]> {
+  async listValidatorDids(filter: MeshFilter = {}): Promise<string[]> {
     this.assertInit();
-    return [];
+    const params: unknown[] = [];
+    const conds: string[] = [];
+    if (filter.domain) {
+      params.push(filter.domain);
+      conds.push(`domain = $${params.length}`);
+    }
+    if (filter.range?.from) {
+      params.push(filter.range.from);
+      conds.push(`observed_at >= $${params.length}`);
+    }
+    if (filter.range?.to) {
+      params.push(filter.range.to);
+      conds.push(`observed_at <= $${params.length}`);
+    }
+    const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+    const sql = `
+      SELECT DISTINCT validator_did
+        FROM validation_observations
+        ${where}
+       ORDER BY validator_did
+    `;
+    const { rows } = await this.pool.query(sql, params);
+    return rows.map((r: { validator_did: string }) => r.validator_did);
   }
 
   private assertInit(): void {

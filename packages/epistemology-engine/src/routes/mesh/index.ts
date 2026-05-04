@@ -13,7 +13,7 @@
  *    GET  /mesh/consensus/drift              recent posterior drifts
  *    GET  /mesh/consensus/:claimId           posterior + CI + dissent for one claim
  *    GET  /mesh/falsifiability               domain/window falsifiability score
- *    GET  /mesh/sybil/rank                   501 until commit 3
+ *    GET  /mesh/sybil/rank                   random-walk Sybil ranking
  *
  *  Input parsing is minimal and tolerant. Bad query strings degrade to the
  *  default behaviour rather than 400-ing, because dashboards iterate fast
@@ -36,6 +36,10 @@ import {
   getClaimConsensus,
   listConsensusDrift,
 } from '../../observability/consensus.js';
+import {
+  rankValidators,
+  toRankedList,
+} from '../../observability/sybil.js';
 import type { ClaimId, EntropyDomain } from '@extropy/contracts';
 
 export interface MeshRouterDeps {
@@ -103,13 +107,48 @@ export function createMeshRouter(deps: MeshRouterDeps): Router {
     }
   });
 
-  // ── Sybil — wired in commit 3 ──────────────────────────────────────────
-  router.get('/sybil/rank', (_req: Request, res: Response) => {
-    res.status(501).json({
-      error: 'not_implemented',
-      planned: 'commit 3',
-      sourceMethod: 'listValidatorCoEdges + listValidatorDids',
-    });
+  // ── Sybil cluster ranking (random-walk SybilRank-style) ──────────────
+  //
+  //  Query parameters (all optional):
+  //    domain, dfaoId, from, to     standard MeshFilter
+  //    seeds                        comma-separated trusted DIDs
+  //    rounds                       override iteration count [4..64]
+  //    damping                      lazy-walk damping in (0, 1)
+  //    fallbackSeedCount            how many top-degree seeds to use
+  //                                 when no trusted seeds are supplied
+  //    limit                        cap on the response list size
+  //
+  //  Response shape:
+  //    { filter, seeds, rounds, validators: [{ did, score, degree, isSeed }] }
+  router.get('/sybil/rank', async (req: Request, res: Response) => {
+    try {
+      const filter = parseMeshFilter(req);
+      const trustedSeeds = parseSeedList(req.query.seeds);
+      const rounds = parseIntSafe(req.query.rounds, NaN);
+      const damping = parseFloatSafe(req.query.damping, NaN);
+      const fallbackSeedCount = parseIntSafe(req.query.fallbackSeedCount, NaN);
+      const limit = parseIntSafe(req.query.limit, 1000);
+
+      const result = await rankValidators(deps.source, {
+        filter,
+        trustedSeeds: trustedSeeds.length > 0 ? trustedSeeds : undefined,
+        rounds: Number.isFinite(rounds) ? rounds : undefined,
+        damping: Number.isFinite(damping) ? damping : undefined,
+        fallbackSeedCount: Number.isFinite(fallbackSeedCount)
+          ? fallbackSeedCount
+          : undefined,
+      });
+      const ranked = toRankedList(result, result.edges).slice(0, limit);
+      res.json({
+        filter,
+        seeds: result.seeds,
+        rounds: result.rounds,
+        edgeCount: result.edges.length,
+        validators: ranked,
+      });
+    } catch (err) {
+      sendError(res, err);
+    }
   });
 
   return router;
@@ -182,6 +221,14 @@ function parseFloatSafe(v: unknown, fallback: number): number {
   if (typeof v !== 'string') return fallback;
   const n = parseFloat(v);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function parseSeedList(v: unknown): string[] {
+  if (typeof v !== 'string' || v.length === 0) return [];
+  return v
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
 
 function isIsoLike(s: string): boolean {

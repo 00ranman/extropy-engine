@@ -144,6 +144,29 @@ async function initDb(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_bhist_claim     ON bayesian_history(claim_id, observed_at DESC);
     CREATE INDEX IF NOT EXISTS idx_bhist_domain_at ON bayesian_history(domain, observed_at DESC);
+
+    -- v3.1 observability (commit 3): one row per validation event tied to a
+    -- DID. The Sybil ranking and validator co-edge graph read from here.
+    -- The legacy evidence and resolve handlers append a row when the request
+    -- body carries a validatorDid; v3.0 callers that omit it still work, but
+    -- their activity is invisible to the Sybil surface (acceptable, because
+    -- v3.0 had no DID layer at all).
+    CREATE TABLE IF NOT EXISTS validation_observations (
+      id                   BIGSERIAL PRIMARY KEY,
+      sub_claim_id         TEXT NOT NULL,
+      claim_id             TEXT NOT NULL,
+      validator_did        TEXT NOT NULL,
+      domain               TEXT NOT NULL,
+      evidence_confidence  FLOAT NOT NULL,
+      counter_confidence   FLOAT,
+      kind                 TEXT NOT NULL DEFAULT 'evidence',
+      dag_receipt_digest   TEXT,
+      observed_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_vobs_sub_claim ON validation_observations(sub_claim_id, observed_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_vobs_claim     ON validation_observations(claim_id, observed_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_vobs_did       ON validation_observations(validator_did, observed_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_vobs_domain_at ON validation_observations(domain, observed_at DESC);
   `);
   console.log('[epistemology-engine] Database schema ready');
 }

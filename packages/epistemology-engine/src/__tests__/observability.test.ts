@@ -403,10 +403,16 @@ describe('mesh router', () => {
     });
   });
 
-  it('GET /mesh/sybil/rank still returns 501 (commit 3)', async () => {
+  it('GET /mesh/sybil/rank returns a ranked validator list', async () => {
     const r = await fetch(`${baseUrl}/mesh/sybil/rank`);
-    expect(r.status).toBe(501);
+    expect(r.status).toBe(200);
     const json = await r.json();
-    expect(json.planned).toBe('commit 3');
+    // The mesh-router fixture pool returns [] for validation_observations,
+    // so we expect an empty graph and an empty validators list, but the
+    // route surface should still be well-formed.
+    expect(Array.isArray(json.validators)).toBe(true);
+    expect(Array.isArray(json.seeds)).toBe(true);
+    expect(typeof json.rounds).toBe('number');
+    expect(typeof json.edgeCount).toBe('number');
   });
 });

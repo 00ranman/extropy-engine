@@ -243,13 +243,24 @@ export function createLegacyRouter(deps: LegacyRouterDeps): Router {
     '/sub-claims/:id/evidence',
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        // Body shape (v3.1): { measurementId, evidenceConfidence: number in [0,1] }
+        // Body shape (v3.1): { measurementId, evidenceConfidence: number in [0,1], validatorDid?, counterConfidence?, dagReceiptDigest? }
         // Body shape (v3.0 legacy, still accepted): { measurementId, likelihood, counterLikelihood }
-        const { measurementId, evidenceConfidence, likelihood, counterLikelihood } = req.body as {
+        const {
+          measurementId,
+          evidenceConfidence,
+          likelihood,
+          counterLikelihood,
+          validatorDid,
+          counterConfidence,
+          dagReceiptDigest,
+        } = req.body as {
           measurementId: MeasurementId;
           evidenceConfidence?: number;
           likelihood?: number;
           counterLikelihood?: number;
+          validatorDid?: string;
+          counterConfidence?: number;
+          dagReceiptDigest?: string;
         };
 
         const { rows } = await db.query('SELECT * FROM sub_claims WHERE id = $1', [
@@ -290,6 +301,27 @@ export function createLegacyRouter(deps: LegacyRouterDeps): Router {
           [JSON.stringify(updatedPrior), measurementId, req.params.id],
         );
 
+        // v3.1: append a validation_observation row when the caller provided
+        // a DID. v3.0 callers (no DID layer) keep working without one, they
+        // just don't show up in the Sybil graph.
+        if (typeof validatorDid === 'string' && validatorDid.length > 0) {
+          await db.query(
+            `INSERT INTO validation_observations
+               (sub_claim_id, claim_id, validator_did, domain,
+                evidence_confidence, counter_confidence, kind, dag_receipt_digest)
+             VALUES ($1, $2, $3, $4, $5, $6, 'evidence', $7)`,
+            [
+              req.params.id,
+              sc.claim_id,
+              validatorDid,
+              sc.domain,
+              confidence,
+              typeof counterConfidence === 'number' ? counterConfidence : null,
+              typeof dagReceiptDigest === 'string' ? dagReceiptDigest : null,
+            ],
+          );
+        }
+
         res.json({ subClaimId: req.params.id, updatedPrior });
       } catch (err) {
         next(err);
@@ -302,7 +334,14 @@ export function createLegacyRouter(deps: LegacyRouterDeps): Router {
     '/sub-claims/:id/resolve',
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { verdict, confidence, justification, validationDurationSeconds } = req.body;
+        const { verdict, confidence, justification, validationDurationSeconds, validatorDid, dagReceiptDigest } = req.body as {
+          verdict?: string;
+          confidence?: number;
+          justification?: string;
+          validationDurationSeconds?: number;
+          validatorDid?: string;
+          dagReceiptDigest?: string;
+        };
         const newStatus =
           verdict === 'confirmed'
             ? SubClaimStatus.VERIFIED
@@ -322,6 +361,30 @@ export function createLegacyRouter(deps: LegacyRouterDeps): Router {
           newStatus,
           req.params.id,
         ]);
+
+        // v3.1: append a resolution observation if the caller provided a DID.
+        // The evidence_confidence column carries the resolver's stated
+        // confidence; verdict='denied' records the inverse so the column is
+        // semantically "P(claim true) according to this resolver".
+        if (typeof validatorDid === 'string' && validatorDid.length > 0) {
+          const stated = typeof confidence === 'number' ? confidence : 0.5;
+          const evidenceConf =
+            verdict === 'denied' ? 1 - stated : stated;
+          await db.query(
+            `INSERT INTO validation_observations
+               (sub_claim_id, claim_id, validator_did, domain,
+                evidence_confidence, kind, dag_receipt_digest)
+             VALUES ($1, $2, $3, $4, $5, 'resolution', $6)`,
+            [
+              req.params.id,
+              scRows[0].claim_id,
+              validatorDid,
+              scRows[0].domain,
+              evidenceConf,
+              typeof dagReceiptDigest === 'string' ? dagReceiptDigest : null,
+            ],
+          );
+        }
 
         // Propagate to parent claim: recompute composite truth score.
         const claimId = scRows[0].claim_id;
