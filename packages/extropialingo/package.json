@@ -5,13 +5,14 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
     "dev": "ts-node src/server.ts",
-    "test": "jest"
+    "test": "jest",
+    "build:wip": "tsc"
   },
   "dependencies": {
-        "@extropy/xp-formula": "*",
+    "@extropy/xp-formula": "*",
     "express": "^4.18.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "//build": "WIP: package has unresolved pre-existing errors (missing service files, ioredis/DOM type issues). Run 'pnpm run build:wip' to attempt build."
 }

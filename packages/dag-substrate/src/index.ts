@@ -19,7 +19,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import express, { Request, Response } from 'express';
+import express, { type Express, Request, Response } from 'express';
 import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -74,7 +74,7 @@ import type {
 //  Bootstrap
 // ─────────────────────────────────────────────────────────────────────────────
 
-const app = express();
+const app: Express = express();
 app.use(express.json({ limit: '1mb' }));
 
 const PORT   = parseInt(process.env.PORT   || '4008', 10);

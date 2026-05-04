@@ -11,7 +11,7 @@
  *   Phase 2 (RCV):  Retroactive confirm or burn
  */
 
-import express from 'express';
+import express, { type Express } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -41,7 +41,7 @@ import type {
   XPBurnedPayload,
 } from '@extropy/contracts';
 
-const app = express();
+const app: Express = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 4005;
