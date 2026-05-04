@@ -28,6 +28,11 @@ import {
 import { loadKeyPairFromEnv, sign, verify } from './keys.js';
 
 const PORT = Number(process.env.PORT ?? 4200);
+// Default-deny remote access. Bind to loopback only so the listener is
+// reachable from localhost (e.g. via SSH tunnel `-L 4200:localhost:4200`).
+// Explicitly set HOST=0.0.0.0 to expose on all interfaces (only do this
+// behind a firewall + reverse proxy with TLS).
+const HOST = process.env.HOST ?? '127.0.0.1';
 const SERVICE_NAME = '@extropy/node-handshake';
 const NODE_ROLE = (process.env.NODE_ROLE ?? 'vps') as NodeRole;
 const NODE_VERSION = '0.1.0';
@@ -180,7 +185,17 @@ app.post('/heartbeat', (req: Request, res: Response) => {
 
 // ────────────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   // eslint-disable-next-line no-console
-  console.log(`[${SERVICE_NAME}] listening on :${PORT} role=${NODE_ROLE} nodeId=${keyPair.nodeId}`);
+  console.log(
+    `[${SERVICE_NAME}] listening on ${HOST}:${PORT} role=${NODE_ROLE} nodeId=${keyPair.nodeId}`,
+  );
+  if (HOST === '127.0.0.1' || HOST === 'localhost') {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[${SERVICE_NAME}] loopback-only. To reach from another machine, use:\n` +
+        `    ssh -L ${PORT}:localhost:${PORT} <user>@<this-host>\n` +
+        `  Or set HOST=0.0.0.0 to expose on all interfaces (firewall + TLS strongly advised).`,
+    );
+  }
 });
