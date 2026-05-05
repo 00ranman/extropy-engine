@@ -6,7 +6,6 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "dev": "ts-node src/server.ts",
-    "test": "jest",
     "build:wip": "tsc"
   },
   "dependencies": {
