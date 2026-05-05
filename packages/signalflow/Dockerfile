@@ -11,6 +11,8 @@ COPY .npmrc tsconfig.base.json ./
 
 # Manifests for the slice signalflow needs
 COPY packages/contracts/package.json            packages/contracts/
+COPY packages/bayesian/package.json             packages/bayesian/
+COPY packages/decomposition-kit/package.json    packages/decomposition-kit/
 COPY packages/epistemology-engine/package.json  packages/epistemology-engine/
 COPY packages/signalflow/package.json           packages/signalflow/
 COPY packages/loop-ledger/package.json          packages/loop-ledger/
@@ -22,6 +24,8 @@ RUN pnpm install --frozen-lockfile \
 
 # Source for signalflow and its workspace deps
 COPY packages/contracts/           packages/contracts/
+COPY packages/bayesian/            packages/bayesian/
+COPY packages/decomposition-kit/   packages/decomposition-kit/
 COPY packages/epistemology-engine/ packages/epistemology-engine/
 COPY packages/loop-ledger/         packages/loop-ledger/
 COPY packages/reputation/          packages/reputation/
