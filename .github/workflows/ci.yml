@@ -21,8 +21,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -r build --if-present
-      - run: pnpm -r test  --if-present
+      - run: pnpm -r --if-present run build
+      - run: pnpm -r --if-present run test
 
   ethics-validation:
     name: Ethics Package Validation
@@ -49,7 +49,7 @@ jobs:
           node-version: 20.x
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -r lint --if-present
+      - run: pnpm -r --if-present run lint
 
   docker-build:
     name: Docker Build Check
