@@ -65,9 +65,8 @@ Copy `.env.example` to `.env` at the repo root and fill in:
 PORT=4001
 BASE_URL=http://<your-lan-ip>:4001
 SESSION_SECRET=<long random string>
-DATABASE_URL=postgresql://extropy:extropy_dev@localhost:5432/extropy_engine?schema=homeflow
-REDIS_URL=redis://localhost:6379
-DAG_SUBSTRATE_URL=http://localhost:4011
+HOMEFLOW_DATA_DIR=./.data
+# DATABASE_URL=postgresql://extropy:extropy_dev@localhost:5432/extropy_engine?schema=homeflow
 GOOGLE_CLIENT_ID=<from step 1>
 GOOGLE_CLIENT_SECRET=<from step 1>
 ```
@@ -77,15 +76,23 @@ GOOGLE_CLIENT_SECRET=<from step 1>
 Without `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` the `/auth/google` route
 returns 503 with a hint, the rest of the API still runs so you can poke at it.
 
+### Storage: file-backed by default, Postgres optional
+
+By default, **`DATABASE_URL` is optional**. When it is unset or empty, HomeFlow
+runs against a file-backed JSON store. The service writes a single JSON file
+at `$HOMEFLOW_DATA_DIR/homeflow.json` (defaults to `/var/lib/homeflow` on the
+VPS or `./.data` in dev). This is the right default for the family pilot
+because the canonical truth lives on each user's device per spec section 3,
+so the server only needs to remember registered DIDs, public keys, and PSLL
+hash-chain anchors. A JSON file fits those needs without provisioning a DB.
+
+To graduate to Postgres later, set `DATABASE_URL` to a real connection string
+(or rerun `deploy-homeflow.sh` with `ENABLE_POSTGRES=1`). The Postgres code
+path is intact behind the runtime branch in `src/index.ts`.
+
 ## 4. Start the service
 
-In one terminal, bring up Postgres and Redis:
-
-```
-docker compose up postgres redis
-```
-
-In another, start HomeFlow in dev mode:
+In dev mode (file-backed store, no extra services needed):
 
 ```
 pnpm install

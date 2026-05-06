@@ -10,7 +10,19 @@
 
 import { Pool, type PoolClient } from 'pg';
 
-export class DatabaseService {
+/**
+ * Minimal contract every storage adapter must satisfy. The Postgres-backed
+ * DatabaseService and the file-backed FileBackedDb both implement this.
+ * Consumers depend on this interface, not the concrete class, so the runtime
+ * adapter can swap in based on whether DATABASE_URL is set.
+ */
+export interface DatabaseLike {
+  query(text: string, params?: unknown[]): Promise<{ rows: unknown[]; rowCount: number | null }>;
+  initialize(): Promise<void>;
+  close(): Promise<void>;
+}
+
+export class DatabaseService implements DatabaseLike {
   public pool: Pool;
 
   constructor(databaseUrl: string) {

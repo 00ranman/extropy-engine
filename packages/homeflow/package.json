@@ -1,6 +1,6 @@
 {
   "name": "@extropy/homeflow",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "HomeFlow - IoT-integrated smart home/building management with thermodynamic entropy reduction measurement",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
