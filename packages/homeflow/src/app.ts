@@ -39,6 +39,8 @@ import { createEntropyRoutes } from './routes/entropy.routes.js';
 import { createIntegrationRoutes } from './routes/integrations.routes.js';
 import { createInteropRoutes } from './routes/interop.routes.js';
 import { createTemporalEventRoute } from './routes/temporal.routes.js';
+import { createFamilyRoutes } from './routes/family.routes.js';
+import type { FamilyStore } from './services/family-store.service.js';
 
 export interface AppDeps {
   db: DatabaseService;
@@ -57,6 +59,8 @@ export interface AppDeps {
     reputation: ReputationIntegration;
   };
   interopService: InteropService;
+  /** Optional family pilot file-backed store. When provided, /api/family is mounted. */
+  familyStore?: FamilyStore;
   authConfig: AuthConfig;
   sessionSecret: string;
   /** Optional override, primarily for tests. */
@@ -67,6 +71,8 @@ export interface AppDeps {
   secureCookies?: boolean;
   /** Optional HMAC secret shared with the temporal service for callback verification. */
   temporalHmacSecret?: string;
+  /** Base URL of the temporal service. Used to proxy /now-public from the UI. */
+  temporalUrl?: string;
 }
 
 /**
@@ -148,7 +154,7 @@ export function createApp(deps: AppDeps): Express {
       (text, params) => deps.db.query(text, params as unknown[]),
     );
 
-  app.use('/', createTemporalEventRoute(deps.integrations.temporal, deps.temporalHmacSecret));
+  app.use('/', createTemporalEventRoute(deps.integrations.temporal, deps.temporalHmacSecret, deps.temporalUrl));
 
   app.use('/api/v1/identity', createIdentityRoutes(deps.userService, dagAnchor));
   app.use('/api/v1/psll', createPSLLRoutes(deps.userService, deps.psllService));
@@ -171,6 +177,10 @@ export function createApp(deps: AppDeps): Express {
     }),
   );
   app.use('/api/v1', interopRouter);
+
+  if (deps.familyStore) {
+    app.use('/api/family', createFamilyRoutes(deps.userService, deps.familyStore));
+  }
 
   if (deps.staticFrontendDir !== null && deps.staticFrontendDir !== undefined) {
     const frontendDir = deps.staticFrontendDir;

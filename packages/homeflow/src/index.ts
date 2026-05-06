@@ -23,6 +23,7 @@ import type { DomainEvent } from '@extropy/contracts';
 
 import { DatabaseService } from './services/database.service.js';
 import { FileBackedDb, resolveDataDir } from './services/file-db.service.js';
+import { FamilyStore } from './services/family-store.service.js';
 import { EventBusService } from './services/event-bus.service.js';
 import { DeviceService } from './services/device.service.js';
 import { EntropyService } from './services/entropy.service.js';
@@ -229,6 +230,12 @@ async function main(): Promise<void> {
 
   await temporal.registerForSeasonEvents();
 
+  // ── Family Pilot v1 store ─────────────────────────────────────────────
+  const familyDataDir = resolveDataDir();
+  const familyStore = new FamilyStore({ dataDir: familyDataDir });
+  await familyStore.initialize();
+  console.log(`[homeflow] Family store ready at ${familyStore.path}`);
+
   // ── Build and start the express app ──────────────────────────────────
   const app = createApp({
     db,
@@ -240,6 +247,7 @@ async function main(): Promise<void> {
     claimService,
     integrations: { governance, temporal, token, credential, dag, reputation },
     interopService,
+    familyStore,
     authConfig: {
       googleClientId: process.env.GOOGLE_CLIENT_ID,
       googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -248,6 +256,7 @@ async function main(): Promise<void> {
     sessionSecret: SESSION_SECRET,
     staticFrontendDir: defaultStaticFrontendDir(),
     secureCookies: process.env.SECURE_COOKIES === '1',
+    temporalUrl: TEMPORAL_URL,
     ...(TEMPORAL_HMAC_SECRET ? { temporalHmacSecret: TEMPORAL_HMAC_SECRET } : {}),
   });
 
