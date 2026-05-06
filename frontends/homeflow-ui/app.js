@@ -6,7 +6,10 @@
   'use strict';
 
   // ─── Config ───
-  const API_BASE = '/homeflow/api/v1';
+  // When the homeflow service serves this frontend directly (family pilot),
+  // use the same origin /api/v1 prefix. When served behind the previous
+  // /homeflow gateway, fall back to the legacy prefix.
+  const API_BASE = (typeof window !== 'undefined' && window.HOMEFLOW_API_BASE) || '/api/v1';
   const STORAGE_KEY = 'homeflow_household_id';
   const STORAGE_VALIDATOR = 'homeflow_validator_id';
   const ACTIVITY_KEY = 'homeflow_activity';
@@ -113,7 +116,17 @@
       householdId = hh.id;
       safeStorage.setItem(STORAGE_KEY, householdId);
       safeStorage.setItem(STORAGE_VALIDATOR, validatorId);
-      addActivity('blue', 'Household registered — Welcome to HomeFlow!');
+      addActivity('blue', 'Household registered. Welcome to HomeFlow!');
+      // Family pilot: sign this action into the user's PSLL.
+      if (window.HomeFlowPSLL) {
+        window.HomeFlowPSLL.appendEntry({
+          kind: 'household.create',
+          householdId: hh.id,
+          name: hh.name
+        }).catch(function (err) {
+          console.warn('PSLL append failed:', err.message);
+        });
+      }
     } catch (err) {
       showToast('Failed to initialize household: ' + err.message, 'error');
     }
@@ -774,9 +787,63 @@
     showToast(zone.name + ' — ' + (zone.isOccupied ? 'Occupied' : 'Vacant'));
   }
 
+  // ─── PSLL view (family pilot) ───
+  function renderPSLLView() {
+    var container = document.getElementById('pageContent');
+    if (!container) return;
+    container.innerHTML = '<div class="card"><h2 style="color:#fff;margin:0 0 12px">My PSLL</h2>'
+      + '<p style="color:#9090b0;font-size:13px;margin:0 0 16px">'
+      + 'Each entry below was signed in your browser with your private Ed25519 key '
+      + 'and verified by the server before being appended to your personal log.</p>'
+      + '<div id="psllList" class="psll-list"><div class="psll-entry">Loading...</div></div></div>';
+    if (!window.HomeFlowPSLL) return;
+    window.HomeFlowPSLL.listMine(0).then(function (resp) {
+      var listEl = document.getElementById('psllList');
+      if (!listEl) return;
+      var entries = (resp && resp.entries) || [];
+      if (entries.length === 0) {
+        listEl.innerHTML = '<div class="psll-entry">No entries yet. Try the demo button below.</div>'
+          + '<button id="psllDemoBtn" class="auth-google-btn" style="margin-top:12px;max-width:260px">Append a hello entry</button>';
+      } else {
+        listEl.innerHTML = entries.map(function (e) {
+          return '<div class="psll-entry">'
+            + '<div><span class="psll-seq">#' + e.seq + '</span> '
+            + escapeHtml(JSON.stringify(e.entry)) + '</div>'
+            + '<div class="psll-hash">hash: ' + escapeHtml(e.hash) + '</div>'
+            + '</div>';
+        }).join('') + '<button id="psllDemoBtn" class="auth-google-btn" style="margin-top:12px;max-width:260px">Append another</button>';
+      }
+      var btn = document.getElementById('psllDemoBtn');
+      if (btn) btn.addEventListener('click', function () {
+        btn.disabled = true;
+        btn.textContent = 'Signing...';
+        window.HomeFlowPSLL.appendEntry({ kind: 'hello', text: 'manual append at ' + new Date().toISOString() })
+          .then(function () { renderPSLLView(); })
+          .catch(function (err) { btn.disabled = false; btn.textContent = 'Retry: ' + (err.message || 'failed'); });
+      });
+    }).catch(function (err) {
+      var listEl = document.getElementById('psllList');
+      if (listEl) listEl.innerHTML = '<div class="psll-entry">Failed to load PSLL: ' + escapeHtml(err.message || String(err)) + '</div>';
+    });
+  }
+
+  function bindPSLLNav() {
+    var navEl = document.querySelector('.nav-item[data-page="psll"]');
+    if (!navEl) return;
+    navEl.addEventListener('click', function (e) {
+      e.preventDefault();
+      var titleEl = document.getElementById('pageTitle');
+      if (titleEl) titleEl.textContent = 'My PSLL';
+      document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
+      navEl.classList.add('active');
+      renderPSLLView();
+    });
+  }
+
   // ─── Init ───
   async function init() {
     bindEvents();
+    bindPSLLNav();
     navigate();
     renderActivity();
 
@@ -791,8 +858,15 @@
     }
   }
 
-  // Start
-  if (document.readyState === 'loading') {
+  // Expose for diagnostics
+  window.HomeFlowApp = { init: init };
+
+  // Start. If the family-pilot auth gate is loaded, defer init until the user
+  // is signed in and onboarded so we don't hammer the API while the auth
+  // screen is showing. Otherwise start immediately.
+  if (window.HomeFlowAuth && typeof window.HomeFlowAuth.onReady === 'function') {
+    window.HomeFlowAuth.onReady(function () { init(); });
+  } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
