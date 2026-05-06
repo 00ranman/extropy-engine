@@ -22,6 +22,7 @@ import { EventType } from '@extropy/contracts';
 import type { DomainEvent } from '@extropy/contracts';
 
 import { DatabaseService } from './services/database.service.js';
+import { FileBackedDb, resolveDataDir } from './services/file-db.service.js';
 import { EventBusService } from './services/event-bus.service.js';
 import { DeviceService } from './services/device.service.js';
 import { EntropyService } from './services/entropy.service.js';
@@ -46,7 +47,10 @@ import { createApp, defaultStaticFrontendDir } from './app.js';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PORT              = parseInt(process.env.PORT ?? '4015', 10);
-const DATABASE_URL      = process.env.DATABASE_URL ?? 'postgresql://extropy:extropy_dev@localhost:5432/extropy_engine?schema=homeflow';
+// DATABASE_URL is now optional. When unset/empty the service runs with a
+// file-backed JSON store (see services/file-db.service.ts). Set it to a real
+// Postgres connection string to graduate the family pilot to Postgres mode.
+const DATABASE_URL      = process.env.DATABASE_URL ?? '';
 const REDIS_URL         = process.env.REDIS_URL ?? 'redis://localhost:6379';
 const EPISTEMOLOGY_URL  = process.env.EPISTEMOLOGY_URL ?? 'http://localhost:4001';
 const SIGNALFLOW_URL    = process.env.SIGNALFLOW_URL ?? 'http://localhost:4002';
@@ -74,9 +78,22 @@ async function main(): Promise<void> {
   console.log('  HOMEFLOW, Extropy Engine IoT Smart Home Service');
   console.log('═══════════════════════════════════════════════════════════════');
 
-  const db = new DatabaseService(DATABASE_URL);
-  await db.initialize();
-  console.log('[homeflow] Database initialized');
+  // Storage adapter: real Postgres when DATABASE_URL is set, otherwise a
+  // file-backed JSON store. See services/file-db.service.ts for the rationale
+  // (Family Pilot only needs users + PSLL anchors; spec section 3 keeps truth
+  // on the user device).
+  let db: DatabaseService;
+  if (DATABASE_URL && DATABASE_URL.trim().length > 0) {
+    db = new DatabaseService(DATABASE_URL);
+    await db.initialize();
+    console.log('[homeflow] Database initialized (Postgres mode)');
+  } else {
+    const dataDir = resolveDataDir();
+    const fileDb = new FileBackedDb({ dataDir });
+    await fileDb.initialize();
+    console.log(`[homeflow] Using file-backed store at ${fileDb.path}`);
+    db = fileDb as unknown as DatabaseService;
+  }
 
   const eventBus = new EventBusService(REDIS_URL);
   await eventBus.connect();
