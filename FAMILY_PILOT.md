@@ -194,6 +194,26 @@ Self signed certs on the LAN are not recommended, that path leads to a
 maze of trust prompts that family members will not accept. Tailscale or
 Cloudflare Tunnel are the two clean options.
 
+## Season events from the temporal service
+
+A second systemd unit named `temporal` runs alongside `homeflow` on the
+VPS. It implements the Universal Times spec
+(see `docs/universaltimes-reference.html`) and posts callbacks to
+HomeFlow's `/temporal/event` endpoint whenever a unit transition occurs.
+HomeFlow registers for the Season unit at startup. Once both services
+are running, season events fire automatically without manual wiring.
+
+If the temporal service is offline at HomeFlow boot, HomeFlow logs a
+clear warning and retries every 60s. HomeFlow never crashes because of
+a missing temporal service.
+
+To verify after a redeploy:
+
+```bash
+systemctl status temporal
+curl -s http://127.0.0.1:4002/now | head -20
+```
+
 ## What is NOT in this pilot
 
 By design the family pilot stops short of:

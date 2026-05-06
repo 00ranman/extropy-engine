@@ -22,6 +22,8 @@
     "build:dfao": "pnpm --filter @extropy/dfao-registry run build",
     "build:governance": "pnpm --filter @extropy/governance run build",
     "build:temporal": "pnpm --filter @extropy/temporal run build",
+    "build:temporal-service": "pnpm --filter @extropy/temporal-service run build",
+    "start:temporal": "pnpm --filter @extropy/temporal-service start",
     "build:economy": "pnpm --filter @extropy/token-economy run build",
     "build:credentials": "pnpm --filter @extropy/credentials run build",
     "build:ecosystem": "pnpm --filter @extropy/ecosystem run build",

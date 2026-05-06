@@ -59,7 +59,8 @@ const REPUTATION_URL    = process.env.REPUTATION_URL ?? 'http://localhost:4004';
 const XP_MINT_URL       = process.env.XP_MINT_URL ?? 'http://localhost:4005';
 const GOVERNANCE_URL    = process.env.GOVERNANCE_URL ?? 'http://localhost:4006';
 const DFAO_REGISTRY_URL = process.env.DFAO_REGISTRY_URL ?? 'http://localhost:4007';
-const TEMPORAL_URL      = process.env.TEMPORAL_URL ?? 'http://localhost:4008';
+const TEMPORAL_URL      = process.env.TEMPORAL_URL ?? 'http://127.0.0.1:4002';
+const TEMPORAL_HMAC_SECRET = process.env.TEMPORAL_HMAC_SECRET ?? '';
 const TOKEN_ECONOMY_URL = process.env.TOKEN_ECONOMY_URL ?? 'http://localhost:4009';
 const CREDENTIALS_URL   = process.env.CREDENTIALS_URL ?? 'http://localhost:4010';
 const DAG_SUBSTRATE_URL = process.env.DAG_SUBSTRATE_URL ?? 'http://localhost:4011';
@@ -122,6 +123,8 @@ async function main(): Promise<void> {
   });
   const temporal = new TemporalIntegration(db, eventBus, {
     temporalUrl: TEMPORAL_URL,
+    callbackUrl: `${BASE_URL.replace(/\/$/, '')}/temporal/event`,
+    ...(TEMPORAL_HMAC_SECRET ? { hmacSecret: TEMPORAL_HMAC_SECRET } : {}),
   });
   const token = new TokenIntegration(db, eventBus, {
     tokenEconomyUrl: TOKEN_ECONOMY_URL,
@@ -245,6 +248,7 @@ async function main(): Promise<void> {
     sessionSecret: SESSION_SECRET,
     staticFrontendDir: defaultStaticFrontendDir(),
     secureCookies: process.env.SECURE_COOKIES === '1',
+    ...(TEMPORAL_HMAC_SECRET ? { temporalHmacSecret: TEMPORAL_HMAC_SECRET } : {}),
   });
 
   app.listen(PORT, () => {
