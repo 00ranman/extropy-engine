@@ -82,27 +82,31 @@ log "Installing pnpm deps and building monorepo"
 sudo -u "$APP_USER" -- bash -c "cd '$APP_DIR' && pnpm install --frozen-lockfile && pnpm -r --if-present run build"
 
 #####################################################
-# 7. Postgres
+# 7. Postgres (default OFF; set ENABLE_POSTGRES=1 to provision)
 #####################################################
-log "Configuring Postgres"
-systemctl enable --now postgresql
+if [[ "${ENABLE_POSTGRES:-0}" == "1" ]]; then
+  log "Configuring Postgres (ENABLE_POSTGRES=1)"
+  systemctl enable --now postgresql
 
-# Create role if missing
-if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$PG_USER'" | grep -q 1; then
-  PG_PASS=$(openssl rand -hex 24)
-  sudo -u postgres psql -c "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASS';"
-  echo "$PG_PASS" > "/root/.homeflow_pg_password"
-  chmod 600 "/root/.homeflow_pg_password"
-  log "Postgres password generated and saved to /root/.homeflow_pg_password"
+  if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$PG_USER'" | grep -q 1; then
+    PG_PASS=$(openssl rand -hex 24)
+    sudo -u postgres psql -c "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASS';"
+    echo "$PG_PASS" > "/root/.homeflow_pg_password"
+    chmod 600 "/root/.homeflow_pg_password"
+    log "Postgres password generated and saved to /root/.homeflow_pg_password"
+  else
+    PG_PASS=$(cat /root/.homeflow_pg_password 2>/dev/null || echo "")
+    [[ -n "$PG_PASS" ]] || err "Postgres role exists but password file missing. Recreate manually."
+    log "Reusing existing Postgres role"
+  fi
+
+  if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'" | grep -q 1; then
+    sudo -u postgres psql -c "CREATE DATABASE $PG_DB OWNER $PG_USER;"
+  fi
 else
-  PG_PASS=$(cat /root/.homeflow_pg_password 2>/dev/null || echo "")
-  [[ -n "$PG_PASS" ]] || err "Postgres role exists but password file missing. Recreate manually."
-  log "Reusing existing Postgres role"
-fi
-
-# Create db if missing
-if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'" | grep -q 1; then
-  sudo -u postgres psql -c "CREATE DATABASE $PG_DB OWNER $PG_USER;"
+  log "Skipping Postgres (default). Family pilot uses file-backed store at /var/lib/homeflow."
+  mkdir -p /var/lib/homeflow
+  chown "$APP_USER:$APP_USER" /var/lib/homeflow
 fi
 
 #####################################################
@@ -112,12 +116,17 @@ ENV_FILE="$APP_DIR/.env"
 if [[ ! -f "$ENV_FILE" ]]; then
   log "Generating $ENV_FILE skeleton"
   SESSION_SECRET=$(openssl rand -hex 32)
+  if [[ "${ENABLE_POSTGRES:-0}" == "1" ]]; then
+    DB_LINE="DATABASE_URL=postgres://$PG_USER:$PG_PASS@127.0.0.1:5432/$PG_DB"
+  else
+    DB_LINE="# DATABASE_URL unset, file-backed store active\nHOMEFLOW_DATA_DIR=/var/lib/homeflow"
+  fi
   cat > "$ENV_FILE" <<EOF
 # HomeFlow production env, do not commit
 PORT=$APP_PORT
 BASE_URL=https://$DOMAIN
 SESSION_SECRET=$SESSION_SECRET
-DATABASE_URL=postgres://$PG_USER:$PG_PASS@localhost:5432/$PG_DB
+$(printf '%b' "$DB_LINE")
 SECURE_COOKIES=true
 
 # Fill these in after creating Google OAuth client (see post-deploy notes)
@@ -138,8 +147,7 @@ log "Writing systemd unit at $SERVICE_FILE"
 cat > "$SERVICE_FILE" <<EOF
 [Unit]
 Description=HomeFlow Family Pilot (Extropy Engine)
-After=network.target postgresql.service
-Wants=postgresql.service
+After=network.target
 
 [Service]
 Type=simple
