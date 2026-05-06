@@ -1,0 +1,204 @@
+/* ============================================
+   HomeFlow Family Pilot, Auth and Onboarding styles
+   Cyberpunk dark theme to match styles.css.
+   ============================================ */
+
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 20%, #1a1430 0%, #0a0a14 70%);
+  padding: 32px 16px;
+}
+
+.auth-card {
+  background: #14142a;
+  border: 1px solid #2a2a4a;
+  border-radius: 12px;
+  box-shadow: 0 0 60px rgba(120, 80, 255, 0.18);
+  padding: 40px 36px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  color: #e8e8f0;
+}
+
+.auth-card-wide {
+  max-width: 620px;
+  text-align: left;
+}
+
+.auth-logo {
+  font-size: 28px;
+  letter-spacing: 2px;
+  color: #b48dff;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.auth-card h1 {
+  font-size: 22px;
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.auth-sub {
+  color: #9090b0;
+  font-size: 14px;
+  margin: 0 0 24px;
+}
+
+.auth-google-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #6c4cff, #b48dff);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+.auth-google-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(120, 80, 255, 0.4);
+}
+.auth-google-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-google-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  color: #6c4cff;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.auth-message {
+  margin-top: 18px;
+  color: #ff8888;
+  font-size: 13px;
+}
+
+.auth-foot {
+  margin-top: 28px;
+  font-size: 12px;
+  color: #707090;
+  line-height: 1.4;
+}
+
+.onboard-step h2 {
+  font-size: 18px;
+  color: #fff;
+  margin: 0 0 12px;
+}
+
+.onboard-step p {
+  color: #b0b0c8;
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0 0 16px;
+}
+
+.onboard-did-line {
+  background: #0a0a14;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  padding: 10px 12px;
+  word-break: break-all;
+  font-size: 13px;
+}
+
+.onboard-did-line code {
+  color: #b48dff;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Header user chip */
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 4px;
+  background: rgba(108, 76, 255, 0.12);
+  border: 1px solid rgba(180, 141, 255, 0.4);
+  border-radius: 999px;
+  margin-left: 10px;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.user-name {
+  font-size: 13px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.user-did {
+  font-size: 10px;
+  color: #b48dff;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.user-logout {
+  background: transparent;
+  border: none;
+  color: #b0b0c8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.user-logout:hover {
+  color: #ff8888;
+}
+
+/* PSLL view */
+.psll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.psll-entry {
+  background: #14142a;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #b0b0c8;
+}
+.psll-entry .psll-seq {
+  color: #b48dff;
+  font-weight: 600;
+}
+.psll-entry .psll-hash {
+  color: #707090;
+  font-size: 10px;
+  word-break: break-all;
+}

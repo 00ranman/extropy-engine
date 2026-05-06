@@ -11,19 +11,24 @@ COPY .npmrc tsconfig.base.json ./
 
 # Manifests for the slice we need to build
 COPY packages/contracts/package.json packages/contracts/
+COPY packages/identity/package.json  packages/identity/
 COPY packages/homeflow/package.json  packages/homeflow/
 
-# Install only deps for contracts + homeflow (and their transitives)
+# Install only deps for contracts + identity + homeflow (and their transitives)
 RUN pnpm install --frozen-lockfile \
       --filter ./packages/contracts... \
+      --filter ./packages/identity... \
       --filter ./packages/homeflow...
 
 # Source
 COPY packages/contracts/ packages/contracts/
+COPY packages/identity/  packages/identity/
 COPY packages/homeflow/  packages/homeflow/
+COPY frontends/homeflow-ui/ frontends/homeflow-ui/
 
-# Build contracts first (shared dep), then homeflow
+# Build contracts and identity first (shared deps), then homeflow
 RUN pnpm --filter ./packages/contracts run build \
+ && pnpm --filter ./packages/identity  run build \
  && pnpm --filter ./packages/homeflow  run build
 
 # ---------- Production stage ----------
@@ -33,8 +38,11 @@ WORKDIR /app
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/packages/contracts/dist         ./packages/contracts/dist
 COPY --from=base /app/packages/contracts/package.json ./packages/contracts/
+COPY --from=base /app/packages/identity/dist          ./packages/identity/dist
+COPY --from=base /app/packages/identity/package.json  ./packages/identity/
 COPY --from=base /app/packages/homeflow/dist          ./packages/homeflow/dist
 COPY --from=base /app/packages/homeflow/package.json  ./packages/homeflow/
+COPY --from=base /app/frontends/homeflow-ui          ./frontends/homeflow-ui
 
 EXPOSE 4015
 CMD ["node", "packages/homeflow/dist/index.js"]
