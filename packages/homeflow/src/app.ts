@@ -38,6 +38,7 @@ import { createHouseholdRoutes, createZoneRoutes } from './routes/households.rou
 import { createEntropyRoutes } from './routes/entropy.routes.js';
 import { createIntegrationRoutes } from './routes/integrations.routes.js';
 import { createInteropRoutes } from './routes/interop.routes.js';
+import { createTemporalEventRoute } from './routes/temporal.routes.js';
 
 export interface AppDeps {
   db: DatabaseService;
@@ -64,6 +65,8 @@ export interface AppDeps {
   staticFrontendDir?: string | null;
   /** When true, set cookie.secure on the session cookie. */
   secureCookies?: boolean;
+  /** Optional HMAC secret shared with the temporal service for callback verification. */
+  temporalHmacSecret?: string;
 }
 
 /**
@@ -82,7 +85,16 @@ export function defaultStaticFrontendDir(): string {
 export function createApp(deps: AppDeps): Express {
   const app = express();
 
-  app.use(express.json({ limit: '10mb' }));
+  app.use(
+    express.json({
+      limit: '10mb',
+      // Capture raw body so HMAC verification on /temporal/event can
+      // recompute the signature byte-for-byte over the original payload.
+      verify: (req: Request & { rawBody?: Buffer }, _res: Response, buf: Buffer) => {
+        req.rawBody = Buffer.from(buf);
+      },
+    }),
+  );
 
   app.use((req: Request, _res: Response, next: NextFunction) => {
     if (process.env.NODE_ENV !== 'test') {
@@ -135,6 +147,8 @@ export function createApp(deps: AppDeps): Express {
       process.env.DAG_SUBSTRATE_URL ?? 'http://localhost:4011',
       (text, params) => deps.db.query(text, params as unknown[]),
     );
+
+  app.use('/', createTemporalEventRoute(deps.integrations.temporal, deps.temporalHmacSecret));
 
   app.use('/api/v1/identity', createIdentityRoutes(deps.userService, dagAnchor));
   app.use('/api/v1/psll', createPSLLRoutes(deps.userService, deps.psllService));

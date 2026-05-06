@@ -1,36 +1,50 @@
-/**
- * ═══════════════════════════════════════════════════════════════════════════════
- *  HomeFlow — Temporal Integration
- * ═══════════════════════════════════════════════════════════════════════════════
+/*
+ * HomeFlow Temporal Integration
  *
- *  Integrates with the Temporal service for:
- *    - Seasonal patterns (heating/cooling seasons, baseline shifts)
- *    - Time-based automation schedules
- *    - Loop timeout management
- *    - Seasonal XP multipliers
+ * Registers HomeFlow with the Universal Times service
+ * (@extropy/temporal-service, default http://127.0.0.1:4002) for
+ * Season transition callbacks. The service posts to BASE_URL +
+ * /temporal/event with HMAC-SHA256 signing when a shared secret is
+ * configured.
  *
- * ═══════════════════════════════════════════════════════════════════════════════
+ * Failure semantics: if the temporal service is unreachable, log a
+ * clear warning and schedule a retry every 60s. HomeFlow must never
+ * crash because the temporal service is offline. Spec: "Season
+ * management, time-aware settlement, decay scheduling" (SPEC v3.1).
  */
 
 import { v4 as uuidv4 } from 'uuid';
 import type { DatabaseService } from '../services/database.service.js';
 import type { EventBusService } from '../services/event-bus.service.js';
 import { HomeFlowEventType, ScheduleType } from '../types/index.js';
-import type { HouseholdId, ScheduleId, AutomationSchedule, ScheduleAction, ScheduleCondition, CreateScheduleRequest } from '../types/index.js';
+import type {
+  HouseholdId,
+  ScheduleId,
+  AutomationSchedule,
+  ScheduleAction,
+  ScheduleCondition,
+  CreateScheduleRequest,
+} from '../types/index.js';
 import type { SeasonId } from '@extropy/contracts';
 
+export interface TemporalIntegrationConfig {
+  temporalUrl: string;
+  callbackUrl: string;
+  hmacSecret?: string;
+  retryIntervalMs?: number;
+}
+
 export class TemporalIntegration {
+  private subscriptionId: string | null = null;
+  private retryTimer: NodeJS.Timeout | null = null;
+  private currentSeason: number | null = null;
+
   constructor(
     private db: DatabaseService,
     private eventBus: EventBusService,
-    private config: {
-      temporalUrl: string;
-    },
+    private config: TemporalIntegrationConfig,
   ) {}
 
-  /**
-   * Create an automation schedule.
-   */
   async createSchedule(req: CreateScheduleRequest): Promise<AutomationSchedule> {
     const id = uuidv4() as ScheduleId;
     const now = new Date().toISOString();
@@ -41,10 +55,17 @@ export class TemporalIntegration {
          conditions, actions, created_at, updated_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
       [
-        id, req.householdId, req.name, req.type, true,
-        req.cronExpression ?? null, req.seasonId ?? null,
-        JSON.stringify(req.conditions ?? []), JSON.stringify(req.actions),
-        now, now,
+        id,
+        req.householdId,
+        req.name,
+        req.type,
+        true,
+        req.cronExpression ?? null,
+        req.seasonId ?? null,
+        JSON.stringify(req.conditions ?? []),
+        JSON.stringify(req.actions),
+        now,
+        now,
       ],
     );
 
@@ -65,9 +86,6 @@ export class TemporalIntegration {
     };
   }
 
-  /**
-   * Get schedules for a household.
-   */
   async listSchedules(householdId: string): Promise<AutomationSchedule[]> {
     const { rows } = await this.db.query(
       'SELECT * FROM hf_schedules WHERE household_id = $1 ORDER BY created_at DESC',
@@ -76,9 +94,6 @@ export class TemporalIntegration {
     return rows.map(this.rowToSchedule);
   }
 
-  /**
-   * Enable/disable a schedule.
-   */
   async toggleSchedule(scheduleId: string, enabled: boolean): Promise<void> {
     await this.db.query(
       'UPDATE hf_schedules SET enabled = $1, updated_at = NOW() WHERE id = $2',
@@ -86,9 +101,6 @@ export class TemporalIntegration {
     );
   }
 
-  /**
-   * Execute a schedule's actions (called by cron or event trigger).
-   */
   async executeSchedule(scheduleId: string): Promise<string[]> {
     const { rows } = await this.db.query('SELECT * FROM hf_schedules WHERE id = $1', [scheduleId]);
     if (rows.length === 0) throw new Error(`Schedule ${scheduleId} not found`);
@@ -96,13 +108,11 @@ export class TemporalIntegration {
     const schedule = this.rowToSchedule(rows[0]);
     if (!schedule.enabled) return [];
 
-    // Execute each action (command issuance handled by caller)
     const commandIds: string[] = [];
-    for (const action of schedule.actions) {
-      commandIds.push(uuidv4()); // Placeholder — actual command execution via device service
+    for (const _action of schedule.actions) {
+      commandIds.push(uuidv4());
     }
 
-    // Update last triggered
     await this.db.query(
       'UPDATE hf_schedules SET last_triggered_at = NOW(), updated_at = NOW() WHERE id = $1',
       [scheduleId],
@@ -121,15 +131,11 @@ export class TemporalIntegration {
     return commandIds;
   }
 
-  /**
-   * Detect seasonal patterns from entropy history.
-   */
   async detectSeasonalPatterns(householdId: string): Promise<Array<{
     pattern: string;
     confidence: number;
     recommendation: string;
   }>> {
-    // Analyze last 90 days of snapshots for patterns
     const { rows } = await this.db.query(
       `SELECT
          date_trunc('week', timestamp) as week,
@@ -146,32 +152,31 @@ export class TemporalIntegration {
     const patterns: Array<{ pattern: string; confidence: number; recommendation: string }> = [];
 
     if (rows.length >= 4) {
-      const recentPower = parseFloat(rows[rows.length - 1].avg_power);
-      const olderPower = parseFloat(rows[0].avg_power);
+      const recentPower = parseFloat(rows[rows.length - 1].avg_power as string);
+      const olderPower = parseFloat(rows[0].avg_power as string);
       const powerDelta = ((recentPower - olderPower) / olderPower) * 100;
 
       if (powerDelta > 20) {
         patterns.push({
           pattern: 'heating_increase',
           confidence: Math.min(0.9, Math.abs(powerDelta) / 100),
-          recommendation: 'Consider lowering thermostat setpoints by 2°F during unoccupied hours',
+          recommendation: 'Consider lowering thermostat setpoints by 2 degrees F during unoccupied hours',
         });
       } else if (powerDelta < -20) {
         patterns.push({
           pattern: 'cooling_increase',
           confidence: Math.min(0.9, Math.abs(powerDelta) / 100),
-          recommendation: 'Pre-cool during off-peak hours and raise setpoint by 1°F',
+          recommendation: 'Pre-cool during off-peak hours and raise setpoint by 1 degree F',
         });
       }
 
-      // Solar pattern
-      const recentSolar = parseFloat(rows[rows.length - 1].avg_solar);
-      const olderSolar = parseFloat(rows[0].avg_solar);
+      const recentSolar = parseFloat(rows[rows.length - 1].avg_solar as string);
+      const olderSolar = parseFloat(rows[0].avg_solar as string);
       if (recentSolar > olderSolar * 1.3) {
         patterns.push({
           pattern: 'solar_peak',
           confidence: 0.8,
-          recommendation: 'Shift heavy loads to peak solar hours (11am-3pm)',
+          recommendation: 'Shift heavy loads to peak solar hours (11am to 3pm)',
         });
       }
     }
@@ -179,23 +184,105 @@ export class TemporalIntegration {
     return patterns;
   }
 
-  /**
-   * Register with the Temporal service for season change notifications.
+  /*
+   * Register HomeFlow with the Universal Times temporal service for
+   * Season transition events. Called once at startup. If the service
+   * is unreachable, schedule a retry every 60s and never throw.
    */
   async registerForSeasonEvents(): Promise<void> {
+    const url = `${this.config.temporalUrl.replace(/\/$/, '')}/subscribe`;
+    const body = {
+      subscriberId: 'homeflow',
+      callbackUrl: this.config.callbackUrl,
+      unit: 'Season',
+      ...(this.config.hmacSecret ? { hmacSecret: this.config.hmacSecret } : {}),
+    };
+
     try {
-      await fetch(`${this.config.temporalUrl}/subscribers`, {
+      const resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          service: 'homeflow',
-          events: ['temporal.season.started', 'temporal.season.ended', 'temporal.reputation.decay_tick'],
-          callbackUrl: 'http://homeflow:4015/events',
-        }),
+        body: JSON.stringify(body),
       });
-      console.log('[homeflow:temporal] Registered for season events');
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => '');
+        throw new Error(`temporal /subscribe returned ${resp.status}: ${text}`);
+      }
+      const out = (await resp.json()) as { subscriptionId?: string };
+      this.subscriptionId = out.subscriptionId ?? null;
+      console.log(`[homeflow:temporal] registered for Season events at ${url}, subscription ${this.subscriptionId}`);
+      if (this.retryTimer) {
+        clearInterval(this.retryTimer);
+        this.retryTimer = null;
+      }
     } catch (err) {
-      console.warn('[homeflow:temporal] Failed to register for season events:', err);
+      console.warn(
+        `[homeflow:temporal] service at ${this.config.temporalUrl} unreachable, season events will not fire until it comes online; will retry every 60s`,
+        err instanceof Error ? err.message : err,
+      );
+      if (!this.retryTimer) {
+        const interval = this.config.retryIntervalMs ?? 60_000;
+        this.retryTimer = setInterval(() => {
+          void this.registerForSeasonEvents();
+        }, interval);
+        // Allow the process to exit even if the retry timer is pending.
+        if (typeof this.retryTimer.unref === 'function') {
+          this.retryTimer.unref();
+        }
+      }
+    }
+  }
+
+  /*
+   * Handle a callback from the temporal service. Called by the
+   * /temporal/event route after HMAC verification. We publish a
+   * SEASON_STARTED domain event so the rest of HomeFlow can react,
+   * then update an in-memory marker for /api/v1/temporal/season.
+   */
+  async handleTemporalEvent(payload: {
+    unit: string;
+    oldValue: number;
+    newValue: number;
+    timestamp?: string;
+  }): Promise<void> {
+    if (payload.unit === 'Season') {
+      this.currentSeason = payload.newValue;
+      console.log(`[homeflow:temporal] Season transition ${payload.oldValue} -> ${payload.newValue}`);
+      /*
+       * Publish to the event bus so the rest of HomeFlow can react.
+       * Swallow publish failures (eg Redis not reachable in pilot
+       * mode) so the callback still ack'es 200 and the temporal
+       * service does not retry forever.
+       */
+      try {
+        await this.eventBus.publish(
+          HomeFlowEventType.SCHEDULE_TRIGGERED,
+          'temporal',
+          {
+            source: 'temporal',
+            unit: 'Season',
+            oldValue: payload.oldValue,
+            newValue: payload.newValue,
+            timestamp: payload.timestamp ?? new Date().toISOString(),
+          },
+        );
+      } catch (err) {
+        console.warn('[homeflow:temporal] event bus publish failed, continuing:', err instanceof Error ? err.message : err);
+      }
+    }
+  }
+
+  getCurrentSeason(): number | null {
+    return this.currentSeason;
+  }
+
+  /*
+   * Test hook: stop retry timer for clean shutdown.
+   */
+  stop(): void {
+    if (this.retryTimer) {
+      clearInterval(this.retryTimer);
+      this.retryTimer = null;
     }
   }
 

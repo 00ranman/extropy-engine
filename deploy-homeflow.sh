@@ -14,6 +14,8 @@ APP_USER="homeflow"
 APP_DIR="/opt/homeflow"
 REPO_URL="https://github.com/00ranman/extropy-engine.git"
 APP_PORT="4001"
+TEMPORAL_PORT="4002"
+TEMPORAL_DATA_DIR="/var/lib/temporal"
 PG_DB="homeflow"
 PG_USER="homeflow"
 
@@ -110,6 +112,13 @@ else
 fi
 
 #####################################################
+# 7b. Temporal data directory (Universal Times service)
+#####################################################
+log "Ensuring temporal data dir at $TEMPORAL_DATA_DIR"
+mkdir -p "$TEMPORAL_DATA_DIR"
+chown "$APP_USER:$APP_USER" "$TEMPORAL_DATA_DIR"
+
+#####################################################
 # 8. .env file (idempotent: only writes if missing)
 #####################################################
 ENV_FILE="$APP_DIR/.env"
@@ -121,6 +130,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
   else
     DB_LINE="# DATABASE_URL unset, file-backed store active\nHOMEFLOW_DATA_DIR=/var/lib/homeflow"
   fi
+  TEMPORAL_HMAC_SECRET=$(openssl rand -hex 32)
   cat > "$ENV_FILE" <<EOF
 # HomeFlow production env, do not commit
 PORT=$APP_PORT
@@ -128,6 +138,10 @@ BASE_URL=https://$DOMAIN
 SESSION_SECRET=$SESSION_SECRET
 $(printf '%b' "$DB_LINE")
 SECURE_COOKIES=true
+
+# Universal Times service (runs alongside HomeFlow on the same VPS)
+TEMPORAL_URL=http://127.0.0.1:$TEMPORAL_PORT
+TEMPORAL_HMAC_SECRET=$TEMPORAL_HMAC_SECRET
 
 # Fill these in after creating Google OAuth client (see post-deploy notes)
 GOOGLE_CLIENT_ID=PASTE_HERE
@@ -137,6 +151,33 @@ EOF
   chmod 600 "$ENV_FILE"
 else
   log ".env exists, leaving as-is"
+  # Ensure TEMPORAL_URL is present (idempotent backfill for older .env files).
+  if ! grep -q '^TEMPORAL_URL=' "$ENV_FILE"; then
+    echo "TEMPORAL_URL=http://127.0.0.1:$TEMPORAL_PORT" >> "$ENV_FILE"
+  fi
+fi
+
+#####################################################
+# 8b. .env.temporal for the Universal Times service
+#####################################################
+TEMPORAL_ENV_FILE="$APP_DIR/.env.temporal"
+if [[ ! -f "$TEMPORAL_ENV_FILE" ]]; then
+  log "Generating $TEMPORAL_ENV_FILE"
+  TEMPORAL_HMAC_SECRET_VAL=$(grep -E '^TEMPORAL_HMAC_SECRET=' "$ENV_FILE" | head -n 1 | cut -d= -f2- || true)
+  if [[ -z "$TEMPORAL_HMAC_SECRET_VAL" ]]; then
+    TEMPORAL_HMAC_SECRET_VAL=$(openssl rand -hex 32)
+    echo "TEMPORAL_HMAC_SECRET=$TEMPORAL_HMAC_SECRET_VAL" >> "$ENV_FILE"
+  fi
+  cat > "$TEMPORAL_ENV_FILE" <<EOF
+# Temporal (Universal Times) service env, do not commit
+TEMPORAL_PORT=$TEMPORAL_PORT
+TEMPORAL_DATA_DIR=$TEMPORAL_DATA_DIR
+TEMPORAL_VERSION=0.1.0
+EOF
+  chown "$APP_USER:$APP_USER" "$TEMPORAL_ENV_FILE"
+  chmod 600 "$TEMPORAL_ENV_FILE"
+else
+  log ".env.temporal exists, leaving as-is"
 fi
 
 #####################################################
@@ -167,8 +208,34 @@ EOF
 touch /var/log/homeflow.log
 chown "$APP_USER:$APP_USER" /var/log/homeflow.log
 
+TEMPORAL_SERVICE_FILE="/etc/systemd/system/temporal.service"
+log "Writing systemd unit at $TEMPORAL_SERVICE_FILE"
+cat > "$TEMPORAL_SERVICE_FILE" <<EOF
+[Unit]
+Description=Temporal (Universal Times) service for Extropy Engine
+After=network.target
+Before=homeflow.service
+
+[Service]
+Type=simple
+User=$APP_USER
+WorkingDirectory=$APP_DIR
+EnvironmentFile=$APP_DIR/.env.temporal
+ExecStart=/usr/bin/pnpm --filter @extropy/temporal-service run start
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/temporal.log
+StandardError=append:/var/log/temporal.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+touch /var/log/temporal.log
+chown "$APP_USER:$APP_USER" /var/log/temporal.log
+
 systemctl daemon-reload
-systemctl enable homeflow
+systemctl enable homeflow temporal
 
 #####################################################
 # 10. Nginx site (only adds; never touches existing extropyengine.com or lladnaros.com configs)
@@ -318,12 +385,20 @@ NEXT STEPS (these still need to be done by you, in this order):
      $ENV_FILE
    (the file already has placeholder lines)
 
-4) Start the service:
-     systemctl restart homeflow
+4) Start the services:
+     systemctl restart temporal homeflow
+     systemctl status temporal --no-pager
      systemctl status homeflow --no-pager
+     journalctl -u temporal -n 30 --no-pager
      journalctl -u homeflow -n 50 --no-pager
 
-5) Open https://$DOMAIN/ in a browser. Sign in with Google. Family pilot is live.
+5) Sanity check the Universal Times service:
+     curl -s http://127.0.0.1:$TEMPORAL_PORT/health
+     curl -s http://127.0.0.1:$TEMPORAL_PORT/now | head -20
+
+6) Open https://$DOMAIN/ in a browser. Sign in with Google. Family pilot is live.
+   Season transitions will fire from the temporal service into HomeFlow's
+   /temporal/event endpoint automatically once both services are up.
 
 To redeploy after future code updates, just run this script again.
 
