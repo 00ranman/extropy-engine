@@ -159,9 +159,17 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api/v1', interopRouter);
 
   if (deps.staticFrontendDir !== null && deps.staticFrontendDir !== undefined) {
-    app.use(express.static(deps.staticFrontendDir, { index: 'index.html' }));
+    const frontendDir = deps.staticFrontendDir;
+    // Explicit MIME type for the PWA manifest. express.static does not
+    // recognize .webmanifest by default and will fall back to octet-stream,
+    // which iOS and Chrome reject when registering the manifest.
+    app.get('/manifest.webmanifest', (_req: Request, res: Response) => {
+      res.type('application/manifest+json');
+      res.sendFile(path.join(frontendDir, 'manifest.webmanifest'));
+    });
+    app.use(express.static(frontendDir, { index: 'index.html' }));
     app.get('/', (_req: Request, res: Response) => {
-      res.sendFile(path.join(deps.staticFrontendDir as string, 'index.html'));
+      res.sendFile(path.join(frontendDir, 'index.html'));
     });
   }
 

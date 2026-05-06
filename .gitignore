@@ -17,6 +17,7 @@ dist/
 !**/vite.config.js
 !**/postcss.config.js
 !**/tailwind.config.js
+!frontends/**/*.js
 
 # environment
 .env
