@@ -141,6 +141,52 @@ If your family is not all on the same LAN, two simple options:
   truncate `hf_users` and `hf_psll_entries`. The schemas re-create on boot.
 - The logout button is in the user chip in the top right of the dashboard.
 
+## Installing as a home screen app
+
+HomeFlow ships as a Progressive Web App. After signing in once, each family
+member can pin it to their home screen and launch it fullscreen, no browser
+chrome.
+
+- **iOS Safari (iPhone):** open the HomeFlow URL in Safari, tap the Share
+  button, scroll to "Add to Home Screen", confirm. The icon shows up on the
+  home screen and opens HomeFlow fullscreen.
+- **iPadOS Safari:** same flow as iOS, Share then "Add to Home Screen".
+- **Android Chrome:** open the URL, tap the three-dot menu, pick "Install
+  app" if it appears, otherwise "Add to Home screen".
+- **Desktop Chrome / Edge:** click the install icon in the address bar
+  (looks like a small monitor with a down arrow), or use the three-dot menu,
+  "Install HomeFlow".
+
+The icon is a teal "HF" on the cyberpunk dark background. Treat it as a
+placeholder, the design can be swapped later without touching the install
+flow.
+
+## PWA limitations on plain LAN
+
+The full PWA experience, offline shell caching plus the install prompt on
+Android and desktop Chrome, requires HTTPS. Browsers will only register a
+service worker on `https://...` or `http://localhost`. Plain LAN URLs like
+`http://192.168.x.x:4001` skip service worker registration silently.
+
+What that means in practice:
+
+- From the host machine itself, opening `http://localhost:4001` gives the
+  full PWA, install prompts, and offline cache.
+- From other devices on the LAN over plain HTTP, "Add to Home Screen" still
+  works on iOS Safari and creates a fullscreen icon, but it falls back to a
+  bookmarked web view, no offline cache.
+
+**Recommended fix: Tailscale.** Install Tailscale on the host plus each
+family device. Tailscale gives every machine a stable `*.ts.net` hostname
+with a real HTTPS certificate, no manual cert wrangling. Set `BASE_URL` to
+the Tailscale hostname, add it to the Google OAuth authorized origins and
+redirect URIs, and every family device gets the full PWA experience with
+offline caching and proper install prompts.
+
+Self signed certs on the LAN are not recommended, that path leads to a
+maze of trust prompts that family members will not accept. Tailscale or
+Cloudflare Tunnel are the two clean options.
+
 ## What is NOT in this pilot
 
 By design the family pilot stops short of:
