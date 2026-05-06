@@ -17,13 +17,6 @@ APP_PORT="4001"
 PG_DB="homeflow"
 PG_USER="homeflow"
 
-# Storage mode: file-backed by default. Set ENABLE_POSTGRES=1 in the
-# environment to provision a Postgres role/db and wire it via DATABASE_URL.
-# The Family Pilot only needs a tiny user+PSLL registry; per spec section 3
-# the canonical truth lives on each user's device, so a JSON file is enough.
-ENABLE_POSTGRES="${ENABLE_POSTGRES:-0}"
-DATA_DIR="/var/lib/homeflow"
-
 log() { echo -e "\033[1;36m[homeflow]\033[0m $*"; }
 err() { echo -e "\033[1;31m[error]\033[0m $*" >&2; exit 1; }
 
@@ -89,36 +82,27 @@ log "Installing pnpm deps and building monorepo"
 sudo -u "$APP_USER" -- bash -c "cd '$APP_DIR' && pnpm install --frozen-lockfile && pnpm -r --if-present run build"
 
 #####################################################
-# 7. Storage: file-backed JSON (default) or Postgres
+# 7. Postgres
 #####################################################
-# Postgres is left installed (apt step above) so future graduation does not
-# need re-provisioning, but role/db creation is gated on ENABLE_POSTGRES=1.
+log "Configuring Postgres"
+systemctl enable --now postgresql
 
-if [[ "$ENABLE_POSTGRES" == "1" ]]; then
-  log "Configuring Postgres (ENABLE_POSTGRES=1)"
-  systemctl enable --now postgresql
-
-  if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$PG_USER'" | grep -q 1; then
-    PG_PASS=$(openssl rand -hex 24)
-    sudo -u postgres psql -c "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASS';"
-    echo "$PG_PASS" > "/root/.homeflow_pg_password"
-    chmod 600 "/root/.homeflow_pg_password"
-    log "Postgres password generated and saved to /root/.homeflow_pg_password"
-  else
-    PG_PASS=$(cat /root/.homeflow_pg_password 2>/dev/null || echo "")
-    [[ -n "$PG_PASS" ]] || err "Postgres role exists but password file missing. Recreate manually."
-    log "Reusing existing Postgres role"
-  fi
-
-  if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'" | grep -q 1; then
-    sudo -u postgres psql -c "CREATE DATABASE $PG_DB OWNER $PG_USER;"
-  fi
+# Create role if missing
+if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$PG_USER'" | grep -q 1; then
+  PG_PASS=$(openssl rand -hex 24)
+  sudo -u postgres psql -c "CREATE ROLE $PG_USER LOGIN PASSWORD '$PG_PASS';"
+  echo "$PG_PASS" > "/root/.homeflow_pg_password"
+  chmod 600 "/root/.homeflow_pg_password"
+  log "Postgres password generated and saved to /root/.homeflow_pg_password"
 else
-  log "Skipping Postgres role/db (default, file-backed mode). Set ENABLE_POSTGRES=1 to enable."
-  log "Provisioning data dir at $DATA_DIR"
-  mkdir -p "$DATA_DIR"
-  chown "$APP_USER:$APP_USER" "$DATA_DIR"
-  chmod 750 "$DATA_DIR"
+  PG_PASS=$(cat /root/.homeflow_pg_password 2>/dev/null || echo "")
+  [[ -n "$PG_PASS" ]] || err "Postgres role exists but password file missing. Recreate manually."
+  log "Reusing existing Postgres role"
+fi
+
+# Create db if missing
+if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$PG_DB'" | grep -q 1; then
+  sudo -u postgres psql -c "CREATE DATABASE $PG_DB OWNER $PG_USER;"
 fi
 
 #####################################################
@@ -128,21 +112,12 @@ ENV_FILE="$APP_DIR/.env"
 if [[ ! -f "$ENV_FILE" ]]; then
   log "Generating $ENV_FILE skeleton"
   SESSION_SECRET=$(openssl rand -hex 32)
-  if [[ "$ENABLE_POSTGRES" == "1" ]]; then
-    DATABASE_LINE="DATABASE_URL=postgres://$PG_USER:$PG_PASS@localhost:5432/$PG_DB"
-  else
-    DATABASE_LINE="# DATABASE_URL is unset on purpose. The service runs against the file-backed
-# JSON store at HOMEFLOW_DATA_DIR. To graduate to Postgres, re-run this script
-# with ENABLE_POSTGRES=1 and uncomment a real DATABASE_URL below.
-# DATABASE_URL=postgres://$PG_USER:CHANGEME@localhost:5432/$PG_DB"
-  fi
   cat > "$ENV_FILE" <<EOF
 # HomeFlow production env, do not commit
 PORT=$APP_PORT
 BASE_URL=https://$DOMAIN
 SESSION_SECRET=$SESSION_SECRET
-HOMEFLOW_DATA_DIR=$DATA_DIR
-$DATABASE_LINE
+DATABASE_URL=postgres://$PG_USER:$PG_PASS@localhost:5432/$PG_DB
 SECURE_COOKIES=true
 
 # Fill these in after creating Google OAuth client (see post-deploy notes)
@@ -163,7 +138,8 @@ log "Writing systemd unit at $SERVICE_FILE"
 cat > "$SERVICE_FILE" <<EOF
 [Unit]
 Description=HomeFlow Family Pilot (Extropy Engine)
-After=network.target
+After=network.target postgresql.service
+Wants=postgresql.service
 
 [Service]
 Type=simple
@@ -223,9 +199,8 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    http2 on;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
     server_name $DOMAIN;
 
     ssl_certificate     /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
@@ -312,8 +287,6 @@ cat <<EOF
   HomeFlow VPS provisioning complete.
 ==================================================================
 
-Storage mode: $([[ "$ENABLE_POSTGRES" == "1" ]] && echo "Postgres" || echo "file-backed JSON at $DATA_DIR")
-
 NEXT STEPS (these still need to be done by you, in this order):
 
 1) DNS (do this FIRST):
@@ -340,13 +313,10 @@ NEXT STEPS (these still need to be done by you, in this order):
 4) Start the service:
      systemctl restart homeflow
      systemctl status homeflow --no-pager
-     tail -n 50 /var/log/homeflow.log
-
-   The log should contain: [homeflow] Using file-backed store at $DATA_DIR/homeflow.json
+     journalctl -u homeflow -n 50 --no-pager
 
 5) Open https://$DOMAIN/ in a browser. Sign in with Google. Family pilot is live.
 
 To redeploy after future code updates, just run this script again.
-To graduate to Postgres later, re-run with: ENABLE_POSTGRES=1 bash $0
 
 EOF
