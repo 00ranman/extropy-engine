@@ -226,3 +226,32 @@ By design the family pilot stops short of:
 
 Those are tracked as follow up work once the family has used the pilot for
 a while and we know which rough edges actually matter.
+
+## v1 family feature surface
+
+The first usable pilot release ships these, all auth gated by Google
+OAuth and scoped to the signed-in user's household.
+
+1. Setup wizard (first run): create the household, add members, optional
+   sample chores, recipes, and pantry items.
+2. Household and members CRUD on /settings.
+3. Chores: per-member or anyone or rotation, with XP rewards, per-chore
+   history and check-off.
+4. Recipes: title, ingredients, steps, prep and cook times, tags.
+5. Meal plan: a 7-day grid with breakfast, lunch, and dinner slots; pick
+   a saved recipe or free text.
+6. Pantry: per-item quantity, unit, location, low-stock threshold.
+7. Shopping list: pantry low-stock and meal-plan-derived items appear
+   automatically, plus manual adds.
+8. Dashboard: today's chores per member, tonight's planned meal, low-stock
+   alerts, recent XP gains, Universal Times Season strip.
+
+All v1 data persists to the same JSON snapshot used by the family pilot
+identity layer, under the top-level `family` key. No Postgres or Redis
+required to use these features. To redeploy on the VPS:
+
+```
+bash /root/deploy-homeflow.sh && systemctl restart homeflow temporal
+```
+
+Co-written and curated by Randall Gossett.
