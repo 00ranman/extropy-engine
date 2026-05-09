@@ -163,6 +163,14 @@ Because the moment you show a user the formula, they will:
 
 Validators catch most of this. But the deeper defense is that **users don't know which variable they're pushing**. They see "complete this loop" or "you cooked at home tonight." They don't see the term in the equation that produces.
 
+### How Layer 3 actually routes work
+
+The Layer 3 engine is not a black box that magically scores activity. Internally it runs on the **contribution graph**, where every unit of work in the system (cleanup, witness, review, delivery, instruction, repair, sourcing-confirmation, household loops, the lot) is one primitive: a contribution. Witnessing is a contribution class, not a separate validator role. Contributions are surfaced from five sources (open list, direct request, threshold-triggered, self-issued, signal-flow extracted) and routed by domain coverage, stakes class, decay-aware filtering, and randomization within the eligible pool.
+
+The substrate is theme-neutral. Layer 1 UIs may apply any theme overlay (fantasy, sci-fi, professional, minimalist). The math, the routing, and the credentialing thresholds do not change.
+
+For the full architectural rules, see [`CONTRIBUTION_GRAPH.md`](./CONTRIBUTION_GRAPH.md).
+
 ---
 
 ## The flywheel
