@@ -1,7 +1,7 @@
 # The Three-Layer Separation
 
 **Status:** Architectural invariant. Hard rule.
-**Owner:** Randall Manning
+**Owner:** Randall Gossett
 **Version:** v3.1.2 (canonical)
 **Last updated:** 2026-05-08
 
@@ -227,7 +227,7 @@ The math is structured so that under-reporting honest signal does not penalize t
 - "Unfuck the world"
 - "Unfucking [X]"
 - Profanity is fine
-- Voice is Mark Manson and Ryan Reynolds with a quantum mechanics degree
+- Voice is sharp, irreverent, technically literate, and unapologetic
 
 ### External (POS software, merchant pitch, consumer marketing)
 - "Rewire the everyday economy"

@@ -107,7 +107,7 @@ A solo developer with the right architecture can ship the first version. Network
 
 ## Who's building it
 
-Randall Manning. Solo. Maxwell, Texas. Background: full-stack web, systems architecture, music production, publishing. Operating from first principles with a Mark Manson and Ryan Reynolds sense of voice and a working understanding of quantum mechanics, information theory, and decentralized systems.
+Randall Gossett. Solo. Maxwell, Texas. Background: full-stack web, systems architecture, music production, publishing. Operating from first principles with a working understanding of quantum mechanics, information theory, and decentralized systems.
 
 Looking for: collaborators, early merchants, technical contributors, advisors who get protocol-shaped projects.
 
