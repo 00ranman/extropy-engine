@@ -105,11 +105,17 @@ A solo developer with the right architecture can ship the first version. Network
 
 ---
 
-## Who's building it
+## About the Author
 
-Randall Gossett. Solo. Maxwell, Texas. Background: full-stack web, systems architecture, music production, publishing. Operating from first principles with a working understanding of quantum mechanics, information theory, and decentralized systems.
+Randall Gossett. Solo dev out of Maxwell, Texas. Full-stack, systems architecture, music production, books. Built this whole thing himself, mostly between other obligations, on consumer hardware, with a voice-to-text habit and an iteration loop measured in hours.
 
-Looking for: collaborators, early merchants, technical contributors, advisors who get protocol-shaped projects.
+No PhD. No physics degree. No institution. No funded lab. No paper in a journal anyone has heard of. Not pending. Not coming. The credential gap is real and it is going to stay there.
+
+The work is the point. Operating from first principles with a working command of quantum mechanics, information theory, thermodynamics, decentralized systems, and protocol design puts a person in a thinner slice of the population than most letters after a name will. Not because the letters are fake. Because the letters mostly certify that someone learned to stop noticing the things this project is built on noticing. Read enough physics papers and you start to clock which physicists are bluffing. Build enough systems and you start to clock which architectures are vibes in a trench coat. That's the qualification on offer.
+
+This is getting built because nobody else was going to. The infrastructure exists. The math works. The incentives line up. The only missing input was a person stubborn enough to assemble it without permission, and that part is handled.
+
+I'm looking for collaborators who get protocol-shaped work. Not gatekeepers. Not credential checkers. People who can read the code, run the math, and tell me where I'm wrong, in that order.
 
 ---
 
