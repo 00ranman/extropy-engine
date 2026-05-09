@@ -13,7 +13,7 @@ import { EthicsValidator } from './validator';
 import { CORE_PRINCIPLES } from './principles';
 import { insertAuditRecord, queryAuditLog } from './db';
 
-export const router = Router();
+export const router: Router = Router();
 
 /** GET /health */
 router.get('/health', (_req: Request, res: Response) => {

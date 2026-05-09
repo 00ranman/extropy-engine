@@ -15,12 +15,14 @@ jobs:
         node-version: [20.x, 22.x]
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm install
-      - run: npm run build --workspaces --if-present
-      - run: npm test --workspaces --if-present
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r --if-present run build
+      - run: pnpm -r --if-present run test
 
   ethics-validation:
     name: Ethics Package Validation
@@ -28,28 +30,32 @@ jobs:
     needs: build-and-test
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
-      - run: npm install
-      - run: npm test --workspace=packages/ethics
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter ./packages/ethics test
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
-      - run: npm install
-      - run: npm run lint --workspaces --if-present
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r --if-present run lint
 
   docker-build:
     name: Docker Build Check
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     strategy:
+      fail-fast: false
       matrix:
         service: [homeflow, xp-mint, signalflow, dag-substrate, credentials]
     steps:
@@ -59,7 +65,7 @@ jobs:
           if [ -f packages/${{ matrix.service }}/Dockerfile ]; then
             docker build -t extropy/${{ matrix.service }}:${{ github.sha }} \
               -f packages/${{ matrix.service }}/Dockerfile \
-                            .
+              .
           else
             echo "No Dockerfile found for ${{ matrix.service }}, skipping"
           fi

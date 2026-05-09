@@ -16,7 +16,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": false,
-    "composite": true
+    "exactOptionalPropertyTypes": false
   }
 }

@@ -1,13 +1,13 @@
-# Open Engineering Gaps — 63 across 13 Categories
+# Open Engineering Gaps — 65 across 13 Categories
 
 **Source:** Section 19 of v3.1 spec
-**Total:** 63
-**Updated:** 2026-05-01
+**Total:** 65 (63 original + 2 added 2026-05-06)
+**Updated:** 2026-05-06
 **Note:** Categories and counts are verified. Per-gap descriptions are the v3.1 enumeration draft — reconciliation against the full PDF is welcomed via PR.
 
 ---
 
-## P1 — Critical Path (24 gaps)
+## P1 — Critical Path (26 gaps)
 
 ### Consensus Mechanism Details (7, P1)
 1. Quorum size formula for variable-domain rings
@@ -41,72 +41,76 @@
 23. Calibration drift detection + auto-replace policy
 24. Inter-domain ΔS comparison weighting
 
+### Verdict Vocabulary Standardization (2, P1) — *added 2026-05-06*
+25. Canonical affirmative verdict values: `'confirmed'` and `'supported'` are both in use across validators and test scripts. A single canonical enum needs to be defined in `contracts/types.ts` and enforced at every validation boundary. The Epistemology Engine currently accepts both; that permissiveness should become explicit policy or collapse to one value.
+26. API field naming consistency: `statement` vs `content` for claim text, `subclaims/by-claim/:id` vs nested route — these live in individual service codebases with no enforced contract. A shared OpenAPI validation middleware or contract test suite is needed.
+
 ## P2 — Important (23 gaps)
 
 ### DAG Distributed Consensus (5, P2)
-25. Causal-edge gossip protocol spec
-26. Partition tolerance + merge rules
-27. DAG GC and pruning policy
-28. Replay attack protection
-29. PSLL-anchor receipt cadence
+27. Causal-edge gossip protocol spec
+28. Partition tolerance + merge rules
+29. DAG GC and pruning policy
+30. Replay attack protection
+31. PSLL-anchor receipt cadence
 
 ### Retroactive Validation Specifics (4, P2)
-30. 30-day window edge cases (validator churn)
-31. Burn-cascade limits when one loop's burn invalidates dependents
-32. Settlement reliability under network partition
-33. Retro-validation incentive structure
+32. 30-day window edge cases (validator churn)
+33. Burn-cascade limits when one loop's burn invalidates dependents
+34. Settlement reliability under network partition
+35. Retro-validation incentive structure
 
 ### DFAO Governance Edge Cases (5, P2)
-34. MIGRATING-state hand-off protocol
-35. Quorum loss recovery for MICRO tier
-36. Conflicting proposals across nested DFAOs
-37. Influence-decay edge cases on dormant members
-38. Cross-tier proposal escalation rules
+36. MIGRATING-state hand-off protocol
+37. Quorum loss recovery for MICRO tier
+38. Conflicting proposals across nested DFAOs
+39. Influence-decay edge cases on dormant members
+40. Cross-tier proposal escalation rules
 
 ### Token Economy Equilibrium (4, P2)
-39. IT 5%/mo decay rate validation
-40. CT/EP/GT/RT decay rate finalization
-41. Multi-token attack-surface analysis
-42. Token-velocity equilibrium modeling
+41. IT 5%/mo decay rate validation
+42. CT/EP/GT/RT decay rate finalization
+43. Multi-token attack-surface analysis
+44. Token-velocity equilibrium modeling
 
 ### Privacy and Access Control (5, P2)
-43. ZKP scheme final selection (BBS+ vs zk-SNARK)
-44. Selective-reveal threshold mechanics
-45. Nullifier collision resistance proof
-46. PSLL selective-disclosure protocol
-47. Cross-DFAO data isolation
+45. ZKP scheme final selection (BBS+ vs zk-SNARK)
+46. Selective-reveal threshold mechanics
+47. Nullifier collision resistance proof
+48. PSLL selective-disclosure protocol
+49. Cross-DFAO data isolation
 
 ## P3 — Future (16 gaps)
 
 ### Skill DAG Design (3, P3)
-48. Skill node progression criteria
-49. Skill verification source-of-truth
-50. Skill graph traversal for SignalFlow routing
+50. Skill node progression criteria
+51. Skill verification source-of-truth
+52. Skill graph traversal for SignalFlow routing
 
 ### Oracle Integration Protocol (4, P3)
-51. External-data ingestion trust model
-52. Oracle-source diversity requirements
-53. Oracle-failure fallback policy
-54. XP minting from oracle-validated claims
+53. External-data ingestion trust model
+54. Oracle-source diversity requirements
+55. Oracle-failure fallback policy
+56. XP minting from oracle-validated claims
 
 ### Performance and Scalability (5, P3)
-55. Target throughput per Validation Neighborhood
-56. PSLL local-storage growth bounds
-57. DAG indexing strategy at planetary scale
-58. SignalFlow routing latency targets
-59. Cold-cache warm-up policy
+57. Target throughput per Validation Neighborhood
+58. PSLL local-storage growth bounds
+59. DAG indexing strategy at planetary scale
+60. SignalFlow routing latency targets
+61. Cold-cache warm-up policy
 
 ### Migration and Upgrade Paths (4, P3)
-60. v3.0 → v3.1 state migration spec
-61. Breaking-change governance protocol
-62. Rule Module hot-swap procedure
-63. Deprecation lifecycle for retired services
+62. v3.0 → v3.1 state migration spec
+63. Breaking-change governance protocol
+64. Rule Module hot-swap procedure
+65. Deprecation lifecycle for retired services
 
 ---
 
 ## Legend
 
-- **P1:** blockers for Phase 2 (24)
+- **P1:** blockers for Phase 2 (26)
 - **P2:** robustness + security (23)
 - **P3:** ecosystem maturity (16)
 

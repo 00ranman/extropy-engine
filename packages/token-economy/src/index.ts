@@ -15,7 +15,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import express, { Request, Response } from 'express';
+import express, { type Express, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -53,7 +53,7 @@ import type {
 //  Bootstrap
 // ─────────────────────────────────────────────────────────────────────────────────
 
-const app = express();
+const app: Express = express();
 app.use(express.json());
 
 const PORT    = process.env.PORT    || 4012;

@@ -1,0 +1,28 @@
+{
+  "name": "@extropy/bayesian",
+  "version": "3.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Beta(alpha, beta) conjugate Bayesian math. Portable, no runtime deps. v3.1.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@extropy/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

@@ -1,11 +1,23 @@
 # build output
 node_modules/
 dist/
-*.js
-*.d.ts
-*.js.map
-*.d.ts.map
-!packages/*/src/**
+
+# emitted JS / declarations should never be checked in.
+# Keep TS sources only under packages/*/src.
+**/*.js
+**/*.js.map
+**/*.d.ts
+**/*.d.ts.map
+*.tsbuildinfo
+
+# Whitelist legitimate JS files
+!**/scripts/**/*.js
+!**/eslint.config.js
+!**/jest.config.js
+!**/vite.config.js
+!**/postcss.config.js
+!**/tailwind.config.js
+!frontends/**/*.js
 
 # environment
 .env
@@ -29,6 +41,5 @@ pgdata/
 *~
 *.orig
 
-# pnpm-only
+# pnpm
 .pnpm-store/
-*.tsbuildinfo

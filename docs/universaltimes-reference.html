@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universal Times | Extropy Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#e0e0e0;font-family:'Space Grotesk',sans-serif;min-height:100vh;overflow-x:hidden}
+.stars{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.page{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:30px 20px}
+h1{font-size:1.4rem;font-weight:300;letter-spacing:.3em;text-transform:uppercase;color:#4a9eff;text-shadow:0 0 20px rgba(92,224,216,.3);text-align:center;margin-bottom:8px}
+.subtitle{text-align:center;font-size:.65rem;color:#555;letter-spacing:.18em;text-transform:uppercase;margin-bottom:20px}
+.section-title{font-size:.8rem;font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:#4a9eff;margin:24px 0 12px;padding-bottom:5px;border-bottom:1px solid rgba(92,224,216,.12)}
+.dials{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.dial-box{display:flex;flex-direction:column;align-items:center;gap:6px}
+.dial-label{font-size:.65rem;color:#666;letter-spacing:.12em;text-transform:uppercase}
+canvas{display:block}
+.digital{font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:500;color:#4a9eff;text-shadow:0 0 10px rgba(92,224,216,.4);letter-spacing:.05em;text-align:center}
+.dur-col{display:inline-flex;flex-direction:column;align-items:center}
+.dur-lbl{font-size:.42rem;font-weight:400;letter-spacing:.12em;text-transform:uppercase;margin-top:2px;line-height:1}
+.dur-sep{line-height:1;padding:0 1px;color:#444;align-self:flex-start}
+.digital .sub{font-size:.55rem;font-weight:300;color:#555;letter-spacing:.18em;text-transform:uppercase;margin-top:1px}
+.info-row{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.info-box{text-align:center}
+.info-box .val{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:#b0b0b0}
+.info-box .lbl{font-size:.5rem;color:#555;letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+.conv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px}
+.conv-item{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:#888;display:flex;justify-content:space-between;padding:2px 4px;border-bottom:1px solid rgba(255,255,255,.03)}
+.conv-item .cn{color:#aaa}.conv-item .cv{color:#4a9eff}
+.conv-item.active{background:rgba(92,224,216,.08);border-radius:3px}
+.dur-bar{display:flex;align-items:center;gap:6px;margin:3px 0;font-family:'JetBrains Mono',monospace;font-size:.6rem}
+.dur-bar .dn{width:55px;color:#888;text-align:right}
+.dur-bar .dt{flex:1;height:12px;background:rgba(255,255,255,.03);border-radius:6px;overflow:hidden}
+.dur-bar .df{height:100%;border-radius:6px;transition:width .3s}
+.dur-bar .dv{width:45px;color:#666;font-size:.5rem}
+.cal-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px}.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.cal-nav button{background:rgba(92,224,216,.15);border:1px solid rgba(92,224,216,.3);color:#5ce0d8;padding:4px 12px;cursor:pointer;font-family:monospace;border-radius:3px}.cal-nav button:hover{background:rgba(92,224,216,.3)}.cal-holiday{position:relative}.cal-holiday::after{content:"*";position:absolute;top:2px;right:4px;color:#ff6644;font-size:10px}.cal-legend{margin-top:8px;font-size:.65rem;color:#777;font-family:monospace;text-align:center}
+.cal-m{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:4px;padding:5px;text-align:center;font-size:.6rem}
+.cal-m.cur{background:rgba(92,224,216,.1);border-color:rgba(92,224,216,.3)}
+.cal-m .mn{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:#ccc;display:block}
+.cal-m .md{color:#555;font-size:.5rem}
+.cal-m.m10{background:rgba(255,200,100,.05);border-color:rgba(255,200,100,.15)}
+.cyc-row{display:flex;gap:3px;margin-top:6px;justify-content:center}
+.cyc-d{width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.6rem;border-radius:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#888}
+.cyc-d.today{background:rgba(92,224,216,.15);border-color:#4a9eff;color:#4a9eff}
+.cyc-d.past{opacity:.4}
+.legacy{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:#333;text-align:center;margin-top:10px}
+.geo{font-size:.55rem;color:#3a3a3a;font-family:'JetBrains Mono',monospace;text-align:center;margin-top:3px}
+
+
+.conv-item .tip{display:none;position:absolute;bottom:100%;left:0;background:#0a1628;border:1px solid #4dabf7;border-radius:6px;padding:8px 12px;z-index:999;min-width:280px;font-size:11px;line-height:1.6;box-shadow:0 0 12px rgba(77,171,247,.3)}.conv-item:hover .tip{display:block}
+/* ===== DAYTIME MODE ===== */
+body.daytime{background:#b8d8f0 !important;color:#0a1a2e !important;}
+body.daytime .page{background:linear-gradient(180deg,#d0eaff 0%,#a8cce8 100%) !important;}
+body.daytime h1{color:#0a3a6e !important;text-shadow:0 0 20px rgba(10,58,110,0.3) !important;}
+body.daytime .subtitle{color:#1a4a7e !important;}
+body.daytime .dial-label{color:#1a4a7e !important;}
+body.daytime #durClock{background:rgba(200,230,255,0.85) !important;border-color:#4a9fd4 !important;}
+body.daytime .dial-box{background:rgba(180,220,255,0.4) !important;border-color:rgba(74,159,212,0.5) !important;}
+body.daytime .dual-time-panel{background:rgba(180,220,255,0.5) !important;border-color:rgba(74,159,212,0.4) !important;color:#0a2a5e !important;}
+body.daytime .dual-time-panel *{color:#0a2a5e !important;}
+body.daytime #geo{color:#1a4a7e !important;}
+body.daytime .day-mode-indicator{display:block !important;}
+.day-mode-indicator{display:none;position:fixed;top:8px;right:12px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:#e8a020;letter-spacing:.1em;z-index:100;}
+/* Stars fade in daytime */
+body.daytime #sf div{opacity:0.05 !important;}
+.dur-unit-hover{position:relative;cursor:pointer}.dur-unit-hover .unit-tooltip{display:none;position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);background:rgba(8,16,32,0.95);border:1px solid #4a9eff;border-radius:10px;padding:14px 18px;min-width:260px;z-index:1000;font-family:JetBrains Mono,monospace;font-size:.7rem;color:#ccc;box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 20px rgba(74,158,255,.15);backdrop-filter:blur(12px);pointer-events:none;opacity:0;transition:opacity .25s ease,transform .25s ease;transform:translateX(-50%) translateY(8px)}.dur-unit-hover:hover .unit-tooltip{display:block;opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0)}.dur-unit-hover .unit-tooltip .tt-title{font-size:.85rem;font-weight:600;margin-bottom:8px;background:linear-gradient(90deg,#4a9eff,#6dbfff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.dur-unit-hover.solar-unit .unit-tooltip{border-color:#ff6060}.dur-unit-hover.solar-unit .unit-tooltip .tt-title{background:linear-gradient(90deg,#ff6060,#ff8888);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.dur-unit-hover .unit-tooltip .tt-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06)}.dur-unit-hover .unit-tooltip .tt-row:last-child{border-bottom:none}.dur-unit-hover .unit-tooltip .tt-label{color:#888}.dur-unit-hover .unit-tooltip .tt-val{color:#eee;font-weight:500}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="day-mode-indicator" id="dayModeInd"></div>
+<div class="page">
+<h1>Universal Times</h1>
+<div class="subtitle">Hydrogen-Anchored Duration Scale</div>
+<div id="durDisplay" style="display:flex;justify-content:center;align-items:center;gap:14px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;flex-wrap:wrap;padding:6px 0">
+  <div style="display:flex;align-items:center;gap:0;opacity:0.55">
+    <div style="text-align:center;min-width:2.2ch"><span id="dn0" style="color:#888;font-size:.95rem">-</span><div style="color:#666;font-size:.34rem;letter-spacing:.1em">EON</div></div>
+    <div style="color:#444;font-size:.95rem;padding:0 1px">:</div>
+    <div style="text-align:center;min-width:2.2ch"><span id="dn1" style="color:#777;font-size:.95rem">-</span><div style="color:#555;font-size:.34rem;letter-spacing:.1em">AGE</div></div>
+    <div style="color:#444;font-size:.95rem;padding:0 1px">:</div>
+    <div style="text-align:center;min-width:2.2ch"><span id="dn2" style="color:#666;font-size:.95rem">-</span><div style="color:#444;font-size:.34rem;letter-spacing:.1em">ERA</div></div>
+      <div style="color:#444;font-size:.95rem;padding:0 1px">:</div>
+      <div style="text-align:center;min-width:2.2ch"><span id="dn3" style="color:#f0f0f0;font-size:.95rem">-</span><div style="color:#aaa;font-size:.34rem;letter-spacing:.1em">EPOCH</div></div>
+  </div>
+  <div style="color:#222;font-size:1.6rem">&bull;</div>
+  <div style="display:flex;align-items:center;gap:0;justify-content:center">
+      <div style="text-align:center;min-width:2.2ch"><span id="dnCyc" style="color:#eee;font-size:1.05rem">-</span><div style="color:#aaa;font-size:.35rem;letter-spacing:.1em">CYCLE</div></div>
+    <div style="color:#555;font-size:1.05rem;padding:0 1px">:</div>
+    <div style="text-align:center;min-width:2.2ch"><span id="dn4" style="color:#ddd;font-size:1.05rem">-</span><div style="color:#999;font-size:.35rem;letter-spacing:.1em">SEASON</div></div>
+    <div style="color:#555;font-size:1.05rem;padding:0 1px">:</div>
+    <div style="text-align:center;min-width:2.2ch"><span id="dn5" style="color:#ccc;font-size:1.05rem">-</span><div style="color:#888;font-size:.35rem;letter-spacing:.1em">CURRENT</div></div>
+  </div>
+  <div style="color:#222;font-size:1.6rem">&bull;</div>
+  <div style="display:flex;align-items:center;gap:0;justify-content:center">
+    <div style="text-align:center;min-width:2.2ch"><span id="dnSpin" style="color:#5aaeff;font-size:1.8rem">-</span><div style="color:#5aaeff;font-size:.37rem;letter-spacing:.1em">SPIN</div></div>
+    <div style="color:#1a5588;font-size:1.8rem;padding:0 2px">:</div>
+    <div style="text-align:center;min-width:2.2ch"><span id="dn6" style="color:#00aaff;font-size:1.8rem">-</span><div style="color:#00aaff;font-size:.37rem;letter-spacing:.1em">TIDE</div></div>
+    <div style="color:#1a5588;font-size:1.8rem;padding:0 2px">:</div>
+    <div style="text-align:center;min-width:2.2ch"><span id="dn7" style="color:#33ccff;font-size:1.8rem">-</span><div style="color:#33ccff;font-size:.37rem;letter-spacing:.1em">WAVE</div></div>
+    <div style="color:#1a5588;font-size:1.8rem;padding:0 2px">:</div>
+    <div style="text-align:center;min-width:2.2ch"><span id="dnGQ" style="color:#ffffff;font-size:1.8rem">-</span><div style="color:#dddddd;font-size:.37rem;letter-spacing:.1em">GQ</div></div>
+  </div>
+<div class="subtitle" style="font-size:0.7rem;color:#5aaeff;letter-spacing:.15em;margin-top:2px">Dual-Scale Timekeeping Display</div>
+<div style="text-align:center;margin-top:12px;font-family:'JetBrains Mono',monospace;color:#4dabf7;font-size:.75rem;letter-spacing:.1em;"><span id="bbQuant">-</span><div style="font-size:.5rem;color:#555;text-transform:uppercase;letter-spacing:.1em;margin-top:2px;">Quants Since Big Bang (Universe Age)</div></div>
+</div>
+
+<div class="dials" style="justify-content:center">
+<div class="dial-box">
+<div style="position:relative;display:inline-block">
+<canvas id="durClock" width="600" height="600" style="width:420px;height:420px;border:3px solid #ffffff;"></canvas>
+</div>
+</div>
+
+
+
+<div style="width:100%;text-align:center;margin:20px 0;clear:both;display:flex;flex-direction:column;align-items:center">
+<div class="subtitle" style="font-size:0.55rem;color:#ff3333;letter-spacing:.12em;margin-top:4px">SOLAR CLOCK</div>
+  <div style="display:flex;align-items:center;gap:0;justify-content:center">
+    <div style="text-align:center;min-width:2.2ch"><span id="dnLoop" style="color:#ff6644;font-size:1.8rem">-</span><div style="color:#ff6644;font-size:.37rem;letter-spacing:.1em">LOOP</div></div>
+    <div style="color:#ff6060;font-size:1.8rem;padding:0 2px">:</div>
+    <div style="text-align:center;min-width:2.2ch"><span id="dnArc" style="color:#ee4400;font-size:1.8rem">-</span><div style="color:#ee4400;font-size:.37rem;letter-spacing:.1em">ARC</div></div>
+    <div style="color:#ff6060;font-size:1.8rem;padding:0 2px">:</div>
+    <div style="text-align:center;min-width:2.2ch"><span id="dnTick" style="color:#ff6060;font-size:1.8rem">-</span><div style="color:#ff6060;font-size:.37rem;letter-spacing:.1em">TICK</div></div>
+  </div>
+</div>
+</div>
+<div style="max-width:600px;margin:20px auto;padding:15px 20px;border:1px solid #333;border-radius:8px;background:rgba(20,30,40,.6);font-family:sans-serif;color:#aab;font-size:.75rem;line-height:1.5"><h3 style="color:#5aaeff;margin:0 0 8px;font-size:.85rem">Why Two Times?</h3><p style="margin:0 0 8px">Traditional clocks conflate two distinct concepts: <strong style="color:#5aaeff">duration</strong> (how long something takes) and <strong style="color:#ff6644">solar position</strong> (where we are in Earth's rotation). This is a category error.</p><p style="margin:0 0 8px">The <strong style="color:#5aaeff">Hydrogen-Anchored Duration Scale</strong> measures pure elapsed time using the hydrogen emission frequency (1,420,405,751.768 Hz) as its fundamental unit. Every duration level is a power of 10 in hydrogen oscillations, giving a universal, physics-based timescale independent of any planet.</p><p style="margin:0">The <strong style="color:#ff6644">Solar Clock</strong> tracks Earth's rotational position, the thing we actually need for scheduling, navigation, and daily life. Separating these two resolves centuries of confusion between "how long" and "what position."</p></div>
+
+<div class="section-title">Solar Calendar</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="display:flex;align-items:center;gap:5px"><button onclick="navCal(-1,0)" style="background:rgba(92,224,216,.15);border:1px solid rgba(92,224,216,.3);color:#5ce0d8;padding:2px 8px;cursor:pointer;font-family:monospace;border-radius:3px;margin-right:5px">&lt;</button><span id="calYear" style="font-family:'JetBrains Mono',monospace;font-size:.85rem;color:#4a9eff">Y2026</span><button onclick="navCal(1,0)" style="background:rgba(92,224,216,.15);border:1px solid rgba(92,224,216,.3);color:#5ce0d8;padding:2px 8px;cursor:pointer;font-family:monospace;border-radius:3px;margin-left:5px">&gt;</button></div>
+<span id="calDate" style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#aaa">-</span></div>
+<div id="calMonth" style="margin-bottom:8px"></div>
+<div style="margin-top:8px;font-size:.65rem;color:#777;font-family:monospace;text-align:center"><span style="color:#ff6644">*</span> = Transitional Holiday</div>
+<div class="legacy" id="leg"></div>
+<div class="geo" id="geo">Locating...</div>
+</div>
+<span id="hfChart" style="display:none"></span><span id="phase" style="display:none"></span><span id="dfrac" style="display:none"></span><span id="qcount" style="display:none"></span><span id="ck0" style="display:none"></span><span id="ck1" style="display:none"></span><span id="ck2" style="display:none"></span><span id="pcount" style="display:none"></span><span id="epochAge" style="display:none"></span><span id="convGrid" style="display:none"></span><script>
+(function(){
+try{
+const TPD=100000,LOOPS=10,ARCS=100,TPA=100,EDS=86400,HF=1420405751.768,BB_SEC=4.350639312e17;
+const TROPICAL_SEC=31556925.216,SHORT_DAY_SEC=20925.216,YEAR0_UNIX=-62167219200;
+const durNames=['GQ','Wave','Tide','Spin','Current','Season','Orbit','Epoch','Era','Age','Eon'];
+const durExp=[9,11,13,14,15,16,17,18,20,22,24];
+const durSec=durExp.map(e=>Math.pow(10,e)/HF);
+const durColors=['#66d9ff','#00aaff','#0077dd','#0055bb','#003d99','#555','#3a3a3a','#222'];
+const phases=['New','Wax-C','1st-Q','Wax-G','Full','Wan-G','3rd-Q','Wan-C'];
+const CAL={dpm:40,m10l:6,m10n:5,cyc:5};
+
+
+
+// Draw HF decay sparkline
+function drawHFChart(){
+  const c=document.getElementById('hfChart');
+  if(!c)return;
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,220,50);
+  // Show HF frequency as stable baseline with quantum noise ripple
+  const grad=ctx.createLinearGradient(0,0,220,0);
+  grad.addColorStop(0,'#4dabf7');
+  grad.addColorStop(1,'#5ce0d8');
+  ctx.strokeStyle=grad;
+  ctx.lineWidth=1.5;
+  ctx.shadowColor='#4dabf7';
+  ctx.shadowBlur=4;
+  ctx.beginPath();
+  for(let x=0;x<220;x++){
+    const noise=Math.sin(x*0.4)*1.5+Math.sin(x*1.1+0.7)*0.8;
+    const y=25+noise;
+    x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  // Label
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(92,224,216,.4)';
+  ctx.font='9px JetBrains Mono,monospace';
+  ctx.fillText('1,420,405,751.768 Hz',4,44);
+}
+function isLeap(y){return(y%4===0&&y%100!==0)||y%400===0;}
+function daysInYear(y){return CAL.dpm*9+(isLeap(y)?CAL.m10l:CAL.m10n);}
+function dayOfYear(d){const jan1=new Date(d.getFullYear(),0,1);return Math.floor((d-jan1)/86400000)+1;}
+function utDate(doy,y){let r=doy;for(let m=1;m<=10;m++){const md=m<=9?CAL.dpm:(isLeap(y)?CAL.m10l:CAL.m10n);if(r<=md)return{month:m,day:r};r-=md;}return{month:10,day:1};}
+// Stars
+const sf=document.getElementById('stars');
+for(let i=0;i<100;i++){const s=document.createElement('div');s.style.cssText='position:absolute;background:#fff;border-radius:50%;width:'+((Math.random()*2+1))+'px;height:'+((Math.random()*2+1))+'px;top:'+(Math.random()*100)+'%;left:'+(Math.random()*100)+'%;opacity:'+(Math.random()*.4+.1)+';animation:tw '+(Math.random()*3+2)+'s ease-in-out infinite alternate';sf.appendChild(s);}
+const twS=document.createElement('style');twS.textContent='@keyframes tw{0%{opacity:.1}100%{opacity:.6}}';document.head.appendChild(twS);
+// Geo
+if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(p){const lat=p.coords.latitude,lon=p.coords.longitude;fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=en').then(r=>r.json()).then(d=>{document.getElementById('geo').textContent=(d.city||'')+', '+(d.principalSubdivision||'')+', '+(d.countryName||'')+' ('+lat.toFixed(4)+', '+lon.toFixed(4)+')';applyDayNightMode(lat,lon);}).catch(()=>{document.getElementById('geo').textContent=lat.toFixed(4)+', '+lon.toFixed(4);});},function(){document.getElementById('geo').textContent='Location unavailable';applyDayNightMode(0,0);});}
+// Day/Night mode detection
+function getSunTimes(lat,lon){
+  const now=new Date();
+  const J=now.getTime()/86400000+2440587.5;
+  const n=Math.ceil(J-2451545+0.0008);
+  const Js=n-lon/360;
+  const M=(357.5291+0.98560028*Js)%360;
+  const C=1.9148*Math.sin(M*Math.PI/180)+0.02*Math.sin(2*M*Math.PI/180)+0.0003*Math.sin(3*M*Math.PI/180);
+  const lam=(M+C+180+102.9372)%360;
+  const Jt=2451545+Js+0.0053*Math.sin(M*Math.PI/180)-0.0069*Math.sin(2*lam*Math.PI/180);
+  const dec=Math.asin(Math.sin(lam*Math.PI/180)*Math.sin(23.4397*Math.PI/180));
+  const cosH=(Math.sin(-0.833*Math.PI/180)-Math.sin(lat*Math.PI/180)*Math.sin(dec))/(Math.cos(lat*Math.PI/180)*Math.cos(dec));
+  if(cosH<-1)return{up:true};if(cosH>1)return{up:false};
+  const H=Math.acos(cosH)*180/Math.PI;
+  const Jrise=Jt-H/360;const Jset=Jt+H/360;
+  const msPerDay=86400000;
+  const rise=new Date((Jrise-2440587.5)*msPerDay);
+  const set=new Date((Jset-2440587.5)*msPerDay);
+  return{rise,set,up:now>=rise&&now<=set};
+}
+function applyDayNightMode(lat,lon){
+  const s=getSunTimes(lat,lon);
+  const isDay=s.up;
+  document.body.classList.toggle('daytime',isDay);
+  const ind=document.getElementById('dayModeInd');
+  if(ind)ind.textContent=isDay?'☀ DAY MODE':'☽ NIGHT MODE';
+  // Re-check every minute
+  setTimeout(function(){applyDayNightMode(lat,lon);},60000);
+}
+
+// Init calendar
+const now=new Date(),yr=now.getFullYear(),doy=dayOfYear(now),ud=utDate(doy,yr);
+const dayNames=['Tue','Wed','Fri','Sat','Sun'];
+const HOLIDAYS={1:{1:"New Cycle"},3:{1:"Equinox"},5:{1:"Mid-Year"},7:{1:"Solstice"},9:{40:"Year End"}};var calYr,calMo;
+function buildMonthGrid(month,currentDay,yr){
+  const md=month<=9?CAL.dpm:(isLeap(yr)?CAL.m10l:CAL.m10n);
+  const weeks=Math.ceil(md/CAL.cyc);
+  let h='<div style="display:grid;grid-template-columns:repeat(10,1fr);gap:1px;margin-bottom:6px">';
+  for(let m=1;m<=10;m++){const isCur=m===month;h+='<div style="text-align:center;padding:3px 0;font-family:monospace;font-size:.6rem;'+(isCur?'color:#4a9eff;font-weight:700;background:rgba(74,158,255,.15);border-radius:3px;cursor:pointer':'color:#555')+'" onclick="renderCal('+m+')">'+(m<=9?"M"+m:"Genesis")+'</div>';}h+='</div>';
+  h+='<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:.65rem">';
+  h+='<tr>';for(let i=0;i<dayNames.length;i++) h+='<th style="padding:3px 2px;color:#4dabf7;font-weight:400;text-align:center;border-bottom:1px solid rgba(92,224,216,.15)">'+dayNames[i]+'</th>';h+='</tr>';
+  let day=1;
+  for(let w=0;w<weeks;w++){h+='<tr>';for(let d=0;d<CAL.cyc;d++){if(day<=md){const isToday=day===currentDay;const isPast=day<currentDay;const isWE=(d>=3);let s='padding:4px 2px;text-align:center;';if(isToday)s+='background:rgba(74,158,255,.25);color:#4a9eff;font-weight:700;border-radius:3px;';else if(isPast)s+='color:#555;';else s+='color:'+(isWE?'#69db7c':'#aaa')+';';var hol=HOLIDAYS[month]&&HOLIDAYS[month][day];h+='<td style="'+s+'"'+(hol?' title="'+hol+'"':'')+'>'+day+(hol?'<span style="color:#ff6644;font-size:8px;vertical-align:super">*</span>':'')+' </td>';day++;}else{h+='<td></td>';}}h+='</tr>';}
+  h+='</table>';return h;
+}
+calYr=yr;calMo=ud.month;window.calMo=calMo;
+function navCal(dy,dm){calYr+=dy;if(dm){calMo+=dm;if(calMo>9){calMo=1;calYr++}if(calMo<1){calMo=9;calYr--}}renderCal()}
+function renderCal(newMo){if(newMo)calMo=newMo;var cd=(calYr===yr&&calMo===ud.month)?ud.day:0;if(calMonthEl)calMonthEl.innerHTML=buildMonthGrid(calMo,cd,calYr);document.getElementById("calYear").textContent="Y"+calYr;document.getElementById("calDate").textContent="M"+calMo+":D"+cd+"  (DOY "+(calYr===yr?doy:"-")+")";}
+window.navCal=navCal;window.renderCal=renderCal;
+var calMonthEl=document.getElementById('calMonth');
+if(calMonthEl) calMonthEl.innerHTML=buildMonthGrid(ud.month,ud.day,yr);
+document.getElementById('calYear').textContent='Y'+now.getFullYear();
+document.getElementById('calDate').textContent='M'+ud.month+':D'+ud.day+'  (DOY '+doy+')';
+
+  // Canvas refs
+const durCanvas=document.getElementById('durClock');
+const dCtx=durCanvas.getContext('2d');
+const S=document.getElementById('durClock').width,R=S/2;
+function drawDial(ctx,sz,hands,colors,ticks){
+  const r=sz/2;
+  ctx.clearRect(0,0,sz,sz);
+  ctx.fillStyle='rgba(8,16,32,0.85)';ctx.fillRect(0,0,sz,sz);
+  ctx.beginPath();ctx.arc(r,r,r-4,0,Math.PI*2);
+  ctx.strokeStyle='rgba(92,224,216,.6)';ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(r,r,r-8,0,Math.PI*2);
+  ctx.strokeStyle='rgba(92,224,216,.3)';ctx.lineWidth=1;ctx.stroke();
+  for(let i=0;i<ticks;i++){
+    const ang=(i/ticks)*Math.PI*2-Math.PI/2;
+    const inner=r-12,outer=r-6;
+    ctx.beginPath();
+    ctx.moveTo(r+Math.cos(ang)*inner,r+Math.sin(ang)*inner);
+    ctx.lineTo(r+Math.cos(ang)*outer,r+Math.sin(ang)*outer);
+    ctx.strokeStyle=i%10===0?'rgba(92,224,216,.9)':'rgba(92,224,216,.4)';
+    ctx.lineWidth=i%10===0?1.5:0.5;ctx.stroke();
+  }
+  // Numbers around dial
+  ctx.font='bold 40px JetBrains Mono,monospace';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  for(let i=0;i<=9;i++){
+    const ang=(i/10)*Math.PI*2-Math.PI/2;
+    const nr=r-38;
+    const nx=r+Math.cos(ang)*nr;
+    const ny=r+Math.sin(ang)*nr;
+    ctx.fillStyle='#ff3300';
+    ctx.fillText(String(i),nx,ny);
+  }
+  ctx.font="11px JetBrains Mono,monospace";for(let mi=0;mi<20;mi++){const mv=mi*5;if(mv%10===0)continue;const ma=(mv/100)*Math.PI*2-Math.PI/2;const mnr=r-16;ctx.fillStyle="rgba(150,180,200,.5)";ctx.fillText(String(mv).padStart(2,"0"),r+Math.cos(ma)*mnr,r+Math.sin(ma)*mnr);}ctx.beginPath();ctx.arc(r,r,3,0,Math.PI*2);
+  ctx.fillStyle='#5ce0d8';ctx.fill();
+  hands.forEach((h,idx)=>{
+    const ang=h.frac*Math.PI*2-Math.PI/2;
+    const len=(r-18)*h.len;
+    const isBQ=idx===hands.length-1;
+    ctx.save();
+    if(isBQ){ctx.shadowColor='#ff4400';ctx.shadowBlur=8;}
+    ctx.beginPath();ctx.moveTo(r,r);
+    ctx.lineTo(r+Math.cos(ang)*len,r+Math.sin(ang)*len);
+    ctx.strokeStyle=colors[idx]||'#5ce0d8';
+    ctx.lineWidth=h.w||1.5;ctx.lineCap='round';ctx.stroke();
+    ctx.restore();
+  });
+}
+  function update(){
+  try{
+  var now=new Date();
+  var utcH=now.getHours(),utcM=now.getMinutes(),utcS=now.getSeconds(),utcMs=now.getMilliseconds();
+  var dayFrac=(utcH*3600+utcM*60+utcS+utcMs/1000)/EDS;
+  var totalTicks=Math.floor(dayFrac*TPD);
+  var loop=Math.floor(totalTicks/(ARCS*TPA));
+  var arc=Math.floor((totalTicks%(ARCS*TPA))/TPA);
+  var tick=totalTicks%TPA;
+  var loopFrac=totalTicks/TPD;
+  var arcFrac=(totalTicks%(ARCS*TPA))/(ARCS*TPA);
+  var tickFrac=(totalTicks%TPA)/TPA;
+    var phaseIdx=Math.floor(dayFrac*phases.length);
+  document.getElementById('phase').textContent=phases[Math.min(phaseIdx,phases.length-1)];
+  document.getElementById('dfrac').textContent=dayFrac.toFixed(5);
+  var quantsToday=Math.round(dayFrac*HF*EDS);document.getElementById('qcount').textContent=quantsToday.toLocaleString();
+  var epochSec=now.getTime()/1000;
+  var bbS=BB_SEC+epochSec;
+    var pulseFrac=Math.floor((Date.now()/704.024)%100)/100;
+  var waveFrac=(bbS%durSec[2])/durSec[2];
+  var tideFrac=(bbS%durSec[3])/durSec[3];
+  var currentFrac=tideFrac;
+  var seasonFrac=(bbS%durSec[5])/durSec[5];
+  var epochFrac=(bbS%durSec[7])/durSec[7];
+  var billionQMs=1e12/HF;var billionQFrac=(Date.now()/billionQMs%100)/100;
+  drawDial(dCtx,S,[
+    {frac:loopFrac,len:0.40,w:3},
+    {frac:arcFrac,len:0.58,w:2},
+    {frac:tickFrac,len:0.72,w:1.5},
+    {frac:tideFrac,len:0.82,w:2.5},
+    {frac:waveFrac,len:0.93,w:1.5},
+  {frac:pulseFrac,len:0.97,w:3}
+  ],['#ff6644','#ee4400','#cc2200','#33ccff','#5aaeff','#5ce0d8'],100);
+  var bbSec=BB_SEC+epochSec;
+  var rem=bbSec;
+  var dv=[];
+  for(var di=10;di>=0;di--){dv.push(Math.floor(rem/durSec[di]));rem=rem%durSec[di];}
+  var dvp=dv.map(function(v,i){return i===0?String(v):String(v).padStart(2,'0')});
+        ['dn0','dn1','dn2','dn3','dn4','dn5','dn6','dn7'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.textContent=[dvp[0],dvp[1],dvp[2],dvp[3],dvp[5],dvp[6],dvp[8],dvp[9]][i];});var elSpin=document.getElementById('dnSpin');if(elSpin)elSpin.textContent=dvp[7];var elCyc=document.getElementById('dnCyc');if(elCyc)elCyc.textContent=dvp[4];var elPulse=document.getElementById('dnGQ');if(elPulse)elPulse.textContent=String(Math.floor(billionQFrac*100)).padStart(2,'0');var elLoop=document.getElementById('dnLoop');if(elLoop)elLoop.textContent=String(loop).padStart(2,'0');var elArc=document.getElementById('dnArc');if(elArc)elArc.textContent=String(arc).padStart(2,'0');var elTick=document.getElementById('dnTick');if(elTick)elTick.textContent=String(tick).padStart(2,'0');var ck0=document.getElementById('ck0');if(ck0)ck0.textContent=dvp[0];
+var ck1=document.getElementById('ck1');if(ck1)ck1.textContent=dvp[1];
+var ck2=document.getElementById('ck2');if(ck2)ck2.textContent=dvp[2];;
+  document.getElementById('pcount').textContent=totalTicks.toLocaleString();
+    var totalQ=(BB_SEC+epochSec)/durSec[0];document.getElementById('bbQuant').textContent=totalQ.toExponential(6)+' quants';var ceEpoch=Math.floor((epochSec-YEAR0_UNIX)/durSec[7]);document.getElementById('epochAge').textContent=ceEpoch;
+    // AUTO-SCALE: if top unit exceeds 99, add a new unit 100x larger
+    var topVal=dv[dv.length-1];
+    if(topVal>=100){
+      var newExp=durExp[durExp.length-1]+2;
+      var unitNames=['Pulse','Wave','Cycle','Season','Orbit','Epoch','Era','Age','Eon','Aeon','Cosmos'];
+      var unitColors=['#ff6b6b','#ffa94d','#ffd43b','#69db7c','#4dabf7','#9775fa','#e599f7','#ffffff','#5ce0d8','#f06595'];
+      durExp.push(newExp);
+      durSec.push(Math.pow(10,newExp)/HF);
+      durNames.push(unitNames[Math.min(durExp.length-1,unitNames.length-1)]);
+      durColors.push(unitColors[Math.min(durExp.length-1,unitColors.length-1)]);
+    }
+  var cg=document.getElementById('convGrid');
+  if(!cg.dataset.init){
+    cg.dataset.init='1';
+    let html='';
+    durNames.forEach((n,i)=>{
+      var durInTicks=durSec[i]*TPD/EDS;
+      var hfOsc=durSec[i]*HF;
+      var siSec=durSec[i];
+      var tropYrs=durSec[i]/TROPICAL_SEC;
+      var fullYrs=Math.floor(tropYrs);
+      var fracYrSec=(tropYrs%1)*TROPICAL_SEC;
+      var shortDayFrac=fracYrSec/SHORT_DAY_SEC;
+      var loops=durInTicks/(ARCS*TPA);
+      var arcs=(durInTicks%(ARCS*TPA))/TPA;
+      let siLabel='';
+      if(siSec<60)siLabel=siSec.toFixed(2)+' sec';
+      else if(siSec<3600)siLabel=(siSec/60).toFixed(2)+' min';
+      else if(siSec<86400)siLabel=(siSec/3600).toFixed(2)+' hrs';
+      else if(siSec<31557600)siLabel=(siSec/86400).toFixed(2)+' days';
+      else siLabel=(siSec/31557600).toExponential(2)+' yrs';
+      html+='<div class="conv-item" style="cursor:pointer;position:relative;border-left:3px solid '+durColors[i]+';padding-left:8px">';
+      html+='<span class="cn" style="color:'+durColors[i]+'">1 '+n+'</span><span class="cv">= '+(durInTicks>999999?durInTicks.toExponential(2):durInTicks.toFixed(2))+' ticks</span>';
+      html+='<div class="tip">';
+      html+='<div style="color:'+durColors[i]+';font-weight:bold;margin-bottom:4px">'+n+'</div><div style="color:#aaa">SI: '+siLabel+'</div>';
+      html+='<div style="color:#ffa94d">HF: '+hfOsc.toExponential(4)+' oscillations</div>';
+      html+='<div style="color:#9775fa">Ticks: '+(durInTicks>999999?durInTicks.toExponential(4):durInTicks.toFixed(2))+'</div>';
+      html+='<div style="color:#69db7c">= '+fullYrs+' tropical yrs + '+shortDayFrac.toFixed(2)+' short-days, '+Math.floor(arcs)+' arcs</div>';
+      html+='</div></div>';
+    });
+    cg.innerHTML=html;
+  }
+  document.getElementById('leg').textContent=now.toUTCString();
+    }catch(e){console.error("update error:",e);}
+  requestAnimationFrame(update);
+
+}
+update();
+}catch(err){document.getElementById('durClock').style.cssText='width:420px;height:420px;border:5px solid red;background:rgba(255,0,0,0.2)';var d=document.createElement('div');d.style='position:fixed;top:0;left:0;background:red;color:white;padding:20px;font-size:14px;z-index:9999';d.textContent='IIFE ERROR: '+err.message+'\n'+err.stack;document.body.appendChild(d);}
+})();
+(function(){var HF=1420405751.768;var units=[{id:"dn0",n:"Eon",s:1e24/HF,t:"dur"},{id:"dn1",n:"Age",s:1e22/HF,t:"dur"},{id:"dn2",n:"Era",s:1e20/HF,t:"dur"},{id:"dn3",n:"Epoch",s:1e18/HF,t:"dur"},{id:"dnCyc",n:"Cycle",s:1e17/HF,t:"dur"},{id:"dn4",n:"Season",s:1e16/HF,t:"dur"},{id:"dn5",n:"Current",s:1e15/HF,t:"dur"},{id:"dnSpin",n:"Spin",s:1e14/HF,t:"dur"},{id:"dn6",n:"Tide",s:1e13/HF,t:"dur"},{id:"dn7",n:"Wave",s:1e11/HF,t:"dur"},{id:"dnGQ",n:"GQ (Giga-Quant)",s:1e9/HF,t:"dur"},{id:"dnLoop",n:"Loop",s:8640,t:"sol"},{id:"dnArc",n:"Arc",s:86.4,t:"sol"},{id:"dnTick",n:"Tick",s:0.864,t:"sol"}];function fmt(v){if(v<1)return v.toFixed(4)+" sec";if(v<60)return v.toFixed(2)+" sec";if(v<3600)return(v/60).toFixed(2)+" min";if(v<86400)return(v/3600).toFixed(2)+" hrs";if(v<31557600)return(v/86400).toFixed(2)+" days";return(v/31557600).toFixed(4)+" yrs"}units.forEach(function(u){var el=document.getElementById(u.id);if(!el)return;var w=el.parentElement;if(!w)return;w.classList.add("dur-unit-hover");if(u.t==="sol")w.classList.add("solar-unit");var tip=document.createElement("div");tip.className="unit-tooltip";var s=u.s;var r="<div class=tt-title>"+u.n+"</div>";if(u.t==="dur"){var tx=Math.round(s/(86400/100000));r+="<div class=tt-row><span class=tt-label>Ticks in 1 "+u.n+"</span><span class=tt-val>"+(tx>999999?tx.toExponential(2):tx.toLocaleString())+"</span></div>";r+="<div class=tt-row><span class=tt-label>In a Wave</span><span class=tt-val>100 ticks</span></div>";r+="<div class=tt-row><span class=tt-label>In a Tide</span><span class=tt-val>10,000 ticks</span></div>"}else{r+="<div class=tt-row><span class=tt-label>Per Day</span><span class=tt-val>"+(u.n==="Loop"?"10":u.n==="Arc"?"1,000":"100,000")+"</span></div>"}r+="<div class=tt-row><span class=tt-label>Seconds</span><span class=tt-val>"+fmt(s)+"</span></div>";if(s>=60)r+="<div class=tt-row><span class=tt-label>Minutes</span><span class=tt-val>"+(s/60).toFixed(2)+"</span></div>";if(s>=3600)r+="<div class=tt-row><span class=tt-label>Hours</span><span class=tt-val>"+(s/3600).toFixed(2)+"</span></div>";if(s>=86400)r+="<div class=tt-row><span class=tt-label>Days</span><span class=tt-val>"+(s/86400).toFixed(2)+"</span></div>";if(s>=31557600)r+="<div class=tt-row><span class=tt-label>Years</span><span class=tt-val>"+(s/31557600).toFixed(4)+"</span></div>";tip.innerHTML=r;w.appendChild(tip)})})();</script>
+<script>
+
+</script></div><a href="https://lladnaros.com/universaltimes.html" id="cross-link-btn" style="position:fixed;bottom:20px;right:20px;z-index:9999;padding:10px 18px;background:rgba(15,25,45,0.85);border:1px solid #4ad;color:#9cf;font-family:'JetBrains Mono',monospace;font-size:0.85rem;letter-spacing:0.05em;text-decoration:none;border-radius:4px;backdrop-filter:blur(6px);transition:all 0.2s;" onmouseover="this.style.background='rgba(74,170,221,0.25)';this.style.color='#fff'" onmouseout="this.style.background='rgba(15,25,45,0.85)';this.style.color='#9cf'">Visit Lladnaros &rarr;</a>
+</body>
+</html>
