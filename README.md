@@ -1,3 +1,5 @@
+> **v3.1.2 (2026-05-08) — Canonical formula labels finalized.** Fixed a load-bearing semantic drift where the XP mint pipeline was feeding *validator reputation* into the R slot of the formula. R is now correctly identified as **Rarity** (action-class scarcity), F as **Frequency-of-decay**. Reputation legitimately governs vote weight (V+/V-) and the CT formula's ρ, but never enters XP minting. See [`docs/CHANGELOG.md`](docs/CHANGELOG.md) and migration [`packages/xp-mint/migrations/002_canonical_formula_v3_1_2.sql`](packages/xp-mint/migrations/002_canonical_formula_v3_1_2.sql). Pre-fix mints are quarantined under `formula_version='pre-canonical-v3.1.0'`.
+>
 > **v3.1 (2026-05-01) is the canonical spec.** See [`docs/SPEC_v3.1.md`](docs/SPEC_v3.1.md), [`docs/CHANGELOG.md`](docs/CHANGELOG.md), and [`docs/GAPS.md`](docs/GAPS.md) (63 open engineering gaps across 13 categories).
 >
 > **What's new in v3.1:** Digital Autarky vision, personal-AI + handshake model, mandatory hybrid identity (OAuth + on-device KYC + ZKP DID), Personal Signed Local Log, micro-quest marketplace with dynamic reward escalation, native substrate decision, three borrowed Holochain patterns renamed (PSLL, Validation Neighborhoods, Rule Modules). The `epistemology-engine` is **redefined, not removed** — v3.0 read it as a central decomposition service; v3.1 recognizes it as the mesh's emergent peer-review witness layer. Decomposition itself moves to personal AI at the edge.
@@ -22,7 +24,9 @@ The Nash equilibrium is flipped. Honest contribution is the individually rationa
 
 ---
 
-## Core Formula
+## Canonical Formulas
+
+### XP — minted on every closed loop with verified ΔS > 0
 
 ```
 XP = R × F × ΔS × (w · E) × log(1/Tₛ)
@@ -30,15 +34,37 @@ XP = R × F × ΔS × (w · E) × log(1/Tₛ)
 
 | Variable | Range | Description |
 |---|---|---|
-| R | [0.1, 10.0] | Rarity/difficulty multiplier |
-| F | (0, 1] | Frequency decay (diminishing returns on repeated actions) |
+| R | [0.1, 10.0] | **Rarity** multiplier. Action-class scarcity / base difficulty. Property of the loop, NOT the actor. Reputation does not enter here. |
+| F | (0, 1] | **Frequency-of-decay** penalty. Diminishing returns for repeated instances of this action class. |
 | ΔS | (0, ∞) | Verified entropy reduction. Must be > 0 to mint. |
 | w · E | dot product | Weight vector × effort vector across energy dimensions |
 | Tₛ | (0, 1] | Timestamp decay: `exp(-λΔt)`. Recency factor. |
 
 `log(1/Tₛ)` enforces diminishing returns as closure time approaches the domain's causal closure speed. XP cannot be farmed by closing loops arbitrarily fast — the log curve kills that incentive.
 
+**Why R is rarity, not reputation.** XP measures entropy reduction from a single closed event. Every multiplier must describe the loop, not the actor's history. If reputation entered XP, past actions would inflate new mints and reputation would compound indefinitely — reputation laundering. Reputation belongs in vote weight (gating whether a loop closes) and in the CT formula (ρ, because CT is identity-bearing), but not in the XP mint amount.
+
 The formula lives in one place: [`packages/xp-formula/src/index.ts`](packages/xp-formula/src/index.ts). Every service that mints XP imports from there. No reimplementations.
+
+### CT — Contribution Token, identity-bearing
+
+```
+CT = C × F × ρ × Δ × E
+```
+
+| Variable | Description |
+|---|---|
+| C | **Capability** of the contributor |
+| F | **Frequency-of-decay** penalty (same semantics as XP's F) |
+| ρ | **Reputation density** (rho). CT is explicitly identity-bearing, so reputation legitimately enters here — unlike XP, where it is forbidden. |
+| Δ | Entropy reduction delta |
+| E | Eight-domain weighting / essentiality (governance-adjustable) |
+
+Minted via `POST /ct/mint` on the token-economy service. Has lockup. See [`packages/token-economy/src/index.ts`](packages/token-economy/src/index.ts).
+
+### Six canonical tokens
+
+`XP` (non-transferable, decays), `CT` (cross-platform, restricted, lockup), `CAT` (Capability Token, portable skill cert), `IT` (Influence Token, governance weight), `DT` (Domain Token, expertise marker), `EP` (Emergence Points, merchant loyalty, `EP = XP × L`).
 
 ---
 

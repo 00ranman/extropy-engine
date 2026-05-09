@@ -573,11 +573,14 @@ export interface XPMintEvent {
 
   // ── Formula Components ────────────────────────────────────────────────
 
-  /** R — Aggregate reputation of the validator(s) who verified the loop */
-  reputationFactor: number;
+  /** R — Rarity multiplier (action-class scarcity / base difficulty).
+   *  Property of the loop's action class. Reputation does NOT enter the
+   *  XP formula — it lives in vote weight (V+/V-) and CT (ρ) only. */
+  rarityMultiplier: number;
 
-  /** F — Feedback closure strength [0, 1] */
-  feedbackClosureStrength: number;
+  /** F — Frequency-of-decay penalty [0, 1].
+   *  Diminishing returns for repeated instances of the same action class. */
+  frequencyOfDecay: number;
 
   /** ΔS — Net entropy reduction (must be > 0) */
   deltaS: number;
@@ -1279,12 +1282,17 @@ export type TypedDomainEvent<T extends EventType> = DomainEvent<T, EventPayloadM
  *   XP = R × F × ΔS × (w · E) × log(1/Tₛ)
  *
  * Where each factor is independently verifiable and must be > 0.
+ *
+ * IMPORTANT: R is rarity (action-class scarcity), NOT actor reputation.
+ * Letting reputation multiply XP would create reputation laundering —
+ * past actions inflating new mints. Reputation belongs in vote weight
+ * and the CT formula (ρ), not here.
  */
 export interface XPFormulaInputs {
-  /** R — Reputation factor */
-  reputation: number;
-  /** F — Feedback closure strength [0, 1] */
-  feedbackClosure: number;
+  /** R — Rarity multiplier (action-class scarcity / base difficulty) */
+  rarity: number;
+  /** F — Frequency-of-decay penalty [0, 1] */
+  frequencyOfDecay: number;
   /** ΔS — Net entropy reduction (must be > 0) */
   deltaS: number;
   /** w — Domain weight */
@@ -1834,17 +1842,26 @@ export interface CATCertification {
   mentorshipBonuses: number;
 }
 
-/** CT formula: CT = f(C, F, R, Δ, E) */
+/**
+ * CT formula: CT = C × F × ρ × Δ × E
+ *   C = Capability of the contributor
+ *   F = Frequency-of-decay penalty (same semantics as XP formula's F)
+ *   ρ = Reputation density (rho) — this is where reputation legitimately
+ *       enters token issuance, because CT is identity-bearing.
+ *   Δ = Entropy reduction delta
+ *   E = Eight-domain weighting / essentiality
+ */
 export interface CTFormulaInputs {
-  /** C — Context of the contribution */
-  context: number;
-  /** F — Feedback closure strength */
-  feedbackClosure: number;
-  /** R — Reputation of contributor */
-  reputation: number;
+  /** C — Capability of the contributor */
+  capability: number;
+  /** F — Frequency-of-decay penalty */
+  frequencyOfDecay: number;
+  /** ρ — Reputation density (rho). CT is identity-bearing, so reputation
+   *  legitimately enters here — unlike XP, where reputation is forbidden. */
+  reputationDensity: number;
   /** Δ — Waste/entropy reduction achieved */
   delta: number;
-  /** E — Essentiality (governance-adjustable) */
+  /** E — Eight-domain weighting / essentiality (governance-adjustable) */
   essentiality: number;
 }
 

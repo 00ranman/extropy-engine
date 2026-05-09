@@ -161,12 +161,17 @@ CREATE INDEX idx_rep_events_validator ON reputation.events(validator_id);
 
 -- ── XP Mint Tables ────────────────────────────────────────────────────────
 
+-- XP formula columns use canonical v3.1.2 labels:
+--   rarity_multiplier   = R (action-class scarcity, NOT reputation)
+--   frequency_of_decay  = F (diminishing returns for repeated actions)
+-- See packages/xp-mint/migrations/002_canonical_formula_v3_1_2.sql for
+-- the rationale and the legacy column rename.
 CREATE TABLE mint.mint_events (
   id                          TEXT PRIMARY KEY,
   loop_id                     TEXT NOT NULL,
   status                      TEXT NOT NULL DEFAULT 'provisional',
-  reputation_factor           DOUBLE PRECISION NOT NULL,
-  feedback_closure_strength   DOUBLE PRECISION NOT NULL,
+  rarity_multiplier           DOUBLE PRECISION NOT NULL,
+  frequency_of_decay          DOUBLE PRECISION NOT NULL,
   delta_s                     DOUBLE PRECISION NOT NULL,
   domain_essentiality_product DOUBLE PRECISION NOT NULL,
   settlement_time_factor      DOUBLE PRECISION NOT NULL,
@@ -176,11 +181,13 @@ CREATE TABLE mint.mint_events (
   burn_reason                 TEXT,
   retroactive_validation_at   TIMESTAMPTZ,
   created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  formula_version             TEXT NOT NULL DEFAULT 'canonical-v3.1.2',
   UNIQUE(loop_id)
 );
 
 CREATE INDEX idx_mint_status ON mint.mint_events(status);
 CREATE INDEX idx_mint_loop ON mint.mint_events(loop_id);
+CREATE INDEX idx_mint_formula_version ON mint.mint_events(formula_version);
 
 -- ── Event Log (shared audit trail) ────────────────────────────────────────
 

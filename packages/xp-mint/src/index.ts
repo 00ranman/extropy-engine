@@ -47,7 +47,36 @@ app.use(express.json());
 const PORT = process.env.PORT || 4005;
 const SERVICE = ServiceName.XP_MINT;
 const LOOP_LEDGER_URL = process.env.LOOP_LEDGER_URL || 'http://loop-ledger:4003';
+
+// Reputation service URL is still needed for downstream rep accrual
+// (validators earn reputation FROM closing loops). What's removed is
+// reputation feeding INTO the XP formula — that's the bug fix.
 const REPUTATION_URL = process.env.REPUTATION_URL || 'http://reputation:4004';
+
+// Canonical formula version stamp. New mints carry this; legacy mints are
+// quarantined under 'pre-canonical-v3.1.0' (see migration 002).
+const FORMULA_VERSION = 'canonical-v3.1.2';
+
+// Per-domain rarity coefficients (R in the XP formula).
+// R is the action-class scarcity / base difficulty multiplier. It is a
+// property of the LOOP, not the actor. Reputation must NEVER feed into R.
+// Values are governance-tunable; defaults below are seeded for v3.1.2.
+const RARITY_DEFAULTS: Record<string, number> = {
+  thermodynamic: 1.0,
+  informational: 1.2,
+  social:        1.0,
+  economic:      1.1,
+  ecological:    1.5,
+  governance:    1.3,
+  cognitive:     1.4,
+  spiritual:     1.0,
+};
+const RARITY_FALLBACK = 1.0;
+
+function rarityForDomain(domain: string | undefined): number {
+  if (!domain) return RARITY_FALLBACK;
+  return RARITY_DEFAULTS[domain] ?? RARITY_FALLBACK;
+}
 
 const pool = createPool();
 const redis = createRedis();
@@ -56,13 +85,13 @@ const bus = new EventBus(redis, pool, SERVICE);
 // ── XP Calculation ────────────────────────────────────────────────────────
 
 function calculateXP(inputs: XPFormulaInputs): number {
-  const { reputation, feedbackClosure, deltaS, domainWeight, essentiality, settlementTimeSeconds } = inputs;
+  const { rarity, frequencyOfDecay, deltaS, domainWeight, essentiality, settlementTimeSeconds } = inputs;
   if (deltaS <= 0) return 0;
-  if (reputation <= 0 || feedbackClosure <= 0 || domainWeight <= 0 || essentiality <= 0) return 0;
+  if (rarity <= 0 || frequencyOfDecay <= 0 || domainWeight <= 0 || essentiality <= 0) return 0;
   if (settlementTimeSeconds <= 0) return 0;
   const settlementFactor = Math.log(1 / settlementTimeSeconds);
   if (settlementFactor <= 0) return 0;
-  const xp = reputation * feedbackClosure * deltaS * (domainWeight * essentiality) * settlementFactor;
+  const xp = rarity * frequencyOfDecay * deltaS * (domainWeight * essentiality) * settlementFactor;
   return Math.max(0, xp);
 }
 
@@ -79,8 +108,11 @@ function mintEventFromRow(row: any): XPMintEvent {
     id: row.id as MintEventId,
     loopId: row.loop_id as LoopId,
     status: row.status as MintStatus,
-    reputationFactor: row.reputation_factor,
-    feedbackClosureStrength: row.feedback_closure_strength,
+    // Migration 002 renames reputation_factor -> rarity_multiplier and
+    // feedback_closure_strength -> frequency_of_decay. We accept either
+    // column shape during the rollout window.
+    rarityMultiplier: row.rarity_multiplier ?? row.reputation_factor,
+    frequencyOfDecay: row.frequency_of_decay ?? row.feedback_closure_strength,
     deltaS: row.delta_s,
     domainEssentialityProduct: row.domain_essentiality_product,
     settlementTimeFactor: row.settlement_time_factor,
@@ -111,32 +143,22 @@ async function mintForLoop(loopId: LoopId): Promise<XPMintEvent> {
   if (loop.status !== 'closed') throw new Error(`Loop ${loopId} is not closed (status=${loop.status})`);
   if (!loop.deltaS || loop.deltaS <= 0) throw new Error(`Loop ${loopId} has invalid ΔS: ${loop.deltaS}`);
 
-  // Fetch validator reputations
-  let aggregateRep = INITIAL_REP_FALLBACK;
   const validatorIds: ValidatorId[] = loop.validatorIds || [];
 
-  if (validatorIds.length > 0) {
-    try {
-      const repRes = await fetch(`${REPUTATION_URL}/reputation/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ validatorIds }),
-      });
-      if (repRes.ok) {
-        const repMap = await repRes.json() as Record<string, any>;
-        const reps = Object.values(repMap).map((r: any) => r.aggregate || 1);
-        aggregateRep = reps.length > 0 ? reps.reduce((a: number, b: number) => a + b, 0) / reps.length : 1;
-      }
-    } catch (err) {
-      console.log('[xp-mint] Reputation service unavailable, using fallback');
-    }
-  }
+  // R = Rarity. Property of the loop's action class, NOT the actor.
+  // Looked up from the per-domain rarity table. Reputation lookups have
+  // been removed from XP minting entirely — they would create reputation
+  // laundering (past actions inflating new mints). Reputation still
+  // legitimately governs vote weight (V+/V-) and the CT formula (ρ).
+  const R = rarityForDomain(loop.domain);
 
-  // Compute formula inputs
-  const R = aggregateRep;
-  const F = loop.consensus
-    ? loop.consensus.vPlus / (loop.consensus.vPlus + loop.consensus.vMinus || 1)
-    : 0.8;
+  // F = Frequency-of-decay penalty. We approximate via 1 / (1 + recentCount)
+  // when the loop carries a recent-instance count; otherwise default 1.0.
+  // The vote-share that USED to live here was a category error: vote
+  // share gates whether a loop closes (in loop-ledger), not how much
+  // entropy reduction is worth on mint.
+  const recentCount = typeof loop.recentInstanceCount === 'number' ? loop.recentInstanceCount : 0;
+  const F = 1 / (1 + recentCount);
   const deltaS = loop.deltaS;
   const w = 1.0; // Domain weight (simplified)
   const E = 0.8; // Essentiality factor (simplified)
@@ -147,8 +169,8 @@ async function mintForLoop(loopId: LoopId): Promise<XPMintEvent> {
 
   // Calculate XP: use max of full formula and irreducible floor
   const fullXP = calculateXP({
-    reputation: R,
-    feedbackClosure: F,
+    rarity: R,
+    frequencyOfDecay: F,
     deltaS,
     domainWeight: w,
     essentiality: E,
@@ -170,14 +192,17 @@ async function mintForLoop(loopId: LoopId): Promise<XPMintEvent> {
 
   const mintEventId = uuidv4() as MintEventId;
 
-  // Idempotent insert — ON CONFLICT returns nothing if mint already exists
+  // Idempotent insert — ON CONFLICT returns nothing if mint already exists.
+  // Post-migration-002, the table has rarity_multiplier and frequency_of_decay
+  // as the canonical columns plus formula_version so legacy and canonical
+  // mints are distinguishable.
   const insertResult = await pool.query(
-    `INSERT INTO mint.mint_events (id, loop_id, status, reputation_factor, feedback_closure_strength, delta_s,
-     domain_essentiality_product, settlement_time_factor, xp_value, distribution, total_minted)
-     VALUES ($1, $2, 'provisional', $3, $4, $5, $6, $7, $8, $9, $10)
+    `INSERT INTO mint.mint_events (id, loop_id, status, rarity_multiplier, frequency_of_decay, delta_s,
+     domain_essentiality_product, settlement_time_factor, xp_value, distribution, total_minted, formula_version)
+     VALUES ($1, $2, 'provisional', $3, $4, $5, $6, $7, $8, $9, $10, $11)
      ON CONFLICT (loop_id) DO NOTHING
      RETURNING id`,
-    [mintEventId, loopId, R, F, deltaS, w * E, settlementFactor, xpValue, JSON.stringify(distribution), xpValue],
+    [mintEventId, loopId, R, F, deltaS, w * E, settlementFactor, xpValue, JSON.stringify(distribution), xpValue, FORMULA_VERSION],
   );
 
   if (insertResult.rowCount === 0) {
@@ -229,8 +254,6 @@ async function mintForLoop(loopId: LoopId): Promise<XPMintEvent> {
   console.log(`[xp-mint] ✨ MINTED ${xpValue.toFixed(2)} XP for loop ${loopId} (R=${R.toFixed(2)}, F=${F.toFixed(2)}, ΔS=${deltaS}, irreducible=${irreducibleXP.toFixed(2)})`);
   return mintEvent;
 }
-
-const INITIAL_REP_FALLBACK = 1.0;
 
 // ── Health Check ──────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
@@ -399,8 +422,8 @@ app.post('/mint/calculate', (req, res) => {
   res.json({
     xpValue,
     breakdown: {
-      reputationFactor: inputs.reputation,
-      feedbackClosureStrength: inputs.feedbackClosure,
+      rarityMultiplier: inputs.rarity,
+      frequencyOfDecay: inputs.frequencyOfDecay,
       deltaS: inputs.deltaS,
       domainEssentialityProduct: inputs.domainWeight * inputs.essentiality,
       settlementTimeFactor: inputs.settlementTimeSeconds > 0
@@ -408,7 +431,8 @@ app.post('/mint/calculate', (req, res) => {
         : 0,
     },
     irreducibleXP: null,
-    formulaUsed: `XP = ${inputs.reputation} × ${inputs.feedbackClosure} × ${inputs.deltaS} × (${inputs.domainWeight} × ${inputs.essentiality}) × log(1/${inputs.settlementTimeSeconds})`,
+    formulaUsed: `XP = ${inputs.rarity} × ${inputs.frequencyOfDecay} × ${inputs.deltaS} × (${inputs.domainWeight} × ${inputs.essentiality}) × log(1/${inputs.settlementTimeSeconds})`,
+    formulaVersion: FORMULA_VERSION,
   });
 });
 

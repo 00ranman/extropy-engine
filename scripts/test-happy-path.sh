@@ -279,9 +279,12 @@ echo "  Total Minted:  ${TOTAL_MINTED}"
 echo "$MINT" | python3 -c "
 import sys, json
 m = json.load(sys.stdin)
-if 'reputationFactor' in m:
-    print(f\"  R (reputation):   {m['reputationFactor']:.4f}\")
-    print(f\"  F (feedback):     {m['feedbackClosureStrength']:.4f}\")
+# Canonical v3.1.2 fields, with legacy fallback for pre-canonical mints.
+rarity = m.get('rarityMultiplier', m.get('reputationFactor'))
+freq   = m.get('frequencyOfDecay', m.get('feedbackClosureStrength'))
+if rarity is not None:
+    print(f\"  R (rarity):       {rarity:.4f}\")
+    print(f\"  F (freq decay):   {freq:.4f}\")
     print(f\"  ΔS:               {m['deltaS']}\")
     print(f\"  w·E:              {m['domainEssentialityProduct']:.4f}\")
     print(f\"  log(1/Tₛ):        {m['settlementTimeFactor']:.4f}\")
