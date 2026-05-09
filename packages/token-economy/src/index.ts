@@ -863,37 +863,59 @@ app.post('/tokens/unlock', async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────────────────────────────────────────
 
 /**
- * POST /ct/mint — Mint Contribution Tokens using CT formula
- * CT = context × feedbackClosure × reputation × delta
- * (essentiality is governance-adjustable; included as multiplier)
+ * POST /ct/mint — Mint Contribution Tokens using the canonical CT formula.
+ *
+ *   CT = C × F × ρ × Δ × E
+ *
+ * Where:
+ *   C = Capability of the contributor
+ *   F = Frequency-of-decay penalty (same semantics as XP formula's F)
+ *   ρ = Reputation density (rho). CT is identity-bearing, so reputation
+ *       legitimately enters here — unlike XP, where it is forbidden.
+ *   Δ = Entropy reduction delta
+ *   E = Eight-domain weighting / essentiality (governance-adjustable)
+ *
+ * Accepts both canonical field names (capability, frequencyOfDecay,
+ * reputationDensity) and legacy names (context, feedbackClosure,
+ * reputation) during the v3.1.2 rollout window.
  */
 app.post('/ct/mint', async (req: Request, res: Response) => {
   try {
     const {
       validatorId,
-      context, feedbackClosure, reputation, delta, essentiality,
+      // canonical names
+      capability, frequencyOfDecay, reputationDensity,
+      // legacy aliases (kept for client compat through rollout)
+      context, feedbackClosure, reputation,
+      delta, essentiality,
       relatedLoopId, seasonId,
     } = req.body;
 
-    if (!validatorId || context == null || feedbackClosure == null
-        || reputation == null || delta == null || essentiality == null) {
+    const C = capability ?? context;
+    const F = frequencyOfDecay ?? feedbackClosure;
+    const RHO = reputationDensity ?? reputation;
+
+    if (!validatorId || C == null || F == null
+        || RHO == null || delta == null || essentiality == null) {
       res.status(400).json(errBody(
-        'Missing required fields: validatorId, context, feedbackClosure, reputation, delta, essentiality',
+        'Missing required fields: validatorId, capability (or context), '
+        + 'frequencyOfDecay (or feedbackClosure), reputationDensity (or reputation), '
+        + 'delta, essentiality',
         'VALIDATION_ERROR',
       ));
       return;
     }
 
     const inputs: CTFormulaInputs = {
-      context:        Number(context),
-      feedbackClosure: Number(feedbackClosure),
-      reputation:     Number(reputation),
-      delta:          Number(delta),
-      essentiality:   Number(essentiality),
+      capability:        Number(C),
+      frequencyOfDecay:  Number(F),
+      reputationDensity: Number(RHO),
+      delta:             Number(delta),
+      essentiality:      Number(essentiality),
     };
 
-    // CT = C × F × R × Δ  (E is a governance-adjustable multiplier)
-    const ctAmount = inputs.context * inputs.feedbackClosure * inputs.reputation * inputs.delta * inputs.essentiality;
+    // CT = C × F × ρ × Δ × E
+    const ctAmount = inputs.capability * inputs.frequencyOfDecay * inputs.reputationDensity * inputs.delta * inputs.essentiality;
 
     if (ctAmount <= 0) {
       res.status(400).json(errBody('CT formula produced zero or negative amount', 'INVALID_FORMULA'));
@@ -906,7 +928,7 @@ app.post('/ct/mint', async (req: Request, res: Response) => {
       validatorId:       validatorId as ValidatorId,
       tokenType:         TokenType.CT,
       amount:            ctAmount,
-      reason:            `CT formula mint: C=${context} F=${feedbackClosure} R=${reputation} Δ=${delta} E=${essentiality}`,
+      reason:            `CT formula mint: C=${C} F=${F} ρ=${RHO} Δ=${delta} E=${essentiality}`,
       locked:            true,
       lockupExpiresAt,
       relatedEntityId:   relatedLoopId ?? null,

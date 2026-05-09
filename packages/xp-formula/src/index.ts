@@ -5,8 +5,11 @@
  * XP = R × F × ΔS × (w · E) × log(1/Tₛ)
  *
  * Where:
- *   R  = Rarity multiplier (base difficulty/scarcity coefficient)
- *   F  = Frequency penalty (diminishing returns for repeated actions)
+ *   R  = Rarity multiplier (action-class scarcity / base difficulty).
+ *        Property of the loop's action class — NOT actor reputation.
+ *        Reputation belongs in vote weight (V+/V-) and CT (ρ), not here.
+ *   F  = Frequency-of-decay penalty (diminishing returns for repeated
+ *        instances of this action class). 1.0 = first occurrence.
  *   ΔS = Entropy delta (verified disorder reduction score, must be > 0)
  *   w  = Weight vector for energy components
  *   E  = Energy vector (effort dimensions: cognitive, physical, temporal)
