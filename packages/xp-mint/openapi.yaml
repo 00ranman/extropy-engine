@@ -44,12 +44,20 @@ paths:
       operationId: mintXP
       summary: Mint XP for a validator after loop closure
       description: |
-        Mints XP using the formula: XP = ΔS · R · D
-        
-        - ΔS = entropy reduction (deltaS)
-        - R = validator aggregate reputation
-        - D = domain difficulty multiplier
-        
+        Mints XP using the canonical formula:
+        XP = R × F × ΔS × (w · E) × log(1/Tₛ)
+
+        - R  = Rarity multiplier (action-class scarcity / base difficulty).
+               Property of the loop's action class, NOT actor reputation.
+        - F  = Frequency-of-decay penalty (diminishing returns for repeats).
+        - ΔS = entropy reduction (deltaS, must be > 0)
+        - w  = domain weight vector
+        - E  = essentiality vector
+        - Tₛ = settlement time (recency factor)
+
+        The formula is owned by @extropy/xp-formula. xp-mint imports it
+        and does NOT reimplement it.
+
         Emits: `xp.minted`
       requestBody:
         required: true
