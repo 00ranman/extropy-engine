@@ -6,6 +6,11 @@
  *
  * Core formula:  XP = R × F × ΔS × (w · E) × log(1/Tₛ)
  *
+ * The formula itself lives in @extropy/xp-formula and is the single
+ * source of truth. xp-mint imports computeXP from there and adapts its
+ * historical scalar w/E surface to the canonical vector signature.
+ * Do NOT reimplement the formula here.
+ *
  * Two-phase minting:
  *   Phase 1 (ERC):  Provisional XP on loop close
  *   Phase 2 (RCV):  Retroactive confirm or burn
@@ -23,6 +28,7 @@ import {
   ServiceName,
   CAUSAL_CLOSURE_SPEEDS,
 } from '@extropy/contracts';
+import { calculateXP } from './calculate-xp';
 import type {
   XPMintEvent,
   MintEventId,
@@ -83,17 +89,8 @@ const redis = createRedis();
 const bus = new EventBus(redis, pool, SERVICE);
 
 // ── XP Calculation ────────────────────────────────────────────────────────
-
-function calculateXP(inputs: XPFormulaInputs): number {
-  const { rarity, frequencyOfDecay, deltaS, domainWeight, essentiality, settlementTimeSeconds } = inputs;
-  if (deltaS <= 0) return 0;
-  if (rarity <= 0 || frequencyOfDecay <= 0 || domainWeight <= 0 || essentiality <= 0) return 0;
-  if (settlementTimeSeconds <= 0) return 0;
-  const settlementFactor = Math.log(1 / settlementTimeSeconds);
-  if (settlementFactor <= 0) return 0;
-  const xp = rarity * frequencyOfDecay * deltaS * (domainWeight * essentiality) * settlementFactor;
-  return Math.max(0, xp);
-}
+// calculateXP lives in ./calculate-xp.ts and delegates to the canonical
+// @extropy/xp-formula computeXP. Do NOT reimplement the formula here.
 
 function calculateIrreducibleXP(inputs: IrreducibleXPInputs): number {
   const { deltaS, causalClosureSpeed } = inputs;
