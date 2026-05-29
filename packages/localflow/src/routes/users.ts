@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { userStore } from '../store.js';
 import type { User } from '../types.js';
 
-export const usersRouter = Router();
+export const usersRouter: ExpressRouter = Router();
 
 const CreateUserSchema = z.object({
   name: z.string().min(1),

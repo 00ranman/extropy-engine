@@ -20,12 +20,12 @@
  *   GET    /mesh/vertices             all DAG vertices (internal observability)
  */
 
-import express from 'express';
+import express, { type Express } from 'express';
 import { usersRouter } from './routes/users.js';
 import { tasksRouter } from './routes/tasks.js';
 import { getAllVertices } from './dag.js';
 
-const app = express();
+const app: Express = express();
 app.use(express.json());
 
 app.use('/users', usersRouter);

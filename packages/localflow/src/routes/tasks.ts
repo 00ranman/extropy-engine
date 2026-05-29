@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { taskStore, userStore } from '../store.js';
 import { emitLoopOpen, emitLoopClose, getVerticesByTask } from '../dag.js';
 import type { Task } from '../types.js';
 
-export const tasksRouter = Router();
+export const tasksRouter: ExpressRouter = Router();
 
 const CreateTaskSchema = z.object({
   clientId: z.string().uuid(),
