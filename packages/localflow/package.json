@@ -8,19 +8,19 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "zod": "^3.22.4",
-    "uuid": "^9.0.0",
-    "ioredis": "^5.3.2"
+    "express": "^4.19.0",
+    "zod": "^3.23.0",
+    "uuid": "^10.0.0",
+    "ioredis": "^5.3.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/uuid": "^9.0.7",
+    "@types/uuid": "^10.0.0",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3",
-    "vitest": "^1.2.0"
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
   }
 }
