@@ -28,6 +28,7 @@
     "build:credentials": "pnpm --filter @extropy/credentials run build",
     "build:ecosystem": "pnpm --filter @extropy/ecosystem run build",
     "build:homeflow": "pnpm --filter @extropy/homeflow run build",
+    "build:localflow": "pnpm --filter @extropy/localflow run build",
     "build:grantflow-discovery": "pnpm --filter @extropy/grantflow-discovery run build",
     "build:grantflow-proposer": "pnpm --filter @extropy/grantflow-proposer run build",
     "build:identity": "pnpm --filter @extropy/identity run build",
