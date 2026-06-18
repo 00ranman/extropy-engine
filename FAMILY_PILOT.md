@@ -12,9 +12,13 @@ laptop. It implements the canonical v3.1 identity flow from spec section 8.2:
 ## What you will set up
 
 1. A Google OAuth client so each family member can sign in with their Gmail
-2. A Postgres + Redis pair (already provided by the repo's `docker compose`)
-3. The HomeFlow service, listening on port 4001 and serving the cyberpunk UI
-4. Network access from the rest of the family's devices
+2. The HomeFlow service, listening on port 4001 and serving the cyberpunk UI
+3. Network access from the rest of the family's devices
+
+The pilot does **not** require Postgres or Redis. By default HomeFlow uses a
+file-backed JSON store and an in process event bus. Both can be graduated to
+real Postgres / Redis later by setting `ENABLE_POSTGRES=1` / `ENABLE_REDIS=1`,
+see the storage and event bus sections below.
 
 ## 1. Create a Google OAuth client
 
@@ -89,6 +93,21 @@ hash-chain anchors. A JSON file fits those needs without provisioning a DB.
 To graduate to Postgres later, set `DATABASE_URL` to a real connection string
 (or rerun `deploy-homeflow.sh` with `ENABLE_POSTGRES=1`). The Postgres code
 path is intact behind the runtime branch in `src/index.ts`.
+
+### Event bus: in process by default, Redis optional
+
+By default, **`ENABLE_REDIS` is unset** and HomeFlow runs against an in process
+EventEmitter bus. Same publish/subscribe API as the Redis backed bus, just
+no cross process fan out. This is the right default for the family pilot
+because the spec puts truth on the user device, the server is a dumb registry,
+and a single HomeFlow process needs no shared bus.
+
+To graduate to a Redis backed bus across multiple HomeFlow processes, set
+both `ENABLE_REDIS=1` and `REDIS_URL=redis://...` in the env (or rerun
+`deploy-homeflow.sh` with `ENABLE_REDIS=1`). If `ENABLE_REDIS=1` is set but
+Redis cannot be reached at boot, HomeFlow logs a warning and falls back to
+the in process bus rather than crashing, mirroring the temporal service
+unreachable behaviour.
 
 ## 4. Start the service
 

@@ -23,7 +23,7 @@ import type { DomainEvent } from '@extropy/contracts';
 
 import { DatabaseService } from './services/database.service.js';
 import { FileBackedDb, resolveDataDir } from './services/file-db.service.js';
-import { EventBusService } from './services/event-bus.service.js';
+import { createEventBus } from './services/event-bus.service.js';
 import { DeviceService } from './services/device.service.js';
 import { EntropyService } from './services/entropy.service.js';
 import { ClaimService } from './services/claim.service.js';
@@ -51,7 +51,11 @@ const PORT              = parseInt(process.env.PORT ?? '4015', 10);
 // file-backed JSON store (see services/file-db.service.ts). Set it to a real
 // Postgres connection string to graduate the family pilot to Postgres mode.
 const DATABASE_URL      = process.env.DATABASE_URL ?? '';
-const REDIS_URL         = process.env.REDIS_URL ?? 'redis://localhost:6379';
+// REDIS_URL is consumed only when ENABLE_REDIS=1. When unset (the family
+// pilot default) HomeFlow uses an in process EventEmitter bus, matching the
+// Extropy spec where the server is a dumb registry and edges hold truth.
+const REDIS_URL         = process.env.REDIS_URL ?? '';
+const ENABLE_REDIS      = process.env.ENABLE_REDIS === '1' || process.env.ENABLE_REDIS === 'true';
 const EPISTEMOLOGY_URL  = process.env.EPISTEMOLOGY_URL ?? 'http://localhost:4001';
 const SIGNALFLOW_URL    = process.env.SIGNALFLOW_URL ?? 'http://localhost:4002';
 const LOOP_LEDGER_URL   = process.env.LOOP_LEDGER_URL ?? 'http://localhost:4003';
@@ -96,9 +100,8 @@ async function main(): Promise<void> {
     db = fileDb as unknown as DatabaseService;
   }
 
-  const eventBus = new EventBusService(REDIS_URL);
-  await eventBus.connect();
-  console.log('[homeflow] Event bus connected');
+  const eventBus = await createEventBus({ enableRedis: ENABLE_REDIS, redisUrl: REDIS_URL });
+  console.log('[homeflow] Event bus ready');
 
   const userService = new UserService(db);
   await userService.ensureSchema();

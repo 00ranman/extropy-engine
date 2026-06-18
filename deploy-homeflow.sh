@@ -112,6 +112,24 @@ else
 fi
 
 #####################################################
+# 7a. Redis (default OFF; set ENABLE_REDIS=1 to require)
+#####################################################
+if [[ "${ENABLE_REDIS:-0}" == "1" ]]; then
+  log "Checking Redis (ENABLE_REDIS=1)"
+  REDIS_HOST_PORT="${REDIS_URL:-redis://127.0.0.1:6379}"
+  REDIS_HOST=$(echo "$REDIS_HOST_PORT" | sed -E 's#^redis://([^:/]+).*#\1#')
+  REDIS_PORT=$(echo "$REDIS_HOST_PORT" | sed -E 's#^redis://[^:/]+:?([0-9]+)?.*#\1#')
+  REDIS_PORT="${REDIS_PORT:-6379}"
+  if (echo > "/dev/tcp/$REDIS_HOST/$REDIS_PORT") 2>/dev/null; then
+    log "Redis reachable at $REDIS_HOST:$REDIS_PORT"
+  else
+    log "WARNING: ENABLE_REDIS=1 but $REDIS_HOST:$REDIS_PORT is not reachable. HomeFlow will fall back to the in process bus and log a warning at boot. Provision Redis (or unset ENABLE_REDIS) before relying on cross process pub/sub."
+  fi
+else
+  log "Skipping Redis (default). HomeFlow will use the in process event bus."
+fi
+
+#####################################################
 # 7b. Temporal data directory (Universal Times service)
 #####################################################
 log "Ensuring temporal data dir at $TEMPORAL_DATA_DIR"
@@ -142,6 +160,11 @@ SECURE_COOKIES=true
 # Universal Times service (runs alongside HomeFlow on the same VPS)
 TEMPORAL_URL=http://127.0.0.1:$TEMPORAL_PORT
 TEMPORAL_HMAC_SECRET=$TEMPORAL_HMAC_SECRET
+
+# Event bus. Default: in process EventEmitter (family pilot). Set both to
+# enable a Redis backed bus across multiple HomeFlow processes.
+# ENABLE_REDIS=1
+# REDIS_URL=redis://127.0.0.1:6379
 
 # Fill these in after creating Google OAuth client (see post-deploy notes)
 GOOGLE_CLIENT_ID=PASTE_HERE
@@ -399,6 +422,14 @@ NEXT STEPS (these still need to be done by you, in this order):
 6) Open https://$DOMAIN/ in a browser. Sign in with Google. Family pilot is live.
    Season transitions will fire from the temporal service into HomeFlow's
    /temporal/event endpoint automatically once both services are up.
+
+OPTIONAL: graduate beyond the family pilot defaults
+   * Postgres: rerun this script with ENABLE_POSTGRES=1 to provision Postgres
+     and rewrite the .env DATABASE_URL line.
+   * Redis: rerun with ENABLE_REDIS=1 (and provide a reachable REDIS_URL in
+     the .env) to use a Redis backed event bus across multiple HomeFlow
+     processes. The default in process bus is the right choice for a single
+     family pilot node.
 
 To redeploy after future code updates, just run this script again.
 
