@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HomeFlow | Extropy Engine</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#060a0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HomeFlow">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="auth.css">
+</head>
+<body>
+<div id="app">
+<aside id="sidebar">
+<div class="logo">&#9851; HomeFlow</div>
+<nav id="nav">
+<a href="#" class="nav-item active" data-page="dashboard">&#127968; Dashboard</a>
+<a href="#" class="nav-item" data-page="devices">&#128241; Devices</a>
+<a href="#" class="nav-item" data-page="entropy">&#9889; Entropy</a>
+<a href="#" class="nav-item" data-page="claims">&#9989; Claims</a>
+<a href="#" class="nav-item" data-page="tokens">&#129689; Tokens</a>
+<a href="#" class="nav-item" data-page="dag">&#127760; DAG</a>
+<a href="#" class="nav-item" data-page="psll">&#128220; My PSLL</a>
+<a href="#" class="nav-item" data-page="ecosystem">&#9881; Ecosystem</a>
+</nav>
+<div class="sidebar-footer">
+<div class="health-dot" id="healthDot"></div>
+<span id="healthLabel">Connecting...</span>
+</div>
+</aside>
+<main id="main">
+<header id="header">
+<h1 id="pageTitle">Dashboard</h1>
+<div class="header-right">
+<span id="xpBadge" class="xp-badge">XP: 0</span>
+<span id="repBadge" class="rep-badge">Rep: 0</span>
+<button id="refreshBtn" class="btn-icon" title="Refresh">&#8635;</button>
+</div>
+</header>
+<div id="pageContent"></div>
+</main>
+</div>
+<script src="did-onboard.js"></script>
+<script src="auth.js"></script>
+<script src="psll.js"></script>
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function (err) {
+        console.warn('SW registration failed', err);
+      });
+    });
+  }
+</script>
+</body>
+</html>

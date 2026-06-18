@@ -17,8 +17,27 @@ import type { TemporalIntegration } from '../integrations/temporal.integration.j
 export function createTemporalEventRoute(
   temporal: TemporalIntegration,
   hmacSecret: string | undefined,
+  temporalUrl?: string,
 ): Router {
   const router = Router();
+
+  // Public read-only proxy for the temporal /now feed so the UI can
+  // render the Universal Times Season strip without exposing the
+  // internal port. Best-effort, returns 503 on failure.
+  router.get('/api/v1/temporal/now-public', async (_req: Request, res: Response) => {
+    const base = temporalUrl ?? process.env.TEMPORAL_URL ?? 'http://127.0.0.1:4002';
+    try {
+      const upstream = await fetch(`${base.replace(/\/$/, '')}/now`);
+      if (!upstream.ok) {
+        res.status(503).json({ error: 'temporal_unhealthy' });
+        return;
+      }
+      const data = await upstream.json();
+      res.json(data);
+    } catch {
+      res.status(503).json({ error: 'temporal_unreachable' });
+    }
+  });
 
   router.post(
     '/temporal/event',
