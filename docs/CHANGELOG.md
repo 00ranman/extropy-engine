@@ -76,6 +76,36 @@ physics-grounded protocol.
 Legacy rows are NOT recomputed. The DAG is event-sourced — history is
 permanent, reinterpretation happens by appending future vertices.
 
+### Documentation correction (follow-up, 2026-05-09)
+
+The v3.1.2 code fix landed cleanly but the human-readable docs were not
+fully scrubbed in the same pass. The technical specification PDF and the
+DAG Architecture Breakdown PDF both shipped under the v3.1.2 label while
+still describing **R as Reliability/Reputation** and **F as Falsifiability**.
+This follow-up corrects the prose to match the code:
+
+- `docs/SPEC_v3.1.md` §6: variable table, §6.1, §6.2 rewritten. R is
+  Rarity (action-class scarcity, property of the loop). F is
+  Frequency-of-decay (anti-grind dampener). Falsifiability is a
+  claim-quality criterion enforced separately and is not a variable in
+  the XP formula.
+- `docs/SPEC_v3.1.md` §1 abstract: "reliability weighting" → "action-class
+  rarity weighting".
+- `extropy-engine-technical-docs-v3.1.2.pdf` regenerated from corrected
+  source.
+- `DAG_Architecture_Breakdown.pdf` regenerated: the factor table row
+  `Reputation / R / Accumulated confirmation weight of the validator's
+  historical vertices` was incoherent against the v3.1.2 invariant and
+  has been replaced with `Rarity / R / Action-class scarcity of the loop
+  being closed. Property of the loop, not the validator.` Use cases that
+  describe walking the person-DAG to compute reputation are retained but
+  re-labeled as CT-side (ρ) rather than XP-side.
+
+No math changed. No new symbols introduced. The naming-convention
+invariant from `THREE_LAYER_SEPARATION.md` ("Never let reputation
+re-enter XP. R is Rarity. Forever.") is now consistent across all
+shipped docs.
+
 ### Math sanity check
 
 Multiplication is commutative; the arithmetic is identical when the
