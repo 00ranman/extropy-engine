@@ -41,5 +41,8 @@ pgdata/
 *~
 *.orig
 
+# generated directory listing (regenerate with `tree`/`find`, do not commit at root)
+/directory_structure.txt
+
 # pnpm
 .pnpm-store/

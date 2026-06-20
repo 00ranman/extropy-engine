@@ -22,6 +22,7 @@
  */
 
 import express, { Request, Response, NextFunction, Express } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { z } from 'zod';
 
 import {
@@ -68,7 +69,7 @@ const STARTED_AT = new Date().toISOString();
 const store = new IdentityStore();
 
 const app: Express = express();
-app.use(express.json({ limit: '1mb' }));
+applyBaseSecurity(app, { jsonLimit: '1mb' });
 
 // Tiny request logger so the service is not a black box at runtime.
 app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -94,8 +95,7 @@ function notFound(res: Response, what: string) {
 function serverError(res: Response, err: unknown) {
   // eslint-disable-next-line no-console
   console.error(`[${SERVICE_NAME}] error:`, err);
-  const msg = err instanceof Error ? err.message : String(err);
-  return res.status(500).json({ error: 'internal_error', reason: msg });
+  return res.status(500).json({ error: 'internal_error' });
 }
 
 function parseBody<T>(schema: z.ZodSchema<T>, req: Request, res: Response): T | null {

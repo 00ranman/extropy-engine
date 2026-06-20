@@ -239,7 +239,7 @@ function isIsoLike(s: string): boolean {
 function sendError(res: Response, err: unknown): void {
   // eslint-disable-next-line no-console
   console.error('[epistemology-engine /mesh] error:', err);
-  const msg = err instanceof Error ? err.message : String(err);
   // 502 because the failure is downstream (Postgres, DAG node).
-  res.status(502).json({ error: 'source_error', reason: msg });
+  // Real error is logged above; client gets a generic reason.
+  res.status(502).json({ error: 'source_error', reason: 'upstream_unavailable' });
 }

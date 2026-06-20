@@ -13,6 +13,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@extropy/contracts": "*",
     "express": "^4.19.0",
     "uuid": "^10.0.0"
   },

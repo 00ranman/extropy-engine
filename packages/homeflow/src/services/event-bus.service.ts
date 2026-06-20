@@ -24,8 +24,8 @@ export class EventBusService {
   }
 
   async connect(): Promise<void> {
-    await this.publisher.connect();
-    await this.subscriber.connect();
+    await this.connectWithRetry(this.publisher, 'publisher');
+    await this.connectWithRetry(this.subscriber, 'subscriber');
 
     await this.subscriber.subscribe(CHANNEL, (message: string) => {
       try {
@@ -37,6 +37,31 @@ export class EventBusService {
     });
 
     console.log('[homeflow:event-bus] Connected and subscribed to', CHANNEL);
+  }
+
+  /**
+   * Connect a Redis client with bounded backoff so a slow-to-start Redis does
+   * not immediately crash the service.
+   */
+  private async connectWithRetry(
+    client: RedisClientType,
+    label: string,
+    maxRetries = 30,
+    baseDelayMs = 1000,
+  ): Promise<void> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await client.connect();
+        return;
+      } catch (err) {
+        if (attempt === maxRetries) {
+          throw err;
+        }
+        const delay = Math.min(attempt * baseDelayMs, 5000);
+        console.log(`[homeflow:event-bus] Waiting for Redis ${label}... (${attempt}/${maxRetries})`);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
   }
 
   async disconnect(): Promise<void> {

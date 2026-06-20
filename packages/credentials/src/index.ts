@@ -9,6 +9,7 @@
  */
 
 import express, { type Express } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -44,7 +45,7 @@ import type {
 } from '@extropy/contracts';
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 const PORT   = process.env.PORT              || 4013;
 const SERVICE = ServiceName.CREDENTIALS;
@@ -255,7 +256,7 @@ app.post('/credentials', async (req, res) => {
     res.status(201).json(credential);
   } catch (err: any) {
     console.error('[credentials] POST /credentials error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -272,7 +273,7 @@ app.get('/credentials/:id', async (req, res) => {
     }
     res.json(credentialFromRow(result.rows[0]));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -295,7 +296,7 @@ app.get('/credentials/validator/:validatorId', async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows.map(credentialFromRow));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -331,7 +332,7 @@ app.delete('/credentials/:id', async (req, res) => {
     console.log(`[credentials] Revoked credential ${credential.id} (validator=${credential.validatorId})`);
     res.json(credential);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -428,7 +429,7 @@ app.post('/levels/check/:validatorId', async (req, res) => {
     res.json(response);
   } catch (err: any) {
     console.error('[credentials] POST /levels/check error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -462,7 +463,7 @@ app.get('/levels/:validatorId', async (req, res) => {
       maxLevel:      level >= 10,
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -497,7 +498,7 @@ app.get('/levels/leaderboard', async (req, res) => {
 
     res.json(entries);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -540,7 +541,7 @@ app.post('/badges/award', async (req, res) => {
     res.status(201).json(credential);
   } catch (err: any) {
     console.error('[credentials] POST /badges/award error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -555,7 +556,7 @@ app.get('/badges/validator/:validatorId', async (req, res) => {
     );
     res.json(result.rows.map(credentialFromRow));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -686,7 +687,7 @@ app.post('/badges/check-automated', async (req, res) => {
     res.json({ awarded, count: awarded.length });
   } catch (err: any) {
     console.error('[credentials] POST /badges/check-automated error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -730,7 +731,7 @@ app.post('/titles/award', async (req, res) => {
     res.status(201).json(credential);
   } catch (err: any) {
     console.error('[credentials] POST /titles/award error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -745,7 +746,7 @@ app.get('/titles/validator/:validatorId', async (req, res) => {
     );
     res.json(result.rows.map(credentialFromRow));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -788,7 +789,7 @@ app.post('/seasons/:seasonId/cosmetic-reset', async (req, res) => {
     res.json({ seasonId, revokedCount: revoked.length, revoked });
   } catch (err: any) {
     console.error('[credentials] POST /seasons/:seasonId/cosmetic-reset error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -889,7 +890,7 @@ app.post('/seasons/:seasonId/award-final-titles', async (req, res) => {
     res.json({ seasonId, awardedCount: awarded.length, awarded });
   } catch (err: any) {
     console.error('[credentials] POST /seasons/:seasonId/award-final-titles error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -958,7 +959,7 @@ app.get('/leaderboard', async (req, res) => {
 
     res.json(entries);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -998,7 +999,7 @@ app.get('/leaderboard/domain/:domain', async (req, res) => {
 
     res.json(entries);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -1078,7 +1079,7 @@ app.get('/profile/:validatorId', async (req, res) => {
     res.json(profile);
   } catch (err: any) {
     console.error('[credentials] GET /profile error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -1094,7 +1095,7 @@ app.post('/events', async (req, res) => {
     res.status(202).send();
   } catch (err: any) {
     console.error('[credentials] Event handler error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'internal_error' });
   }
 });
 
@@ -1471,5 +1472,8 @@ main().catch((err) => {
   console.error('[credentials] Fatal startup error:', err);
   process.exit(1);
 });
+
+// Sanitized error handler (mounted last): logs full error, returns generic payload.
+app.use(sanitizedErrorHandler);
 
 export default app;

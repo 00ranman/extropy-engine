@@ -21,12 +21,13 @@
  */
 
 import express, { type Express } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { usersRouter } from './routes/users.js';
 import { tasksRouter } from './routes/tasks.js';
 import { getAllVertices } from './dag.js';
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 app.use('/users', usersRouter);
 app.use('/tasks', tasksRouter);
@@ -39,6 +40,9 @@ app.get('/health', (_req, res) => {
 app.get('/mesh/vertices', (_req, res) => {
   res.json(getAllVertices());
 });
+
+// Sanitized error handler (mounted last): logs full error, returns generic payload.
+app.use(sanitizedErrorHandler);
 
 const PORT = Number(process.env.LOCALFLOW_PORT ?? 4030);
 app.listen(PORT, () => {

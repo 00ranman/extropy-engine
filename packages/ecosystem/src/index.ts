@@ -14,6 +14,7 @@
  */
 
 import express, { type Express } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -48,7 +49,7 @@ import type {
 } from '@extropy/contracts';
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 const PORT  = process.env.PORT                || 4014;
 const SERVICE = ServiceName.ECOSYSTEM;
@@ -1173,7 +1174,7 @@ app.post('/events', async (req, res) => {
     res.status(202).send();
   } catch (err: any) {
     console.error('[ecosystem] Event handler error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'internal_error' });
   }
 });
 
@@ -1344,5 +1345,8 @@ main().catch((err) => {
   console.error('[ecosystem] Fatal startup error:', err);
   process.exit(1);
 });
+
+// Sanitized error handler (mounted last): logs full error, returns generic payload.
+app.use(sanitizedErrorHandler);
 
 export default app;

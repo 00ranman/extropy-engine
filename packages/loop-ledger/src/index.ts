@@ -6,6 +6,7 @@
  */
 
 import express, { type Express } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -39,7 +40,7 @@ import type {
 } from '@extropy/contracts';
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 const PORT = process.env.PORT || 4003;
 const SERVICE = ServiceName.LOOP_LEDGER;
@@ -234,7 +235,7 @@ app.post('/loops', async (req, res) => {
     res.status(201).json(loop);
   } catch (err: any) {
     console.error('[loop-ledger] POST /loops error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -252,7 +253,7 @@ app.get('/loops', async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows.map(loopFromRow));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -266,7 +267,7 @@ app.get('/loops/:loopId', async (req, res) => {
     }
     res.json(loopFromRow(result.rows[0]));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -284,7 +285,7 @@ app.post('/loops/:loopId/measurements', async (req, res) => {
     res.status(201).json(measurement);
   } catch (err: any) {
     console.error('[loop-ledger] POST /measurements error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -299,7 +300,7 @@ app.post('/loops/:loopId/consensus', async (req, res) => {
     console.log(`[loop-ledger] Loop ${loopId} entered CONSENSUS phase`);
     res.json(loopFromRow(loopRes.rows[0]));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -378,7 +379,7 @@ app.post('/loops/:loopId/consensus/vote', async (req, res) => {
     res.json(loopFromRow(updated.rows[0]));
   } catch (err: any) {
     console.error('[loop-ledger] POST /consensus/vote error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -388,7 +389,7 @@ app.post('/loops/:loopId/close', async (req, res) => {
     const loop = await closeLoop(req.params.loopId as LoopId);
     res.json(loop);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -399,7 +400,7 @@ app.post('/loops/:loopId/settle', async (req, res) => {
     const loop = await settleLoop(req.params.loopId as LoopId, mintEventId as MintEventId);
     res.json(loop);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -419,7 +420,7 @@ app.post('/loops/:loopId/fail', async (req, res) => {
     } as LoopFailedPayload);
     res.json(loop);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -432,7 +433,7 @@ app.post('/events', async (req, res) => {
     res.status(202).send();
   } catch (err: any) {
     console.error('[loop-ledger] Event handler error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'internal_error' });
   }
 });
 
@@ -600,5 +601,8 @@ main().catch((err) => {
   console.error('[loop-ledger] Fatal startup error:', err);
   process.exit(1);
 });
+
+// Sanitized error handler (mounted last): logs full error, returns generic payload.
+app.use(sanitizedErrorHandler);
 
 export default app;

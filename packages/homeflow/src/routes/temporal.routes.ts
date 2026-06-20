@@ -20,6 +20,12 @@ export function createTemporalEventRoute(
 ): Router {
   const router = Router();
 
+  // Fail closed. If no shared secret is configured we reject every request
+  // unless the operator has explicitly opted out with ALLOW_UNSIGNED_TEMPORAL=1
+  // (intended for local dev only). This prevents a clean deploy from silently
+  // accepting forged, unsigned season events.
+  const allowUnsigned = process.env.ALLOW_UNSIGNED_TEMPORAL === '1';
+
   router.post(
     '/temporal/event',
     async (req: Request & { rawBody?: Buffer }, res: Response, next: NextFunction) => {
@@ -38,6 +44,11 @@ export function createTemporalEventRoute(
             res.status(401).json({ error: 'invalid signature' });
             return;
           }
+        } else if (!allowUnsigned) {
+          res.status(401).json({
+            error: 'temporal callback signing is not configured; set TEMPORAL_HMAC_SECRET',
+          });
+          return;
         }
         const body = req.body as {
           unit?: string;

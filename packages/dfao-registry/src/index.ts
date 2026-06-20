@@ -10,6 +10,7 @@
  */
 
 import express, { type Express } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -48,7 +49,7 @@ import type {
 } from '@extropy/contracts';
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 const PORT   = process.env.PORT || 4009;
 const SERVICE = ServiceName.DFAO_REGISTRY;
@@ -321,7 +322,7 @@ app.post('/dfaos', async (req, res) => {
     res.status(201).json(dfao);
   } catch (err: any) {
     console.error('[dfao-registry] POST /dfaos error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -339,7 +340,7 @@ app.get('/dfaos/:id', async (req, res) => {
     res.json(dfaoFromRow(result.rows[0]));
   } catch (err: any) {
     console.error('[dfao-registry] GET /dfaos/:id error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -384,7 +385,7 @@ app.get('/dfaos', async (req, res) => {
     res.json(response);
   } catch (err: any) {
     console.error('[dfao-registry] GET /dfaos error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -459,7 +460,7 @@ app.patch('/dfaos/:id/status', async (req, res) => {
     res.json(dfaoFromRow(updatedRes.rows[0]));
   } catch (err: any) {
     console.error('[dfao-registry] PATCH /dfaos/:id/status error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -564,7 +565,7 @@ app.post('/dfaos/:id/members', async (req, res) => {
     res.status(201).json(membership);
   } catch (err: any) {
     console.error('[dfao-registry] POST /dfaos/:id/members error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -617,7 +618,7 @@ app.delete('/dfaos/:id/members/:validatorId', async (req, res) => {
     res.status(204).send();
   } catch (err: any) {
     console.error('[dfao-registry] DELETE /dfaos/:id/members/:validatorId error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -679,7 +680,7 @@ app.post('/dfaos/:id/members/:validatorId/expel', async (req, res) => {
     res.status(200).json({ dfaoId, validatorId, status: MembershipStatus.EXPELLED, proposalId });
   } catch (err: any) {
     console.error('[dfao-registry] POST .../expel error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -707,7 +708,7 @@ app.get('/dfaos/:id/members', async (req, res) => {
     res.json(result.rows.map(membershipFromRow));
   } catch (err: any) {
     console.error('[dfao-registry] GET /dfaos/:id/members error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -768,7 +769,7 @@ app.patch('/dfaos/:id/members/:validatorId/role', async (req, res) => {
     res.json(membershipFromRow(updatedRes.rows[0]));
   } catch (err: any) {
     console.error('[dfao-registry] PATCH .../role error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -785,7 +786,7 @@ app.get('/dfaos/:id/children', async (req, res) => {
     res.json(result.rows.map(dfaoFromRow));
   } catch (err: any) {
     console.error('[dfao-registry] GET /dfaos/:id/children error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -822,7 +823,7 @@ app.get('/dfaos/:id/ancestry', async (req, res) => {
     res.json(ancestry);
   } catch (err: any) {
     console.error('[dfao-registry] GET /dfaos/:id/ancestry error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -866,7 +867,7 @@ app.post('/dfaos/:id/governance-weight', async (req, res) => {
     res.json({ dfaoId, updatedCount: updates.length, updates });
   } catch (err: any) {
     console.error('[dfao-registry] POST /governance-weight error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -913,7 +914,7 @@ app.get('/dfaos/:id/stats', async (req, res) => {
     });
   } catch (err: any) {
     console.error('[dfao-registry] GET /dfaos/:id/stats error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -976,7 +977,7 @@ app.post('/dfaos/:id/dissolve', async (req, res) => {
     res.json(dfaoFromRow(updatedRes.rows[0]));
   } catch (err: any) {
     console.error('[dfao-registry] POST /dfaos/:id/dissolve error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -992,7 +993,7 @@ app.post('/events', async (req, res) => {
     res.status(202).send();
   } catch (err: any) {
     console.error('[dfao-registry] Event handler error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'internal_error' });
   }
 });
 
@@ -1101,5 +1102,8 @@ main().catch((err) => {
   console.error('[dfao-registry] Fatal startup error:', err);
   process.exit(1);
 });
+
+// Sanitized error handler (mounted last): logs full error, returns generic payload.
+app.use(sanitizedErrorHandler);
 
 export default app;

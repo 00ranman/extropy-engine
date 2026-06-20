@@ -68,7 +68,7 @@ export function createUploadsRoutes(uploadService: UploadService): Router {
       res.json({ uploads, count: uploads.length });
     } catch (err) {
       console.error('[academia-bridge] GET /uploads error:', err);
-      res.status(500).json({ error: 'Failed to list uploads', details: String(err) });
+      res.status(500).json({ error: 'Failed to list uploads' });
     }
   });
 
@@ -109,7 +109,7 @@ export function createUploadsRoutes(uploadService: UploadService): Router {
       res.json(upload);
     } catch (err) {
       console.error(`[academia-bridge] GET /uploads/${req.params.id} error:`, err);
-      res.status(500).json({ error: 'Failed to get upload', details: String(err) });
+      res.status(500).json({ error: 'Failed to get upload' });
     }
   });
 
@@ -133,7 +133,7 @@ export function createUploadsRoutes(uploadService: UploadService): Router {
       res.json(status);
     } catch (err) {
       console.error('[academia-bridge] GET /uploads/session/status error:', err);
-      res.status(500).json({ error: 'Failed to get session status', details: String(err) });
+      res.status(500).json({ error: 'Failed to get session status' });
     }
   });
 

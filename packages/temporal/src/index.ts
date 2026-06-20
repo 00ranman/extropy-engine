@@ -10,6 +10,7 @@
  */
 
 import express, { type Express } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -42,7 +43,7 @@ import type {
 } from '@extropy/contracts';
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 const PORT = process.env.PORT || 4011;
 const SERVICE = ServiceName.TEMPORAL;
@@ -166,7 +167,7 @@ app.post('/seasons', async (req, res) => {
     res.status(201).json(season);
   } catch (err: any) {
     console.error('[temporal] POST /seasons error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -180,7 +181,7 @@ app.get('/seasons', async (_req, res) => {
     );
     res.json(result.rows.map(seasonFromRow));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -202,7 +203,7 @@ app.get('/seasons/current', async (_req, res) => {
     }
     res.json(seasonFromRow(result.rows[0]));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -221,7 +222,7 @@ app.get('/seasons/:id', async (req, res) => {
     }
     res.json(seasonFromRow(result.rows[0]));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -250,7 +251,7 @@ app.get('/seasons/:id/rankings', async (req, res) => {
     const rankings = await computeCurrentRankings(season.id, seasonRes.rows[0].starts_at);
     res.json(rankings);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -314,7 +315,7 @@ app.post('/seasons/:id/start', async (req, res) => {
     res.json(updatedSeason);
   } catch (err: any) {
     console.error('[temporal] POST /seasons/:id/start error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -399,7 +400,7 @@ app.post('/seasons/:id/end', async (req, res) => {
     res.json(completedSeason);
   } catch (err: any) {
     console.error('[temporal] POST /seasons/:id/end error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -466,7 +467,7 @@ app.post('/loops/check-timeouts', async (_req, res) => {
     res.json({ timedOutCount, checkedCount: result.rows.length });
   } catch (err: any) {
     console.error('[temporal] POST /loops/check-timeouts error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -528,7 +529,7 @@ app.post('/reputation/decay-tick', async (_req, res) => {
     res.json({ decayedCount, decayRate: DECAY_RATE });
   } catch (err: any) {
     console.error('[temporal] POST /reputation/decay-tick error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -582,7 +583,7 @@ app.post('/governance/weight-decay', async (_req, res) => {
     res.json({ decayedCount, decayRate: DECAY_RATE });
   } catch (err: any) {
     console.error('[temporal] POST /governance/weight-decay error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -643,7 +644,7 @@ app.post('/xp/decay', async (_req, res) => {
     res.json({ decayedCount, decayRate: DECAY_RATE, cycleNumber });
   } catch (err: any) {
     console.error('[temporal] POST /xp/decay error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -690,7 +691,7 @@ app.post('/scheduled-tasks', async (req, res) => {
     res.status(201).json(scheduledTaskFromRow(row.rows[0]));
   } catch (err: any) {
     console.error('[temporal] POST /scheduled-tasks error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -724,7 +725,7 @@ app.get('/scheduled-tasks', async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows.map(scheduledTaskFromRow));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -777,7 +778,7 @@ app.post('/scheduled-tasks/execute', async (_req, res) => {
     });
   } catch (err: any) {
     console.error('[temporal] POST /scheduled-tasks/execute error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -885,7 +886,7 @@ app.post('/cron/tick', async (_req, res) => {
     res.json({ ok: true, timestamp: new Date().toISOString(), summary });
   } catch (err: any) {
     console.error('[temporal] POST /cron/tick error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -901,7 +902,7 @@ app.post('/events', async (req, res) => {
     res.status(202).send();
   } catch (err: any) {
     console.error('[temporal] Event handler error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'internal_error' });
   }
 });
 
@@ -1253,5 +1254,8 @@ main().catch((err) => {
   console.error('[temporal] Fatal startup error:', err);
   process.exit(1);
 });
+
+// Sanitized error handler (mounted last): logs full error, returns generic payload.
+app.use(sanitizedErrorHandler);
 
 export default app;

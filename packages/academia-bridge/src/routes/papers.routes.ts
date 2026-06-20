@@ -76,10 +76,10 @@ export function createPapersRoutes(
       res.status(201).json(paper);
     } catch (err) {
       if (err instanceof Error && err.name === 'ZodError') {
-        res.status(400).json({ error: 'Validation error', details: String(err) });
+        res.status(400).json({ error: 'Validation error' });
       } else {
         console.error('[academia-bridge] POST /papers error:', err);
-        res.status(500).json({ error: 'Failed to queue paper', details: String(err) });
+        res.status(500).json({ error: 'Failed to queue paper' });
       }
     }
   });
@@ -149,7 +149,7 @@ export function createPapersRoutes(
       res.json({ papers, count: papers.length });
     } catch (err) {
       console.error('[academia-bridge] GET /papers error:', err);
-      res.status(500).json({ error: 'Failed to list papers', details: String(err) });
+      res.status(500).json({ error: 'Failed to list papers' });
     }
   });
 
@@ -167,7 +167,7 @@ export function createPapersRoutes(
       res.json(paper);
     } catch (err) {
       console.error(`[academia-bridge] GET /papers/${req.params.id} error:`, err);
-      res.status(500).json({ error: 'Failed to get paper', details: String(err) });
+      res.status(500).json({ error: 'Failed to get paper' });
     }
   });
 
@@ -185,7 +185,7 @@ export function createPapersRoutes(
       res.json(paper);
     } catch (err) {
       console.error(`[academia-bridge] PATCH /papers/${req.params.id} error:`, err);
-      res.status(500).json({ error: 'Failed to update paper', details: String(err) });
+      res.status(500).json({ error: 'Failed to update paper' });
     }
   });
 
@@ -207,7 +207,7 @@ export function createPapersRoutes(
         return;
       }
       console.error(`[academia-bridge] DELETE /papers/${req.params.id} error:`, err);
-      res.status(500).json({ error: 'Failed to delete paper', details: String(err) });
+      res.status(500).json({ error: 'Failed to delete paper' });
     }
   });
 
@@ -266,7 +266,7 @@ export function createPapersRoutes(
       }
     } catch (err) {
       console.error(`[academia-bridge] POST /papers/${req.params.id}/upload error:`, err);
-      res.status(500).json({ error: 'Upload failed', details: String(err) });
+      res.status(500).json({ error: 'Upload failed' });
     }
   });
 

@@ -8,10 +8,11 @@
  * Port: 4008 (default)
  */
 import express from 'express';
+import { applyBaseSecurity } from '@extropy/contracts';
 import { AdaptiveEngineService } from './services/adaptive-engine.service';
 
 const app = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 const engine = new AdaptiveEngineService();
 
@@ -66,7 +67,7 @@ app.get('/progress/:agentId', async (req, res, next) => {
 /** Generic error handler */
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[levelup-academy]', err);
-  res.status(500).json({ error: err.message });
+  res.status(500).json({ error: 'internal_error' });
 });
 
 const PORT = parseInt(process.env.PORT ?? '4008', 10);

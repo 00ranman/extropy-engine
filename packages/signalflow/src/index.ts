@@ -10,6 +10,18 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
+
+// Dashboard origins allowed to open a socket.io connection. Comma-separated.
+// Falls back to localhost in non-production; required in production.
+const DASHBOARD_ORIGINS = (process.env.SIGNALFLOW_DASHBOARD_ORIGINS
+  || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000'))
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+if (process.env.NODE_ENV === 'production' && DASHBOARD_ORIGINS.length === 0) {
+  throw new Error('SIGNALFLOW_DASHBOARD_ORIGINS must be set in production (socket.io CORS allowlist).');
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,10 +78,10 @@ const redis = new Redis(REDIS_URL);
 const app = express();
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
-  cors: { origin: '*' },
+  cors: { origin: DASHBOARD_ORIGINS, credentials: true },
 });
 
-app.use(express.json());
+applyBaseSecurity(app);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -339,13 +351,7 @@ io.on('connection', (socket) => {
 
 // ─── Error Handler ────────────────────────────────────────────────────────────
 
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('[SignalFlow Error]', err);
-  res.status(500).json({
-    error: 'INTERNAL_ERROR',
-    message: err.message || 'An unexpected error occurred',
-  });
-});
+app.use(sanitizedErrorHandler);
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
 

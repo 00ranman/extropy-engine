@@ -14,6 +14,8 @@ import path from 'node:path';
 import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import session from 'express-session';
 import passport from 'passport';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import type { DatabaseService } from './services/database.service.js';
 import type { UserService } from './services/user.service.js';
@@ -31,13 +33,14 @@ import type { ReputationIntegration } from './integrations/reputation.integratio
 import type { InteropService } from './interop/interop.service.js';
 
 import { createAuthRoutes, type AuthConfig } from './auth/auth.routes.js';
+import { requireSession } from './auth/auth.middleware.js';
 import { createIdentityRoutes, GenesisAnchor, type DAGAnchor } from './routes/identity.routes.js';
 import { createPSLLRoutes } from './routes/psll.routes.js';
 import { createDeviceRoutes } from './routes/devices.routes.js';
 import { createHouseholdRoutes, createZoneRoutes } from './routes/households.routes.js';
 import { createEntropyRoutes } from './routes/entropy.routes.js';
 import { createIntegrationRoutes } from './routes/integrations.routes.js';
-import { createInteropRoutes } from './routes/interop.routes.js';
+import { createInteropRoutes, createInteropIngressRoutes } from './routes/interop.routes.js';
 import { createTemporalEventRoute } from './routes/temporal.routes.js';
 
 export interface AppDeps {
@@ -85,9 +88,29 @@ export function defaultStaticFrontendDir(): string {
 export function createApp(deps: AppDeps): Express {
   const app = express();
 
+  // Trust the first proxy hop so secure cookies and client IP based rate
+  // limiting work correctly behind Cloudflare Tunnel / a reverse proxy.
+  app.set('trust proxy', 1);
+
+  // Baseline security headers (clickjacking, MIME sniffing, etc.). CSP is left
+  // off here because the PWA frontend is served from the same origin and a
+  // tight policy needs per-asset tuning; enable it deliberately later.
+  app.use(helmet({ contentSecurityPolicy: false }));
+
+  // Global rate limit. Generous enough for a family pilot, low enough to blunt
+  // brute force and abuse. Tighter limits are applied to auth and to the
+  // write-heavy entropy and schedule surfaces below.
+  const globalLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 300,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+  });
+  app.use(globalLimiter);
+
   app.use(
     express.json({
-      limit: '10mb',
+      limit: '1mb',
       // Capture raw body so HMAC verification on /temporal/event can
       // recompute the signature byte-for-byte over the original payload.
       verify: (req: Request & { rawBody?: Buffer }, _res: Response, buf: Buffer) => {
@@ -105,19 +128,33 @@ export function createApp(deps: AppDeps): Express {
 
   app.use(
     session({
+      name: 'hf.sid',
       secret: deps.sessionSecret,
       resave: false,
       saveUninitialized: false,
+      rolling: true, // refresh the cookie maxAge on activity
       cookie: {
         httpOnly: true,
         sameSite: 'lax',
-        secure: !!deps.secureCookies,
-        maxAge: 1000 * 60 * 60 * 24 * 30,
+        // In production always require HTTPS for the session cookie. The
+        // secureCookies flag can still force it on in other environments.
+        secure: deps.secureCookies || process.env.NODE_ENV === 'production',
+        // Shorter lifetime than the previous 30 days narrows the window if a
+        // cookie leaks. rolling:true keeps active users signed in.
+        maxAge: 1000 * 60 * 60 * 24 * 7,
       },
     }),
   );
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Stricter limiter for authentication endpoints.
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+  });
 
   app.get('/health', async (_req: Request, res: Response) => {
     try {
@@ -131,15 +168,16 @@ export function createApp(deps: AppDeps): Express {
         adapters: deps.interopService.listAdapters().length,
       });
     } catch (err) {
+      // Log detail server side; do not leak DB/connection errors to callers.
+      console.error('[homeflow] health check failed:', err);
       res.status(503).json({
         service: 'homeflow',
         status: 'unhealthy',
-        error: String(err),
       });
     }
   });
 
-  app.use('/auth', createAuthRoutes(deps.userService, deps.authConfig));
+  app.use('/auth', authLimiter, createAuthRoutes(deps.userService, deps.authConfig));
 
   const dagAnchor: DAGAnchor =
     deps.dagAnchor ??
@@ -153,14 +191,39 @@ export function createApp(deps: AppDeps): Express {
   app.use('/api/v1/identity', createIdentityRoutes(deps.userService, dagAnchor));
   app.use('/api/v1/psll', createPSLLRoutes(deps.userService, deps.psllService));
 
-  const interopRouter = createInteropRoutes(deps.interopService);
-  app.use('/', interopRouter);
-  app.use('/api/v1/households', createHouseholdRoutes(deps.householdService));
-  app.use('/api/v1/zones', createZoneRoutes(deps.householdService));
-  app.use('/api/v1/devices', createDeviceRoutes(deps.deviceService));
-  app.use('/api/v1/entropy', createEntropyRoutes(deps.entropyService, deps.claimService));
+  // Every remaining /api/v1 surface requires an authenticated session. The
+  // route factories below additionally enforce per-household ownership so a
+  // signed-in user cannot read or mutate another family's data.
+  const auth = requireSession(deps.userService);
+
+  // Public service-to-service ingress (no session). Secret-gated in production.
+  app.use('/', createInteropIngressRoutes(deps.interopService));
+
+  // Authenticated interop management surface.
+  const interopRouter = createInteropRoutes(deps.interopService, deps.householdService);
+  app.use(
+    '/api/v1/households',
+    auth,
+    createHouseholdRoutes(deps.householdService),
+  );
+  app.use(
+    '/api/v1/zones',
+    auth,
+    createZoneRoutes(deps.householdService),
+  );
+  app.use(
+    '/api/v1/devices',
+    auth,
+    createDeviceRoutes(deps.deviceService, deps.householdService),
+  );
+  app.use(
+    '/api/v1/entropy',
+    auth,
+    createEntropyRoutes(deps.entropyService, deps.claimService, deps.householdService),
+  );
   app.use(
     '/api/v1',
+    auth,
     createIntegrationRoutes({
       governance: deps.integrations.governance,
       temporal: deps.integrations.temporal,
@@ -168,9 +231,10 @@ export function createApp(deps: AppDeps): Express {
       credential: deps.integrations.credential,
       dag: deps.integrations.dag,
       reputation: deps.integrations.reputation,
+      householdService: deps.householdService,
     }),
   );
-  app.use('/api/v1', interopRouter);
+  app.use('/api/v1', auth, interopRouter);
 
   if (deps.staticFrontendDir !== null && deps.staticFrontendDir !== undefined) {
     const frontendDir = deps.staticFrontendDir;
@@ -187,10 +251,13 @@ export function createApp(deps: AppDeps): Express {
     });
   }
 
+  // Centralized error handler. Logs the full error server side, returns a
+  // generic message to the client so internal details (DB errors, hostnames,
+  // stack-derived text) are never leaked.
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('[homeflow] Error:', err.message);
+    console.error('[homeflow] Error:', err);
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
