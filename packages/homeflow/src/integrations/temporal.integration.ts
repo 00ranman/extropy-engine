@@ -94,6 +94,19 @@ export class TemporalIntegration {
     return rows.map(this.rowToSchedule);
   }
 
+  /**
+   * Resolve the owning household id for a schedule, or null if it does not
+   * exist. Used by route ownership guards so a caller cannot toggle, execute, or
+   * delete a schedule belonging to another household.
+   */
+  async getScheduleHouseholdId(scheduleId: string): Promise<string | null> {
+    const { rows } = await this.db.query(
+      'SELECT household_id FROM hf_schedules WHERE id = $1',
+      [scheduleId],
+    );
+    return rows.length > 0 ? (rows[0].household_id as string) : null;
+  }
+
   async toggleSchedule(scheduleId: string, enabled: boolean): Promise<void> {
     await this.db.query(
       'UPDATE hf_schedules SET enabled = $1, updated_at = NOW() WHERE id = $2',

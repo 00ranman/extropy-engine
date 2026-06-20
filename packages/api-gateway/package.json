@@ -1,0 +1,27 @@
+{
+  "name": "@extropy/api-gateway",
+  "version": "0.1.0",
+  "description": "Unified API gateway and reverse proxy for the Extropy Engine microservices",
+  "main": "./dist/gateway.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/gateway.ts",
+    "start": "node dist/gateway.js",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.0",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "http-proxy-middleware": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "typescript": "^5.4.0",
+    "tsx": "^4.7.0",
+    "vitest": "^2.0.0"
+  }
+}

@@ -12,6 +12,7 @@
  */
 
 import express, { type Express } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -42,7 +43,7 @@ import type {
 } from '@extropy/contracts';
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 const PORT = process.env.PORT || 4005;
 const SERVICE = ServiceName.XP_MINT;
@@ -285,7 +286,7 @@ app.post('/mint', async (req, res) => {
     res.status(201).json(mintEvent);
   } catch (err: any) {
     console.error('[xp-mint] POST /mint error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -299,7 +300,7 @@ app.get('/mint/:mintEventId', async (req, res) => {
     }
     res.json(mintEventFromRow(result.rows[0]));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -313,7 +314,7 @@ app.get('/mint/by-loop/:loopId', async (req, res) => {
     }
     res.json(mintEventFromRow(result.rows[0]));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -337,7 +338,7 @@ app.get('/mint/history', async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows.map(mintEventFromRow));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -372,7 +373,7 @@ app.post('/mint/:mintEventId/confirm', async (req, res) => {
     console.log(`[xp-mint] Mint ${mintEventId} CONFIRMED`);
     res.json(mintEvent);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -410,7 +411,7 @@ app.post('/mint/:mintEventId/burn', async (req, res) => {
     console.log(`[xp-mint] Mint ${mintEventId} BURNED: ${reason}`);
     res.json(mintEvent);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -457,7 +458,7 @@ app.get('/supply', async (_req, res) => {
       eventCount: parseInt(row.event_count),
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -479,7 +480,7 @@ app.get('/supply/by-validator/:validatorId', async (req, res) => {
 
     res.json({ validatorId, totalXP });
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -507,7 +508,7 @@ app.post('/events', async (req, res) => {
     res.status(202).send();
   } catch (err: any) {
     console.error('[xp-mint] Event handler error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'internal_error' });
   }
 });
 
@@ -540,4 +541,7 @@ main().catch((err) => {
 });
 
 export { calculateXP, calculateIrreducibleXP };
+// Sanitized error handler (mounted last): logs full error, returns generic payload.
+app.use(sanitizedErrorHandler);
+
 export default app;

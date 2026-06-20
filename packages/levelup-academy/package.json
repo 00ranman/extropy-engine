@@ -9,6 +9,7 @@
     "build:wip": "tsc"
   },
   "dependencies": {
+    "@extropy/contracts": "*",
     "@extropy/xp-formula": "*",
     "express": "^4.18.0"
   },

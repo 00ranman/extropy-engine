@@ -36,6 +36,7 @@
  */
 
 import express, { type Request, type Response, type NextFunction } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { EventType } from '@extropy/contracts';
 import type { DomainEvent } from '@extropy/contracts';
 
@@ -214,7 +215,7 @@ async function main(): Promise<void> {
 
   // ── Create Express app ────────────────────────────────────────────────
   const app = express();
-  app.use(express.json({ limit: '50mb' })); // Larger limit for paper content
+  applyBaseSecurity(app, { jsonLimit: '50mb' }); // Larger limit for paper content
 
   // Request logging middleware
   app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -248,10 +249,11 @@ async function main(): Promise<void> {
         },
       });
     } catch (err) {
+      console.error('[academia-bridge] /health error:', err);
       res.status(503).json({
         service:   'academia-bridge',
         status:    'unhealthy',
-        error:     String(err),
+        error:     'unavailable',
         timestamp: new Date().toISOString(),
       });
     }
@@ -287,16 +289,16 @@ async function main(): Promise<void> {
       const failed  = results.filter(r => r === null).length;
       res.json({ synced, failed, timestamp: new Date().toISOString() });
     } catch (err) {
-      res.status(500).json({ error: 'Sync failed', details: String(err) });
+      res.status(500).json({ error: 'Sync failed' });
     }
   });
   app.use('/api/v1/scheduler', schedulerRouter);
 
   // ── Global error handler ──────────────────────────────────────────────
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('[academia-bridge] Unhandled error:', err.message);
+    console.error('[academia-bridge] Unhandled error:', err);
     res.status(500).json({
-      error:     err.message,
+      error:     'internal_error',
       code:      'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });

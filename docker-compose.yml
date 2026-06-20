@@ -17,11 +17,13 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: extropy
-      POSTGRES_PASSWORD: extropy_dev
-      POSTGRES_DB: extropy_engine
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-extropy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (see .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:-extropy_engine}
+    # Not published to the host. Reachable only on the internal compose network.
+    # To inspect locally, use: docker compose exec postgres psql -U extropy
+    expose:
+      - "5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
@@ -33,10 +35,12 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set (see .env.example)}"]
+    # Not published to the host. Reachable only on the internal compose network.
+    expose:
+      - "6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -50,8 +54,8 @@ services:
       - "4001:4001"
     environment:
       PORT: 4001
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=epistemology
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=epistemology
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       LOOP_LEDGER_URL: http://loop-ledger:4003
       SIGNALFLOW_URL: http://signalflow:4002
     depends_on:
@@ -68,8 +72,8 @@ services:
       - "4002:4002"
     environment:
       PORT: 4002
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=signalflow
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=signalflow
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       REPUTATION_URL: http://reputation:4004
       EPISTEMOLOGY_URL: http://epistemology-engine:4001
     depends_on:
@@ -86,8 +90,8 @@ services:
       - "4003:4003"
     environment:
       PORT: 4003
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=ledger
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=ledger
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       EPISTEMOLOGY_URL: http://epistemology-engine:4001
       SIGNALFLOW_URL: http://signalflow:4002
       REPUTATION_URL: http://reputation:4004
@@ -106,8 +110,8 @@ services:
       - "4004:4004"
     environment:
       PORT: 4004
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=reputation
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=reputation
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       SIGNALFLOW_URL: http://signalflow:4002
     depends_on:
       postgres:
@@ -123,8 +127,8 @@ services:
       - "4005:4005"
     environment:
       PORT: 4005
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=mint
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=mint
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       LOOP_LEDGER_URL: http://loop-ledger:4003
       REPUTATION_URL: http://reputation:4004
     depends_on:
@@ -142,8 +146,8 @@ services:
       - "4008:4008"
     environment:
       PORT: 4008
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=dag
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=dag
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     depends_on:
       postgres:
         condition: service_healthy
@@ -158,8 +162,8 @@ services:
       - "4009:4009"
     environment:
       PORT: 4009
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=dfao
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=dfao
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       DAG_SUBSTRATE_URL: http://dag-substrate:4008
     depends_on:
       postgres:
@@ -175,8 +179,8 @@ services:
       - "4010:4010"
     environment:
       PORT: 4010
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=governance
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=governance
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       DFAO_REGISTRY_URL: http://dfao-registry:4009
     depends_on:
       postgres:
@@ -192,8 +196,8 @@ services:
       - "4011:4011"
     environment:
       PORT: 4011
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=temporal
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=temporal
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     depends_on:
       postgres:
         condition: service_healthy
@@ -208,8 +212,8 @@ services:
       - "4012:4012"
     environment:
       PORT: 4012
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=economy
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=economy
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       XP_MINT_URL: http://xp-mint:4005
     depends_on:
       postgres:
@@ -225,8 +229,8 @@ services:
       - "4013:4013"
     environment:
       PORT: 4013
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=credentials
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=credentials
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       REPUTATION_URL: http://reputation:4004
     depends_on:
       postgres:
@@ -242,8 +246,8 @@ services:
       - "4014:4014"
     environment:
       PORT: 4014
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=ecosystem
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=ecosystem
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     depends_on:
       postgres:
         condition: service_healthy
@@ -258,8 +262,8 @@ services:
       - "4015:4015"
     environment:
       PORT: 4015
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=homeflow
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=homeflow
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       EPISTEMOLOGY_URL: http://epistemology-engine:4001
       SIGNALFLOW_URL: http://signalflow:4002
       LOOP_LEDGER_URL: http://loop-ledger:4003
@@ -287,8 +291,8 @@ services:
       - "4020:4020"
     environment:
       PORT: 4020
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=grantflow
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=grantflow
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
     depends_on:
       postgres:
         condition: service_healthy
@@ -303,8 +307,8 @@ services:
       - "4021:4021"
     environment:
       PORT: 4021
-      DATABASE_URL: postgresql://extropy:extropy_dev@postgres:5432/extropy_engine?schema=grantflow
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=grantflow
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       GRANTFLOW_DISCOVERY_URL: http://grantflow-discovery:4020
     depends_on:
       postgres:

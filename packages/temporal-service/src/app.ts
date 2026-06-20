@@ -4,8 +4,9 @@
  * tick() directly without spinning real timers.
  */
 
-import express, { type Express, type Request, type Response, type NextFunction } from 'express';
+import express, { type Express, type Request, type Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { isValidUnit, nowSnapshot, type AnyUnitName } from './universaltimes.js';
 import { TemporalClock } from './clock.js';
 import type { Subscriber, TemporalStore } from './store.js';
@@ -21,7 +22,7 @@ const startedAt = Date.now();
 
 export function createApp(opts: AppOptions): Express {
   const app = express();
-  app.use(express.json({ limit: '256kb' }));
+  applyBaseSecurity(app, { jsonLimit: '256kb' });
 
   app.get('/health', (_req: Request, res: Response) => {
     res.json({
@@ -117,10 +118,7 @@ export function createApp(opts: AppOptions): Express {
     return res.json({ unit, fired });
   });
 
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('[temporal] error:', err.message);
-    res.status(500).json({ error: err.message });
-  });
+  app.use(sanitizedErrorHandler);
 
   return app;
 }

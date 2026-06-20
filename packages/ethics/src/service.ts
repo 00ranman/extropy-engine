@@ -10,7 +10,8 @@
  * Or import the router directly:
  *   import { router } from './routes';
  */
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { router } from './routes';
 import { initDb } from './db';
 
@@ -29,16 +30,13 @@ export function createApp(options: ServiceOptions = {}): Application {
   const { prefix = '/', skipDbInit = false } = options;
   const app = express();
 
-  app.use(express.json());
+  applyBaseSecurity(app);
 
   // Attach ethics routes under the configured prefix
   app.use(prefix, router);
 
-  // Generic JSON error handler
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('[ethics-service]', err);
-    res.status(500).json({ error: 'Internal server error', message: err.message });
-  });
+  // Generic JSON error handler (logs full error server-side, generic to client)
+  app.use(sanitizedErrorHandler);
 
   if (!skipDbInit) {
     initDb().catch((e) =>

@@ -49,6 +49,7 @@
  */
 
 import express, { Express, Request, Response, NextFunction } from 'express';
+import { applyBaseSecurity } from '@extropy/contracts';
 import { Pool } from 'pg';
 import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
@@ -245,7 +246,7 @@ const epistemologySource: EpistemologySource =
     : new DagSubstrateSource();
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 // Mount the v3.1 observability surface under /mesh.
 app.use('/mesh', createMeshRouter({ source: epistemologySource }));
@@ -267,7 +268,8 @@ app.get('/health', async (_req: Request, res: Response) => {
     await db.query('SELECT 1');
     res.json({ service: 'epistemology-engine', status: 'healthy', version: '1.0.0', uptime: process.uptime() });
   } catch (err) {
-    res.status(503).json({ service: 'epistemology-engine', status: 'unhealthy', error: String(err) });
+    console.error('[epistemology-engine] /health error:', err);
+    res.status(503).json({ service: 'epistemology-engine', status: 'unhealthy', error: 'unavailable' });
   }
 });
 
@@ -275,7 +277,7 @@ app.get('/health', async (_req: Request, res: Response) => {
 // ── Error handler ─────────────────────────────────────────────────────────────
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('[epistemology-engine] Error:', err);
-  res.status(500).json({ error: err.message });
+  res.status(500).json({ error: 'internal_error' });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

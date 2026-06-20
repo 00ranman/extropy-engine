@@ -59,7 +59,7 @@ export function createMetricsRoutes(
       res.json(metrics);
     } catch (err) {
       console.error('[academia-bridge] GET /metrics error:', err);
-      res.status(500).json({ error: 'Failed to get aggregate metrics', details: String(err) });
+      res.status(500).json({ error: 'Failed to get aggregate metrics' });
     }
   });
 
@@ -103,7 +103,7 @@ export function createMetricsRoutes(
       res.json(metrics);
     } catch (err) {
       console.error(`[academia-bridge] GET /metrics/${req.params.paperId} error:`, err);
-      res.status(500).json({ error: 'Failed to get metrics', details: String(err) });
+      res.status(500).json({ error: 'Failed to get metrics' });
     }
   });
 
@@ -182,7 +182,7 @@ export function createMetricsRoutes(
       res.json({ synced, failed, milestonesCrossed });
     } catch (err) {
       console.error('[academia-bridge] POST /scheduler/sync error:', err);
-      res.status(500).json({ error: 'Sync failed', details: String(err) });
+      res.status(500).json({ error: 'Sync failed' });
     }
   });
 
@@ -221,7 +221,7 @@ export function createMetricsRoutes(
       res.json({ metrics, milestoneCrossed });
     } catch (err) {
       console.error(`[academia-bridge] POST /metrics/${req.params.paperId}/sync error:`, err);
-      res.status(500).json({ error: 'Sync failed', details: String(err) });
+      res.status(500).json({ error: 'Sync failed' });
     }
   });
 

@@ -16,6 +16,7 @@
  */
 
 import express, { type Express, Request, Response } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -54,7 +55,7 @@ import type {
 // ─────────────────────────────────────────────────────────────────────────────────
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 const PORT    = process.env.PORT    || 4012;
 const SERVICE = ServiceName.TOKEN_ECONOMY;
@@ -551,7 +552,7 @@ app.post('/wallets', async (req: Request, res: Response) => {
     res.status(201).json(walletFromRow(res2.rows[0]));
   } catch (err: any) {
     console.error('[token-economy] POST /wallets:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -568,7 +569,7 @@ app.get('/wallets/:validatorId', async (req: Request, res: Response) => {
     }
     res.json(walletFromRow(result.rows[0]));
   } catch (err: any) {
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -598,7 +599,7 @@ app.get('/wallets/:validatorId/balances', async (req: Request, res: Response) =>
       }, {} as Record<string, { active: number; locked: number; total: number }>),
     });
   } catch (err: any) {
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -658,7 +659,7 @@ app.post('/tokens/mint', async (req: Request, res: Response) => {
     res.status(201).json({ wallet, balance, transaction: tx });
   } catch (err: any) {
     console.error('[token-economy] POST /tokens/mint:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -686,8 +687,13 @@ app.post('/tokens/burn', async (req: Request, res: Response) => {
     res.json({ wallet, transaction: tx });
   } catch (err: any) {
     console.error('[token-economy] POST /tokens/burn:', err);
-    const status = err.message.startsWith('Insufficient') ? 400 : 500;
-    res.status(status).json(errBody(err.message, 'INSUFFICIENT_BALANCE'));
+    const isBalanceErr = err.message.startsWith('Insufficient');
+    const status = isBalanceErr ? 400 : 500;
+    res.status(status).json(
+      isBalanceErr
+        ? errBody(err.message, 'INSUFFICIENT_BALANCE')
+        : errBody('internal_error', 'INTERNAL_ERROR'),
+    );
   }
 });
 
@@ -773,7 +779,7 @@ app.post('/tokens/lock', async (req: Request, res: Response) => {
     res.json(walletFromRow(updated.rows[0]));
   } catch (err: any) {
     console.error('[token-economy] POST /tokens/lock:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -854,7 +860,7 @@ app.post('/tokens/unlock', async (req: Request, res: Response) => {
     res.json(walletFromRow(updated.rows[0]));
   } catch (err: any) {
     console.error('[token-economy] POST /tokens/unlock:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -940,7 +946,7 @@ app.post('/ct/mint', async (req: Request, res: Response) => {
     res.status(201).json({ wallet, balance, transaction: tx, ctAmount, inputs, lockupExpiresAt });
   } catch (err: any) {
     console.error('[token-economy] POST /ct/mint:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1002,7 +1008,7 @@ app.post('/ct/check-lockup-expiry', async (_req: Request, res: Response) => {
     res.json({ unlockedCount: unlocked.length, validators: unlocked });
   } catch (err: any) {
     console.error('[token-economy] POST /ct/check-lockup-expiry:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1055,7 +1061,7 @@ app.post('/ct/inactivity-burn', async (_req: Request, res: Response) => {
     res.json({ burnedCount: burned.length, burned });
   } catch (err: any) {
     console.error('[token-economy] POST /ct/inactivity-burn:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1087,7 +1093,7 @@ app.post('/cat/certify', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error('[token-economy] POST /cat/certify:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1133,7 +1139,7 @@ app.post('/cat/record-performance', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error('[token-economy] POST /cat/record-performance:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1172,7 +1178,7 @@ app.post('/cat/check-recertification', async (_req: Request, res: Response) => {
     res.json({ flaggedCount: flagged.length, validators: flagged });
   } catch (err: any) {
     console.error('[token-economy] POST /cat/check-recertification:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1219,7 +1225,7 @@ app.post('/cat/mentorship-bonus', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error('[token-economy] POST /cat/mentorship-bonus:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1267,7 +1273,7 @@ app.post('/it/derive', async (req: Request, res: Response) => {
     res.status(201).json({ wallet, balance, transaction: tx, governanceWeight });
   } catch (err: any) {
     console.error('[token-economy] POST /it/derive:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1355,8 +1361,13 @@ app.post('/ep/convert', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error('[token-economy] POST /ep/convert:', err);
-    const status = err.message.startsWith('Insufficient') ? 400 : 500;
-    res.status(status).json(errBody(err.message, 'INSUFFICIENT_BALANCE'));
+    const isBalanceErr = err.message.startsWith('Insufficient');
+    const status = isBalanceErr ? 400 : 500;
+    res.status(status).json(
+      isBalanceErr
+        ? errBody(err.message, 'INSUFFICIENT_BALANCE')
+        : errBody('internal_error', 'INTERNAL_ERROR'),
+    );
   }
 });
 
@@ -1431,7 +1442,7 @@ app.get('/tokens/stats', async (_req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error('[token-economy] GET /tokens/stats:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1484,7 +1495,7 @@ app.get('/tokens/leaderboard/:tokenType', async (req: Request, res: Response) =>
     });
   } catch (err: any) {
     console.error('[token-economy] GET /tokens/leaderboard:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1500,7 +1511,7 @@ app.post('/events', async (req: Request, res: Response) => {
     res.status(202).send();
   } catch (err: any) {
     console.error('[token-economy] Event handler error:', err);
-    res.status(500).json(errBody(err.message, 'INTERNAL_ERROR'));
+    res.status(500).json(errBody('internal_error', 'INTERNAL_ERROR'));
   }
 });
 
@@ -1609,5 +1620,8 @@ main().catch((err) => {
   console.error('[token-economy] Fatal startup error:', err);
   process.exit(1);
 });
+
+// Sanitized error handler (mounted last): logs full error, returns generic payload.
+app.use(sanitizedErrorHandler);
 
 export default app;

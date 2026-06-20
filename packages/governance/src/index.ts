@@ -8,6 +8,7 @@
  */
 
 import express, { type Express } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -45,7 +46,7 @@ import type {
 } from '@extropy/contracts';
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 const PORT = process.env.PORT || 4010;
 const SERVICE = ServiceName.GOVERNANCE;
@@ -450,7 +451,7 @@ app.post('/proposals', async (req, res) => {
   } catch (err: any) {
     console.error('[governance] POST /proposals error:', err);
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -518,7 +519,7 @@ app.post('/proposals/:id/deliberation', async (req, res) => {
   } catch (err: any) {
     console.error('[governance] POST /proposals/:id/deliberation error:', err);
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -617,7 +618,7 @@ app.post('/proposals/:id/voting', async (req, res) => {
   } catch (err: any) {
     console.error('[governance] POST /proposals/:id/voting error:', err);
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -803,7 +804,7 @@ app.post('/proposals/:id/votes', async (req, res) => {
   } catch (err: any) {
     console.error('[governance] POST /proposals/:id/votes error:', err);
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -819,10 +820,11 @@ app.post('/proposals/:id/resolve', async (req, res) => {
     res.json(resolved);
   } catch (err: any) {
     console.error('[governance] POST /proposals/:id/resolve error:', err);
-    const status = err.message === 'Proposal not found' ? 404 : 500;
+    const notFound = err.message === 'Proposal not found';
+    const status = notFound ? 404 : 500;
     res.status(status).json({
-      error: err.message,
-      code: status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+      error: notFound ? 'Proposal not found' : 'internal_error',
+      code: notFound ? 'NOT_FOUND' : 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
   }
@@ -938,7 +940,7 @@ app.post('/proposals/:id/implement', async (req, res) => {
   } catch (err: any) {
     console.error('[governance] POST /proposals/:id/implement error:', err);
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -1058,7 +1060,7 @@ app.post('/proposals/:id/veto', async (req, res) => {
   } catch (err: any) {
     console.error('[governance] POST /proposals/:id/veto error:', err);
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -1084,7 +1086,7 @@ app.get('/proposals/:id', async (req, res) => {
     res.json(proposalFromRow(result.rows[0]));
   } catch (err: any) {
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -1154,7 +1156,7 @@ app.get('/proposals', async (req, res) => {
     res.json(response);
   } catch (err: any) {
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -1172,7 +1174,7 @@ app.get('/proposals/:id/votes', async (req, res) => {
     res.json(result.rows.map(voteFromRow));
   } catch (err: any) {
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -1198,7 +1200,7 @@ app.get('/parameters', async (_req, res) => {
     res.json(params);
   } catch (err: any) {
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -1236,7 +1238,7 @@ app.get('/parameters/:key', async (req, res) => {
     });
   } catch (err: any) {
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -1281,7 +1283,7 @@ app.post('/parameters/bulk-update', async (req, res) => {
     res.json({ applied, count: applied.length });
   } catch (err: any) {
     res.status(500).json({
-      error: err.message,
+      error: 'internal_error',
       code: 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });
@@ -1298,7 +1300,7 @@ app.post('/events', async (req, res) => {
     res.status(202).send();
   } catch (err: any) {
     console.error('[governance] Event handler error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'internal_error' });
   }
 });
 
@@ -1443,5 +1445,8 @@ main().catch((err) => {
   console.error('[governance] Fatal startup error:', err);
   process.exit(1);
 });
+
+// Sanitized error handler (mounted last): logs full error, returns generic payload.
+app.use(sanitizedErrorHandler);
 
 export default app;

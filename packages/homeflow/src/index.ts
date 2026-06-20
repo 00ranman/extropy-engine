@@ -46,6 +46,7 @@ import { createApp, defaultStaticFrontendDir } from './app.js';
 //  Configuration
 // ─────────────────────────────────────────────────────────────────────────────
 
+const IS_PROD           = process.env.NODE_ENV === 'production';
 const PORT              = parseInt(process.env.PORT ?? '4015', 10);
 // DATABASE_URL is now optional. When unset/empty the service runs with a
 // file-backed JSON store (see services/file-db.service.ts). Set it to a real
@@ -60,12 +61,43 @@ const XP_MINT_URL       = process.env.XP_MINT_URL ?? 'http://localhost:4005';
 const GOVERNANCE_URL    = process.env.GOVERNANCE_URL ?? 'http://localhost:4006';
 const DFAO_REGISTRY_URL = process.env.DFAO_REGISTRY_URL ?? 'http://localhost:4007';
 const TEMPORAL_URL      = process.env.TEMPORAL_URL ?? 'http://127.0.0.1:4002';
-const TEMPORAL_HMAC_SECRET = process.env.TEMPORAL_HMAC_SECRET ?? '';
+const TEMPORAL_HMAC_SECRET = (() => {
+  const v = process.env.TEMPORAL_HMAC_SECRET ?? '';
+  if (!v && IS_PROD && process.env.ALLOW_UNSIGNED_TEMPORAL !== '1') {
+    throw new Error('[homeflow] TEMPORAL_HMAC_SECRET is required in production. Set it, or set ALLOW_UNSIGNED_TEMPORAL=1 to explicitly opt out. Refusing to start.');
+  }
+  return v;
+})();
+
+// Service-to-service interop ingress secret. Required in production unless
+// explicitly opted out, mirroring the temporal callback policy.
+const INTEROP_INGRESS_SECRET = (() => {
+  const v = process.env.INTEROP_INGRESS_SECRET ?? '';
+  if (!v && IS_PROD && process.env.ALLOW_UNSIGNED_INGRESS !== '1') {
+    throw new Error('[homeflow] INTEROP_INGRESS_SECRET is required in production. Set it, or set ALLOW_UNSIGNED_INGRESS=1 to explicitly opt out. Refusing to start.');
+  }
+  return v;
+})();
+void INTEROP_INGRESS_SECRET;
 const TOKEN_ECONOMY_URL = process.env.TOKEN_ECONOMY_URL ?? 'http://localhost:4009';
 const CREDENTIALS_URL   = process.env.CREDENTIALS_URL ?? 'http://localhost:4010';
 const DAG_SUBSTRATE_URL = process.env.DAG_SUBSTRATE_URL ?? 'http://localhost:4011';
 const BASE_URL          = process.env.BASE_URL ?? `http://localhost:${PORT}`;
-const SESSION_SECRET    = process.env.SESSION_SECRET ?? 'homeflow-dev-only-change-me';
+
+// ─── Security-critical config: fail closed in production ──────────────────────
+// Missing secrets must never silently degrade auth. In production we refuse to
+// start; in dev we fall back loudly so local work is not blocked.
+
+function requiredInProd(name: string, value: string | undefined, devFallback: string): string {
+  if (value && value.trim().length > 0) return value;
+  if (IS_PROD) {
+    throw new Error(`[homeflow] ${name} is required in production. Refusing to start.`);
+  }
+  console.warn(`[homeflow] WARNING: ${name} is unset. Using an insecure dev fallback. Do NOT use this in production.`);
+  return devFallback;
+}
+
+const SESSION_SECRET    = requiredInProd('SESSION_SECRET', process.env.SESSION_SECRET, 'homeflow-dev-only-change-me');
 
 // Note: SIGNALFLOW_URL is read for parity with the other service configs.
 void SIGNALFLOW_URL;

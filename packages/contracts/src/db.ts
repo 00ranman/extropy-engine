@@ -11,8 +11,18 @@ import Redis from 'ioredis';
  * Create a PostgreSQL connection pool from DATABASE_URL env var.
  */
 export function createPool(): Pool {
-  const connectionString = process.env.DATABASE_URL
-    || 'postgresql://extropy:extropy_dev@localhost:5432/extropy_engine';
+  const isProd = process.env.NODE_ENV === 'production';
+  let connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    if (isProd) {
+      throw new Error('DATABASE_URL must be set in production.');
+    }
+    // Dev-only fallback. The password here mirrors the .env.example placeholder;
+    // it is NOT a usable secret. Set DATABASE_URL for any real database.
+    console.warn('[db] DATABASE_URL not set, using local dev fallback. Do not use in production.');
+    const devPassword = process.env.POSTGRES_PASSWORD || 'extropy_dev';
+    connectionString = `postgresql://extropy:${devPassword}@localhost:5432/extropy_engine`;
+  }
   const pool = new Pool({ connectionString, max: 10 });
   pool.on('error', (err) => {
     console.error('Unexpected PG pool error:', err);
@@ -24,7 +34,16 @@ export function createPool(): Pool {
  * Create a Redis client from REDIS_URL env var.
  */
 export function createRedis(): Redis {
-  const url = process.env.REDIS_URL || 'redis://localhost:6379';
+  const isProd = process.env.NODE_ENV === 'production';
+  let url = process.env.REDIS_URL;
+  if (!url) {
+    if (isProd) {
+      throw new Error('REDIS_URL must be set in production.');
+    }
+    console.warn('[db] REDIS_URL not set, using local dev fallback. Do not use in production.');
+    const devPassword = process.env.REDIS_PASSWORD;
+    url = devPassword ? `redis://:${devPassword}@localhost:6379` : 'redis://localhost:6379';
+  }
   const redis = new Redis(url, {
     maxRetriesPerRequest: 3,
     retryStrategy(times: number) {

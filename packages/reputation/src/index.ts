@@ -12,6 +12,7 @@
  */
 
 import express, { type Express } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventBus,
@@ -34,7 +35,7 @@ import type {
 } from '@extropy/contracts';
 
 const app: Express = express();
-app.use(express.json());
+applyBaseSecurity(app);
 
 const PORT = process.env.PORT || 4004;
 const SERVICE = ServiceName.REPUTATION;
@@ -183,7 +184,7 @@ app.post('/validators', async (req, res) => {
     res.status(201).json(validatorFromRow(result.rows[0]));
   } catch (err: any) {
     console.error('[reputation] POST /validators error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -209,7 +210,7 @@ app.get('/validators', async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows.map(validatorFromRow));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -223,7 +224,7 @@ app.get('/validators/:validatorId', async (req, res) => {
     }
     res.json(validatorFromRow(result.rows[0]));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -250,7 +251,7 @@ app.patch('/validators/:validatorId', async (req, res) => {
     const result = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [req.params.validatorId]);
     res.json(validatorFromRow(result.rows[0]));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -273,7 +274,7 @@ app.get('/validators/:validatorId/reputation', async (req, res) => {
       lastUpdatedAt: row.last_active_at.toISOString(),
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -286,7 +287,7 @@ app.get('/validators/:validatorId/reputation/history', async (req, res) => {
     );
     res.json(result.rows);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -298,7 +299,7 @@ app.post('/reputation/accrue', async (req, res) => {
     res.json(updated);
   } catch (err: any) {
     console.error('[reputation] POST /reputation/accrue error:', err);
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -345,7 +346,7 @@ app.post('/reputation/penalize', async (req, res) => {
     const updated = await pool.query('SELECT * FROM reputation.validators WHERE id = $1', [validatorId]);
     res.json(validatorFromRow(updated.rows[0]));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -380,7 +381,7 @@ app.post('/reputation/decay', async (req, res) => {
 
     res.json({ affectedValidators: affected });
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -408,7 +409,7 @@ app.post('/reputation/bulk', async (req, res) => {
     }
     res.json(map);
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -420,7 +421,7 @@ app.get('/reputation/leaderboard', async (_req, res) => {
     );
     res.json(result.rows.map(validatorFromRow));
   } catch (err: any) {
-    res.status(500).json({ error: err.message, code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
+    res.status(500).json({ error: 'internal_error', code: 'INTERNAL_ERROR', timestamp: new Date().toISOString() });
   }
 });
 
@@ -451,7 +452,7 @@ app.post('/events', async (req, res) => {
     res.status(202).send();
   } catch (err: any) {
     console.error('[reputation] Event handler error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'internal_error' });
   }
 });
 
@@ -485,5 +486,8 @@ main().catch((err) => {
   console.error('[reputation] Fatal startup error:', err);
   process.exit(1);
 });
+
+// Sanitized error handler (mounted last): logs full error, returns generic payload.
+app.use(sanitizedErrorHandler);
 
 export default app;

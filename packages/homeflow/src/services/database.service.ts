@@ -30,8 +30,30 @@ export class DatabaseService implements DatabaseLike {
   }
 
   async initialize(): Promise<void> {
+    await this.waitForReady();
     await this.pool.query(SCHEMA_SQL);
     console.log('[homeflow:db] Schema initialized');
+  }
+
+  /**
+   * Poll the database with bounded exponential-ish backoff before running the
+   * schema. Avoids a hard crash when Postgres is still coming up (for example
+   * in docker-compose where the app can race the database).
+   */
+  private async waitForReady(maxRetries = 30, baseDelayMs = 1000): Promise<void> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.pool.query('SELECT 1');
+        return;
+      } catch (err) {
+        if (attempt === maxRetries) {
+          throw err;
+        }
+        const delay = Math.min(attempt * baseDelayMs, 5000);
+        console.log(`[homeflow:db] Waiting for Postgres... (${attempt}/${maxRetries})`);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
   }
 
   async query(text: string, params?: unknown[]) {

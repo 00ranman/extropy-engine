@@ -37,6 +37,7 @@
  */
 
 import express, { type Request, type Response, type NextFunction } from 'express';
+import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
 import { EventType } from '@extropy/contracts';
 import type { DomainEvent } from '@extropy/contracts';
 
@@ -205,7 +206,7 @@ async function main(): Promise<void> {
 
   // ── Create Express app ────────────────────────────────────────────────────
   const app = express();
-  app.use(express.json({ limit: '10mb' }));
+  applyBaseSecurity(app, { jsonLimit: '10mb' });
 
   // Request logging middleware
   app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -238,10 +239,11 @@ async function main(): Promise<void> {
         },
       });
     } catch (err) {
+      console.error('[grantflow-discovery] /health error:', err);
       res.status(503).json({
         service: 'grantflow-discovery',
         status:  'unhealthy',
-        error:   String(err),
+        error:   'unavailable',
       });
     }
   });
@@ -304,7 +306,7 @@ async function main(): Promise<void> {
       res.json({ received: true, eventType: event.type, timestamp: new Date().toISOString() });
     } catch (err) {
       console.error('[grantflow-discovery] Webhook error:', err);
-      res.status(500).json({ error: String(err) });
+      res.status(500).json({ error: 'internal_error' });
     }
   });
 
@@ -352,9 +354,9 @@ async function main(): Promise<void> {
 
   // ── Global error handler ──────────────────────────────────────────────────
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('[grantflow-discovery] Error:', err.message);
+    console.error('[grantflow-discovery] Error:', err);
     res.status(500).json({
-      error:     err.message,
+      error:     'internal_error',
       code:      'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     });

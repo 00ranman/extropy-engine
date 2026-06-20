@@ -3,60 +3,93 @@
  * Extropy Engine — Unified API Gateway
  *
  * Single entry point for the dashboard and master-control-hub.
- * Reverse-proxies and aggregates all monorepo microservices:
+ * Reverse-proxies and aggregates all monorepo microservices.
  *
- * Service Port Map:
- *   homeflow       → :4000
- *   xp-mint        → :4001
- *   signalflow     → :4002
- *   dag-substrate  → :4003
- *   credentials    → :4004
- *   ecosystem      → :4005
- *   governance     → :4006
- *   reputation     → :4007
- *   token-economy  → :4008
- *   temporal       → :4009
- *   contracts      → :4010
+ * Security posture:
+ *   - CORS restricted to an explicit origin allowlist (GATEWAY_ALLOWED_ORIGINS).
+ *   - Proxied /api/:service routes sit behind a bearer-token auth gate
+ *     (GATEWAY_AUTH_TOKEN). /health, /api/status, and the static dashboard
+ *     remain public.
+ *   - helmet + a global rate limiter on every request.
  *
- * Gateway listens on :3000
- * Dashboard served at /
- * master-control-hub connected via /hub/*
+ * Gateway listens on :3000.
  */
 
-import express, { Request, Response, NextFunction } from 'express';
+import express, { type Express, type Request, type Response, type NextFunction } from 'express';
+import type { Socket } from 'net';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 
-const app = express();
+const IS_PROD = process.env.NODE_ENV === 'production';
+const app: Express = express();
 const PORT = process.env.PORT ?? 3000;
 
-app.use(cors());
-app.use(express.json());
+// ── CORS allowlist ────────────────────────────────────────────────────────────
+// Comma-separated origins. Required in production; localhost fallback in dev.
+const ALLOWED_ORIGINS = (process.env.GATEWAY_ALLOWED_ORIGINS
+  || (IS_PROD ? '' : 'http://localhost:3000'))
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-// Service registry
+if (IS_PROD && ALLOWED_ORIGINS.length === 0) {
+  throw new Error('GATEWAY_ALLOWED_ORIGINS must be set in production.');
+}
+
+// ── Auth gate token ───────────────────────────────────────────────────────────
+const AUTH_TOKEN = process.env.GATEWAY_AUTH_TOKEN || '';
+if (IS_PROD && !AUTH_TOKEN) {
+  throw new Error('GATEWAY_AUTH_TOKEN must be set in production.');
+}
+
+app.set('trust proxy', 1);
+app.use(helmet());
+app.use(
+  cors({
+    origin: ALLOWED_ORIGINS,
+    credentials: true,
+  }),
+);
+app.use(
+  rateLimit({
+    windowMs: 60_000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'rate_limited' },
+  }),
+);
+app.use(express.json({ limit: '1mb' }));
+
+// ── Service registry ──────────────────────────────────────────────────────────
+// Ports align with docker-compose.yml. Keep this map in sync with that file.
 const SERVICES: Record<string, string> = {
-  homeflow: process.env.HOMEFLOW_URL ?? 'http://localhost:4000',
-  'xp-mint': process.env.XP_MINT_URL ?? 'http://localhost:4001',
+  homeflow: process.env.HOMEFLOW_URL ?? 'http://localhost:4015',
+  'xp-mint': process.env.XP_MINT_URL ?? 'http://localhost:4005',
   signalflow: process.env.SIGNALFLOW_URL ?? 'http://localhost:4002',
-  'dag-substrate': process.env.DAG_SUBSTRATE_URL ?? 'http://localhost:4003',
-  credentials: process.env.CREDENTIALS_URL ?? 'http://localhost:4004',
-  ecosystem: process.env.ECOSYSTEM_URL ?? 'http://localhost:4005',
-  governance: process.env.GOVERNANCE_URL ?? 'http://localhost:4006',
-  reputation: process.env.REPUTATION_URL ?? 'http://localhost:4007',
-  'token-economy': process.env.TOKEN_ECONOMY_URL ?? 'http://localhost:4008',
-  temporal: process.env.TEMPORAL_URL ?? 'http://localhost:4009',
-  contracts: process.env.CONTRACTS_URL ?? 'http://localhost:4010',
+  'dag-substrate': process.env.DAG_SUBSTRATE_URL ?? 'http://localhost:4008',
+  credentials: process.env.CREDENTIALS_URL ?? 'http://localhost:4013',
+  ecosystem: process.env.ECOSYSTEM_URL ?? 'http://localhost:4014',
+  governance: process.env.GOVERNANCE_URL ?? 'http://localhost:4010',
+  reputation: process.env.REPUTATION_URL ?? 'http://localhost:4004',
+  'token-economy': process.env.TOKEN_ECONOMY_URL ?? 'http://localhost:4012',
+  temporal: process.env.TEMPORAL_URL ?? 'http://localhost:4011',
+  'epistemology-engine': process.env.EPISTEMOLOGY_URL ?? 'http://localhost:4001',
+  'loop-ledger': process.env.LOOP_LEDGER_URL ?? 'http://localhost:4003',
+  'dfao-registry': process.env.DFAO_REGISTRY_URL ?? 'http://localhost:4009',
   // master-control-hub (Python Flask, external)
   hub: process.env.MASTER_CONTROL_HUB_URL ?? 'http://localhost:5000',
 };
 
-// Health check
+// ── Public endpoints ──────────────────────────────────────────────────────────
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', gateway: 'extropy-api-gateway', services: Object.keys(SERVICES) });
 });
 
-// Service status aggregation for the dashboard
+// Service status aggregation for the dashboard (no upstream data, safe to expose).
 app.get('/api/status', async (_req: Request, res: Response) => {
   const statuses = await Promise.allSettled(
     Object.entries(SERVICES).map(async ([name, url]) => {
@@ -69,29 +102,57 @@ app.get('/api/status', async (_req: Request, res: Response) => {
       } catch {
         return { name, status: 'unreachable', url };
       }
-    })
+    }),
   );
   res.json(statuses.map((s) => (s.status === 'fulfilled' ? s.value : { name: 'unknown', status: 'error' })));
 });
 
-// Dynamic proxy routes: /api/:service/* → service
+// ── Auth gate for proxied service traffic ─────────────────────────────────────
+// Constant-time-ish bearer check. Applied to every /api/:service/* route below.
+function requireGatewayAuth(req: Request, res: Response, next: NextFunction): void {
+  // If no token configured (dev convenience only, never in prod), allow through.
+  if (!AUTH_TOKEN) {
+    if (IS_PROD) {
+      res.status(500).json({ error: 'gateway_misconfigured' });
+      return;
+    }
+    next();
+    return;
+  }
+  const header = req.headers.authorization || '';
+  const provided = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (provided && provided === AUTH_TOKEN) {
+    next();
+    return;
+  }
+  res.status(401).json({ error: 'unauthorized' });
+}
+
+// ── Dynamic proxy routes: /api/:service/* → service ───────────────────────────
 for (const [name, target] of Object.entries(SERVICES)) {
   app.use(
     `/api/${name}`,
+    requireGatewayAuth,
     createProxyMiddleware({
       target,
       changeOrigin: true,
       pathRewrite: { [`^/api/${name}`]: '' },
       on: {
-        error: (err: Error, _req: Request, res: Response) => {
-          (res as Response).status(502).json({ error: `Gateway error for ${name}: ${err.message}` });
+        error: (err: Error, _req: Request, res: Response | Socket) => {
+          console.error(`[API Gateway] proxy error for ${name}:`, err);
+          // res can be a raw socket for upgrade requests; only respond on HTTP responses.
+          if ('status' in res && typeof res.status === 'function') {
+            res.status(502).json({ error: 'gateway_error', service: name });
+          } else {
+            res.destroy();
+          }
         },
       },
-    })
+    }),
   );
 }
 
-// Serve the dashboard static files
+// ── Static dashboard ──────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, '../../dashboard')));
 app.get('*', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../../dashboard/index.html'));
@@ -100,7 +161,6 @@ app.get('*', (_req: Request, res: Response) => {
 app.listen(PORT, () => {
   console.log(`[API Gateway] Listening on http://localhost:${PORT}`);
   console.log(`[API Gateway] Dashboard: http://localhost:${PORT}/`);
-  console.log(`[API Gateway] master-control-hub: http://localhost:${PORT}/api/hub/`);
   console.log(`[API Gateway] Services: ${Object.keys(SERVICES).join(', ')}`);
 });
 
