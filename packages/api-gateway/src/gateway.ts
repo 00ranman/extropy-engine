@@ -2,8 +2,11 @@
  * @package api-gateway
  * Extropy Engine — Unified API Gateway
  *
- * Single entry point for the dashboard and master-control-hub.
+ * Single entry point for the dashboard.
  * Reverse-proxies and aggregates all monorepo microservices.
+ *
+ * The legacy external master-control-hub has been retired; orchestration and
+ * aggregation now live in packages/ecosystem.
  *
  * Security posture:
  *   - CORS restricted to an explicit origin allowlist (GATEWAY_ALLOWED_ORIGINS).
@@ -80,8 +83,6 @@ const SERVICES: Record<string, string> = {
   'epistemology-engine': process.env.EPISTEMOLOGY_URL ?? 'http://localhost:4001',
   'loop-ledger': process.env.LOOP_LEDGER_URL ?? 'http://localhost:4003',
   'dfao-registry': process.env.DFAO_REGISTRY_URL ?? 'http://localhost:4009',
-  // master-control-hub (Python Flask, external)
-  hub: process.env.MASTER_CONTROL_HUB_URL ?? 'http://localhost:5000',
 };
 
 // ── Public endpoints ──────────────────────────────────────────────────────────
