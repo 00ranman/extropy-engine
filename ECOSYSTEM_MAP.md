@@ -11,10 +11,10 @@ implementations; the deployed TypeScript packages live under `packages/`.
 | Standalone Repo | Lang | Port | Monorepo Package | Port | Status |
 |------------------------------|--------|------|--------------------------|------|----------------|
 | `homeflow` | Python | 3005 | `packages/homeflow` | 4015 | Ported (Issue #5) |
-| `signalflow` | Python | CLI | `packages/signalflow` | 4002 | Partial — CLI features pending |
-| `levelup-academy` | Python | 3006 | — (planned) | — | Not yet ported |
+| `signalflow` | Python | CLI | `packages/signalflow` | 4002 | Standalone repo archived |
+| `levelup-academy` | Python | 3006 | `packages/levelup-academy` | — | Standalone repo archived |
 | `extropialingo` | TS | 3007 | `frontends/extropialingo` | 3007 | Frontend — needs API wiring |
-| `extropy-master-control-hub` | Python | 3000 | — (see `packages/ecosystem`) | 4014 | Orchestration overlap |
+| `extropy-master-control-hub` | Python | 3000 | `packages/ecosystem` | 4014 | Standalone repo archived, retired |
 | `xp-dag-mesh` | Rust | — | `packages/dag-substrate` | 4008 | TS re-implementation |
 | `xp-net` | Rust | — | `packages/dag-substrate` | 4008 | Merged into dag-substrate |
 | `xp-timekeeping` | Rust | — | `packages/temporal` | 4011 | TS re-implementation |
@@ -43,7 +43,7 @@ implementations; the deployed TypeScript packages live under `packages/`.
 |----------------------------------------------|----------------------------------------------|--------|
 | signalflow standalone CLI vs deployed :4002 | Standalone is CLI-only, no port conflict | — |
 | homeflow :3005 vs deployed :4015 | Standalone deprecated, use monorepo | #5 |
-| extropy-master-control-hub :3000 vs character-sheet :3000 | Control hub gateway proxies; frontends get own ports | — |
+| extropy-master-control-hub :3000 vs character-sheet :3000 | Hub retired and archived; api-gateway handles routing | resolved |
 | loop-ledger was :4003, signalflow was :4003 | signalflow moved to :4002 | fixed |
 
 ## Feature Parity Tracker
@@ -86,13 +86,19 @@ implementations; the deployed TypeScript packages live under `packages/`.
 | XP rewards | ✓ | ✗ | Will use xp-mint |
 | Course management | ✓ | ✗ | Needs new package |
 
-### extropy-master-control-hub (Python → ecosystem service)
+### extropy-master-control-hub (retired, archived)
 
-| Feature | Standalone | Deployed | Notes |
-|---------------------------|-----------|----------|----------------------------|
-| Service orchestration | ✓ | Partial | ecosystem pkg handles agg |
-| Health monitoring | ✓ | ✗ | docker-compose healthchecks|
-| Unified dashboard | ✓ | ✗ | character-sheet frontend |
+The standalone Python hub was a centralized command center that brokered auth,
+XP minting, and user sync for the whole ecosystem. That pattern runs against the
+decentralized model, so it was retired rather than ported. Its responsibilities
+are covered by monorepo services:
+
+| Feature | Old hub | Replacement |
+|---------------------------|---------|-------------------------------------|
+| Service orchestration | ✓ | `packages/ecosystem` (aggregation) |
+| Reverse-proxy routing | ✓ | `packages/api-gateway` (auth-gated) |
+| Health monitoring | ✓ | docker-compose healthchecks + gateway `/api/status` |
+| Unified dashboard | ✓ | `character-sheet` frontend |
 
 ## How to Run Together
 
