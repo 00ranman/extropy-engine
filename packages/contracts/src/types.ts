@@ -847,7 +847,8 @@ export enum ServiceName {
   TOKEN_ECONOMY      = 'token-economy',
   CREDENTIALS        = 'credentials',
   ECOSYSTEM          = 'ecosystem',
-    GRANTFLOW_DISCOVERY  = 'grantflow-discovery',
+  ACADEMIA_BRIDGE    = 'academia-bridge',
+  GRANTFLOW_DISCOVERY  = 'grantflow-discovery',
   GRANTFLOW_PROPOSER   = 'grantflow-proposer',
 }
 

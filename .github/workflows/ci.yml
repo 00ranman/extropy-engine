@@ -38,6 +38,23 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter ./packages/ethics test
 
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      # Full-workspace type check via project references (tsc --noEmit).
+      # This catches type errors independently of the build/emit step and
+      # guards against suppressions (@ts-nocheck/@ts-ignore) silently
+      # disabling checking, which previously hid real bugs.
+      - run: pnpm run typecheck
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

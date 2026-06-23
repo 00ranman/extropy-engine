@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ─────────────────────────────────────────────────────────────────────────────
  *  GrantFlow Discovery — Event Bus Service
@@ -14,7 +13,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { v4 as uuid } from 'uuid';
 import type { DomainEvent, EventType, EventPayloadMap } from '@extropy/contracts';
 

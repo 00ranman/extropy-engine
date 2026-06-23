@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ════════════════════════════════════════════════════════════════════════════════
  *  GrantFlow Proposer — Proposals Router
@@ -31,7 +30,8 @@ import type { SectionService } from '../services/section.service.js';
 import type { GenerationService } from '../services/generation.service.js';
 import type { ExportService } from '../services/export.service.js';
 import type { ClaimService } from '../services/claim.service.js';
-import type { SectionType, GenerationContext } from '../types/index.js';
+import { SectionType } from '../types/index.js';
+import type { GenerationContext, ProposalStatus, ListProposalsFilter } from '../types/index.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Validation Schemas
@@ -58,10 +58,7 @@ const UpdateProposalSchema = z.object({
 });
 
 const AddSectionSchema = z.object({
-  sectionType:    z.enum([
-    'EXECUTIVE_SUMMARY', 'PROJECT_NARRATIVE', 'BUDGET_JUSTIFICATION',
-    'EVALUATION_PLAN', 'ORGANIZATIONAL_CAPACITY', 'LETTERS_OF_SUPPORT', 'REFERENCES',
-  ]),
+  sectionType:    z.nativeEnum(SectionType),
   content:        z.string().min(1),
   isAiGenerated:  z.boolean().optional(),
 });
@@ -148,9 +145,15 @@ export function createProposalsRoutes(
   // ── GET /proposals — List proposals ───────────────────────────────────────
   router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const filters = {
+      const PROPOSAL_STATUSES: ProposalStatus[] = ['draft', 'generating', 'complete', 'exported'];
+      const rawStatus = req.query.status as string | undefined;
+      const status = PROPOSAL_STATUSES.includes(rawStatus as ProposalStatus)
+        ? (rawStatus as ProposalStatus)
+        : undefined;
+
+      const filters: ListProposalsFilter = {
         submissionId: req.query.submissionId as string | undefined,
-        status:       req.query.status as string | undefined,
+        status,
         agency:       req.query.agency as string | undefined,
         limit:        req.query.limit  ? parseInt(req.query.limit  as string, 10) : undefined,
         offset:       req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ════════════════════════════════════════════════════════════════════════════════
  *  GrantFlow Proposer — Claim Service
@@ -154,7 +153,7 @@ export class ClaimService {
       if (response.ok) {
         const data = await response.json() as EpistemologyClaimResponse;
         claimId = data.claimId ?? claimId;
-        loopId  = data.loopId  ?? loopId;
+        loopId  = (data.loopId as LoopId | undefined) ?? loopId;
         console.log(`[proposer:claim] Submitted to Epistemology: claimId=${claimId}, loopId=${loopId}`);
       } else {
         console.warn(`[proposer:claim] Epistemology Engine returned ${response.status} — recording locally`);

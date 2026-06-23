@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ════════════════════════════════════════════════════════════════════════════════
  *  GrantFlow Proposer — Event Bus Service
@@ -19,7 +18,7 @@
  * ════════════════════════════════════════════════════════════════════════════════
  */
 
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { v4 as uuid } from 'uuid';
 import { EventType } from '@extropy/contracts';
 import type { DomainEvent, EventPayloadMap, LoopId } from '@extropy/contracts';
