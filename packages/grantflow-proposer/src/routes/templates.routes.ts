@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * ════════════════════════════════════════════════════════════════════════════════
  *  GrantFlow Proposer — Templates Router
@@ -18,7 +17,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { z } from 'zod';
 import type { TemplateService } from '../services/template.service.js';
-import type { SectionType } from '../types/index.js';
+import { SectionType } from '../types/index.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Validation Schemas
@@ -31,7 +30,7 @@ const VALID_SECTION_TYPES = [
 
 const CreateTemplateSchema = z.object({
   name:        z.string().min(1).max(255),
-  sectionType: z.enum(VALID_SECTION_TYPES),
+  sectionType: z.nativeEnum(SectionType),
   content:     z.string().min(1),
   isDefault:   z.boolean().optional(),
 });
