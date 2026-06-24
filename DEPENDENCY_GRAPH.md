@@ -11,7 +11,7 @@ Services must be built in this order due to type and runtime dependencies:
 4.  signalflow                   <- depends on contracts + event-bus
 5.  loop-ledger                  <- depends on contracts + event-bus
 6.  reputation                   <- depends on contracts + event-bus
-7.  xp-mint                      <- depends on contracts + event-bus + loop-ledger (for loop reads)
+7.  xp-mint                      <- depends on contracts + xp-formula (canonical XP) + event-bus + loop-ledger (for loop reads)
 8.  dag-substrate                <- depends on contracts + event-bus (records all system events)
 9.  dfao-registry                <- depends on contracts + event-bus + dag-substrate
 10. governance                   <- depends on contracts + event-bus + dfao-registry

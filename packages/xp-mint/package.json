@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@extropy/contracts": "*",
+    "@extropy/xp-formula": "*",
     "express": "^4.19.0",
     "ioredis": "^5.3.0",
     "pg": "^8.12.0",
