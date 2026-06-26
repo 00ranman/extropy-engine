@@ -4,6 +4,8 @@ Sharded validation routing for Extropy v3.1. Splits claims into blind slices (de
 
 **Status:** Skeleton.
 
+> **"Validator" here is a role a contributor temporarily occupies, not a class of people.** Blind slicing is what makes validation emergent: a contributor scoring a slice does not see the parent claim or who authored it, and often does not know the slice is part of a validation at all. They are just doing a small entropy-reducing task. The validation is reconstructed by aggregation, not performed by a designated reviewer. See [`docs/VALIDATION_IS_EMERGENT.md`](../../docs/VALIDATION_IS_EMERGENT.md).
+
 ## Responsibilities
 
 - Slice generation (default 1/10th blind slicing of claims)
