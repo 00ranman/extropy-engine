@@ -1,7 +1,7 @@
 ---
 title: "Extropy Codex, Version 2.0"
 subtitle: "A Non-Extractive Contribution Ledger for Verified Entropy Reduction"
-author: "Randall Gossett, with AI-assisted drafting disclosed"
+author: "Randall Gossett, with Perplexity Computer (Claude Fable 5), AI-assisted drafting disclosed"
 date: "2026-07"
 version: "Codex v2.0, formula canonical-v3.1.3, protocol v0.1"
 abstract: |
