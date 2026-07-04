@@ -422,6 +422,31 @@ importers:
         specifier: ^4.18.0
         version: 4.22.1
 
+  packages/github-parasite:
+    dependencies:
+      '@extropy/contracts':
+        specifier: '*'
+        version: link:../contracts
+      '@extropy/xp-formula':
+        specifier: '*'
+        version: link:../xp-formula
+      express:
+        specifier: ^4.19.0
+        version: 4.22.1
+    devDependencies:
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
+      tsx:
+        specifier: ^4.7.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.39)
+
   packages/governance:
     dependencies:
       '@extropy/contracts':
@@ -1096,13 +1121,23 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.39)
 
-  packages/xp-formula: {}
+  packages/xp-formula:
+    devDependencies:
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@20.19.39)
 
   packages/xp-mint:
     dependencies:
       '@extropy/contracts':
         specifier: '*'
         version: link:../contracts
+      '@extropy/xp-formula':
+        specifier: '*'
+        version: link:../xp-formula
       express:
         specifier: ^4.19.0
         version: 4.22.1

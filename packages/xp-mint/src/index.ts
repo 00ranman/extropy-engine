@@ -30,7 +30,6 @@ import type {
   MintStatus,
   XPDistribution,
   XPFormulaInputs,
-  IrreducibleXPInputs,
   LoopId,
   ValidatorId,
   DomainEvent,
@@ -41,6 +40,10 @@ import type {
   XPConfirmedPayload,
   XPBurnedPayload,
 } from '@extropy/contracts';
+import {
+  computeXPFromElapsedSeconds,
+  FORMULA_VERSION as CANONICAL_FORMULA_VERSION,
+} from '@extropy/xp-formula';
 
 const app: Express = express();
 applyBaseSecurity(app);
@@ -54,9 +57,26 @@ const LOOP_LEDGER_URL = process.env.LOOP_LEDGER_URL || 'http://loop-ledger:4003'
 // reputation feeding INTO the XP formula — that's the bug fix.
 const REPUTATION_URL = process.env.REPUTATION_URL || 'http://reputation:4004';
 
-// Canonical formula version stamp. New mints carry this; legacy mints are
-// quarantined under 'pre-canonical-v3.1.0' (see migration 002).
-const FORMULA_VERSION = 'canonical-v3.1.2';
+// Canonical formula version stamp. Sourced from @extropy/xp-formula so
+// the mint row's formula_version column and the actual formula executed
+// cannot drift. Legacy mints remain quarantined under
+// 'pre-canonical-v3.1.0' (see migration 002).
+const FORMULA_VERSION = CANONICAL_FORMULA_VERSION;
+
+// Per-domain settlement-decay constant λ used inside
+// normalizeSettlementTime(elapsedSeconds, λ). Seed default λ = 1e-4
+// ("slow decay"): a 1-day settlement gives raw log-decay ≈ 8.64, which the
+// formula then clamps down to log(1/T_FLOOR_DEFAULT) ≈ 4.605.
+// Governance-tunable; a real impl reads from GOVERNANCE_DEFAULTS at boot.
+const SETTLEMENT_LAMBDA_DEFAULTS: Partial<Record<EntropyDomain, number>> = {
+  // Seeds only — calibration is a separate PR.
+};
+const SETTLEMENT_LAMBDA_FALLBACK = 1e-4;
+
+function lambdaForDomain(domain: EntropyDomain | undefined): number {
+  if (!domain) return SETTLEMENT_LAMBDA_FALLBACK;
+  return SETTLEMENT_LAMBDA_DEFAULTS[domain] ?? SETTLEMENT_LAMBDA_FALLBACK;
+}
 
 // Per-domain rarity coefficients (R in the XP formula).
 // R is the action-class scarcity / base difficulty multiplier. It is a
@@ -85,21 +105,29 @@ const bus = new EventBus(redis, pool, SERVICE);
 
 // ── XP Calculation ────────────────────────────────────────────────────────
 
-function calculateXP(inputs: XPFormulaInputs): number {
-  const { rarity, frequencyOfDecay, deltaS, domainWeight, essentiality, settlementTimeSeconds } = inputs;
-  if (deltaS <= 0) return 0;
-  if (rarity <= 0 || frequencyOfDecay <= 0 || domainWeight <= 0 || essentiality <= 0) return 0;
-  if (settlementTimeSeconds <= 0) return 0;
-  const settlementFactor = Math.log(1 / settlementTimeSeconds);
-  if (settlementFactor <= 0) return 0;
-  const xp = rarity * frequencyOfDecay * deltaS * (domainWeight * essentiality) * settlementFactor;
-  return Math.max(0, xp);
-}
+// v3.1.3: Formula moved to @extropy/xp-formula. This module owns only the
+// service wiring (event handling, DB rows, distribution). The raw-seconds
+// bug at the previous `Math.log(1 / settlementTimeSeconds)` call site
+// (which returned 0 for any settlement > 1 second) is closed by routing
+// through `computeXPFromElapsedSeconds`, which normalizes and clamps.
 
-function calculateIrreducibleXP(inputs: IrreducibleXPInputs): number {
-  const { deltaS, causalClosureSpeed } = inputs;
-  if (deltaS <= 0 || causalClosureSpeed <= 0) return 0;
-  return deltaS / (causalClosureSpeed * causalClosureSpeed);
+function calculateXP(
+  inputs: XPFormulaInputs,
+  opts: { domain?: EntropyDomain } = {},
+): number {
+  const { rarity, frequencyOfDecay, deltaS, domainWeight, essentiality, settlementTimeSeconds } = inputs;
+  const result = computeXPFromElapsedSeconds(
+    {
+      R: rarity,
+      F: frequencyOfDecay,
+      deltaS,
+      w: [domainWeight],
+      E: [essentiality],
+    },
+    settlementTimeSeconds,
+    lambdaForDomain(opts.domain),
+  );
+  return result.xp;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -163,24 +191,40 @@ async function mintForLoop(loopId: LoopId): Promise<XPMintEvent> {
   const deltaS = loop.deltaS;
   const w = 1.0; // Domain weight (simplified)
   const E = 0.8; // Essentiality factor (simplified)
-  const Ts = loop.settlementTimeSeconds || 1;
+  const elapsedSeconds = loop.settlementTimeSeconds || 1;
 
   const domain = loop.domain as EntropyDomain;
-  const cL = CAUSAL_CLOSURE_SPEEDS[domain] || 1e-4;
+  // c_L is retained as a per-domain constant for analytics, but it is
+  // NO LONGER used to derive an "irreducible XP" floor. See
+  // docs/REJECTED_FRAMINGS.md for why XP = ΔS / c_L² was retired in v3.1.3.
+  const _cL = CAUSAL_CLOSURE_SPEEDS[domain] || 1e-4;
+  void _cL;
 
-  // Calculate XP: use max of full formula and irreducible floor
-  const fullXP = calculateXP({
-    rarity: R,
-    frequencyOfDecay: F,
-    deltaS,
-    domainWeight: w,
-    essentiality: E,
-    settlementTimeSeconds: Ts,
-  });
+  // Route through @extropy/xp-formula. The formula package clamps Ts to
+  // T_FLOOR_DEFAULT (0.01) and caps logDecay at log(1/T_FLOOR_DEFAULT)
+  // ≈ 4.605 — the actual anti-speed-farming invariant.
+  const lambda = lambdaForDomain(domain);
+  const formulaResult = computeXPFromElapsedSeconds(
+    {
+      R,
+      F,
+      deltaS,
+      w: [w],
+      E: [E],
+    },
+    elapsedSeconds,
+    lambda,
+  );
 
-  const irreducibleXP = calculateIrreducibleXP({ deltaS, causalClosureSpeed: cL });
-  const xpValue = Math.max(fullXP, irreducibleXP);
-  const settlementFactor = Ts > 0 ? Math.log(1 / Ts) : 0;
+  if (!formulaResult.valid) {
+    throw new Error(`Loop ${loopId} failed formula preconditions: ${formulaResult.reason}`);
+  }
+
+  const xpValue = formulaResult.xp;
+  const settlementFactor = formulaResult.breakdown.logDecay;
+  if (formulaResult.breakdown.tsClamped) {
+    console.warn(`[xp-mint] Loop ${loopId} settlement clamped to T_floor — speed-farming heuristic tripped`);
+  }
 
   // Compute distribution (filter null validators)
   const cleanValidatorIds = validatorIds.filter((v: ValidatorId) => v != null);
@@ -252,7 +296,7 @@ async function mintForLoop(loopId: LoopId): Promise<XPMintEvent> {
     console.error(`[xp-mint] Failed to settle loop ${loopId}:`, err);
   }
 
-  console.log(`[xp-mint] ✨ MINTED ${xpValue.toFixed(2)} XP for loop ${loopId} (R=${R.toFixed(2)}, F=${F.toFixed(2)}, ΔS=${deltaS}, irreducible=${irreducibleXP.toFixed(2)})`);
+  console.log(`[xp-mint] ✨ MINTED ${xpValue.toFixed(2)} XP for loop ${loopId} (R=${R.toFixed(2)}, F=${F.toFixed(2)}, ΔS=${deltaS}, logDecay=${settlementFactor.toFixed(3)})`);
   return mintEvent;
 }
 
@@ -417,22 +461,35 @@ app.post('/mint/:mintEventId/burn', async (req, res) => {
 
 // ── POST /mint/calculate ─────────────────────────────────────────────────
 app.post('/mint/calculate', (req, res) => {
-  const inputs = req.body as XPFormulaInputs;
-  const xpValue = calculateXP(inputs);
+  const inputs = req.body as XPFormulaInputs & { domain?: EntropyDomain };
+  const domain = inputs.domain;
+  const lambda = lambdaForDomain(domain);
+  const result = computeXPFromElapsedSeconds(
+    {
+      R: inputs.rarity,
+      F: inputs.frequencyOfDecay,
+      deltaS: inputs.deltaS,
+      w: [inputs.domainWeight],
+      E: [inputs.essentiality],
+    },
+    inputs.settlementTimeSeconds,
+    lambda,
+  );
 
   res.json({
-    xpValue,
+    xpValue: result.xp,
+    valid: result.valid,
+    reason: result.reason,
     breakdown: {
       rarityMultiplier: inputs.rarity,
       frequencyOfDecay: inputs.frequencyOfDecay,
       deltaS: inputs.deltaS,
       domainEssentialityProduct: inputs.domainWeight * inputs.essentiality,
-      settlementTimeFactor: inputs.settlementTimeSeconds > 0
-        ? Math.log(1 / inputs.settlementTimeSeconds)
-        : 0,
+      settlementTimeFactor: result.breakdown.logDecay,
+      tFloor: result.breakdown.Tfloor,
+      tsClamped: result.breakdown.tsClamped,
     },
-    irreducibleXP: null,
-    formulaUsed: `XP = ${inputs.rarity} × ${inputs.frequencyOfDecay} × ${inputs.deltaS} × (${inputs.domainWeight} × ${inputs.essentiality}) × log(1/${inputs.settlementTimeSeconds})`,
+    formulaUsed: 'XP = R × F × ΔS × (w · E) × min(log(1/Tₛ), log(1/T_floor)); Tₛ = exp(-λ·Δt)',
     formulaVersion: FORMULA_VERSION,
   });
 });
@@ -540,7 +597,7 @@ main().catch((err) => {
   process.exit(1);
 });
 
-export { calculateXP, calculateIrreducibleXP };
+export { calculateXP };
 // Sanitized error handler (mounted last): logs full error, returns generic payload.
 app.use(sanitizedErrorHandler);
 
