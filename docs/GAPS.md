@@ -1,8 +1,8 @@
-# Open Engineering Gaps — 65 across 13 Categories
+# Open Engineering Gaps — 66 across 14 Categories
 
 **Source:** Section 19 of v3.1 spec
-**Total:** 65 (63 original + 2 added 2026-05-06)
-**Updated:** 2026-05-06
+**Total:** 66 (63 original + 2 added 2026-05-06 + 1 added 2026-07-04)
+**Updated:** 2026-07-04
 **Note:** Categories and counts are verified. Per-gap descriptions are the v3.1 enumeration draft — reconciliation against the full PDF is welcomed via PR.
 
 ---
@@ -80,6 +80,9 @@
 48. PSLL selective-disclosure protocol
 49. Cross-DFAO data isolation
 
+### Naming Hygiene (1, P2) added 2026-07-04
+49a. Domain-set reconciliation between `docs/NORMALIZATION.md` and the `EntropyDomain` enum in `packages/contracts/src/types.ts`. The enum and `docs/SPEC_v3.1.md` §5 name eight domains: cognitive, code, social, economic, thermodynamic, informational, governance, temporal. `docs/NORMALIZATION.md` currently names a slightly different eight-domain set that includes ecological and a reserved spiritual slot. Codex v2.0 canonizes the enum set. `NORMALIZATION.md` MUST be aligned to the enum, not the other way around. This is a precondition for the F1 falsification condition being operationalizable end to end.
+
 ## P3 — Future (16 gaps)
 
 ### Skill DAG Design (3, P3)
@@ -111,7 +114,7 @@
 ## Legend
 
 - **P1:** blockers for Phase 2 (26)
-- **P2:** robustness + security (23)
+- **P2:** robustness + security (24)
 - **P3:** ecosystem maturity (16)
 
 Gaps are not failures. They are the engineering backlog. Acknowledging incompleteness is a prerequisite for systematic completion.

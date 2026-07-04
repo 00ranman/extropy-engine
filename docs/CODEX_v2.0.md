@@ -35,7 +35,7 @@ In one sentence: the Extropy Engine measures verified entropy reduction and tran
 The protocol is defined by five commitments, restated from `docs/SPEC_v3.1.md` with the v3.1.3 corrections applied:
 
 1. Value is measurable as entropy reduction, in bits-equivalent (bₑ), under a domain-specific measurement operator M_d.
-2. Entropy is measurable across eight domains: thermodynamic, informational, social, economic, ecological, governance, cognitive, and a reserved spiritual slot with no accepted M_d.
+2. Entropy is measurable across eight domains: cognitive, code, social, economic, thermodynamic, informational, governance, and temporal. These are the eight named in the `EntropyDomain` enum in `packages/contracts/src/types.ts` and in `docs/SPEC_v3.1.md` §5.
 3. Intelligence stays at the edge. Each participant runs their own model or model consensus locally. The shared network is a coordination and accounting layer, never a supermind.
 4. Verification is adversarially robust, privacy preserving, and incentive aligned, and it is performed by contributors doing contribution tasks, not by a separate validator class.
 5. Governance is fractal, composable, and bounded against permanent concentration, with every operational parameter tunable through the same loop mechanism that mints XP.
@@ -173,23 +173,23 @@ Each domain owns its own M_d. The invariants any M_d must satisfy are listed in 
 
 ## 5.1 The eight domains
 
-Note on domain nomenclature. Codex v1.0 used a slightly different set of domain labels in `docs/SPEC_v3.1.md` §5 (cognitive, code, social, economic, thermodynamic, informational, governance, temporal). The normalization document `docs/NORMALIZATION.md` uses the set below (thermodynamic, informational, social, economic, ecological, governance, cognitive, spiritual). Codex v2.0 adopts the `NORMALIZATION.md` set because it is the set the mint layer normalizes over. The `SPEC_v3.1.md` labels remain useful as operational categorizations of contribution style, but the canonical mint-side domains are the eight below.
+Note on domain nomenclature. Two eight-domain sets appear in the repository. The `EntropyDomain` enum in `packages/contracts/src/types.ts` and `docs/SPEC_v3.1.md` §5 name the eight below: cognitive, code, social, economic, thermodynamic, informational, governance, temporal. The mint-side normalization document `docs/NORMALIZATION.md` currently names a slightly different set that includes ecological and a reserved spiritual slot. Codex v2.0 canonizes the enum and SPEC set, because that is the set every service in the codebase actually switches over, and because it does not carry a reserved slot with no operator. The drift between `NORMALIZATION.md` and the enum is filed as an open item in `docs/GAPS.md` (naming-hygiene P2, domain-set reconciliation) and MUST be closed by aligning `NORMALIZATION.md` to the enum, not the other way around.
 
-**Thermodynamic.** Physical disorder. 1 bₑ_thermo ≡ one bit of thermodynamic entropy erased, which by Landauer's principle corresponds to `k_B T ln 2` joules of minimum dissipation avoided.
+**Cognitive.** Disorder in belief states, knowledge, understanding, mental models, skill formation, and conceptual coherence. 1 bₑ_cog ≡ removing one bit of belief-state uncertainty in a verifiable epistemic agent (test scored, model calibration improved, misconception corrected in a way validators can inspect).
 
-**Informational.** Disorder in records, data, channels, and archival coherence. Anchor is raw Shannon bits with H₀ = 1. Prediction-loop instances (proofs, patches merged) use log-likelihood-ratio of the claim under the pre-verification distribution.
+**Code.** Disorder in software systems, architecture, maintainability, correctness, and operational clarity. 1 bₑ_code ≡ resolving one bit of software-state uncertainty as evidenced by tests, review, and reproducible builds. Examples: bug fixed, brittle module refactored, test coverage increased against a documented gap, cyclomatic complexity reduced with behavior preserved.
 
-**Social.** Disorder in coordination. 1 bₑ_social ≡ removing one round of "who does what" ambiguity in a coordination game.
+**Social.** Disorder in trust networks, cooperation, conflict dynamics, and community coherence. 1 bₑ_social ≡ removing one round of "who does what" ambiguity in a coordination game, or one verifiable step toward resolving a coordination breakdown.
 
-**Economic.** Disorder in allocation. 1 bₑ_econ ≡ resolving one bit of allocation-outcome uncertainty in a market or matching. Never denominated in fiat.
+**Economic.** Disorder in allocation, throughput, matching, waste, bottlenecks, and coordination of scarce resources. 1 bₑ_econ ≡ resolving one bit of allocation-outcome uncertainty in a market or matching. Never denominated in fiat.
 
-**Ecological.** Disorder in ecosystem state. 1 bₑ_eco ≡ resolving one bit of ecosystem-state uncertainty over species, stocks, or flows in a bounded region.
+**Thermodynamic.** Physical disorder expressed through waste heat, physical inefficiency, environmental degradation, or energy loss. 1 bₑ_thermo ≡ one bit of thermodynamic entropy erased, which by Landauer's principle corresponds to `k_B T ln 2` joules of minimum dissipation avoided. Physical-restoration work whose ΔS is grounded in measured energetic or material change is minted here rather than in a separate ecological domain.
 
-**Governance.** Disorder in decision systems. 1 bₑ_gov ≡ removing one bit of decision uncertainty under a codified rule set.
+**Informational.** Disorder in records, data quality, accessibility, signal-to-noise ratio, and archival coherence. Anchor is raw Shannon bits with H₀ = 1. Prediction-loop instances (proofs, patches merged, datasets reconciled) use log-likelihood-ratio of the claim under the pre-verification distribution.
 
-**Cognitive.** Disorder in belief states. 1 bₑ_cog ≡ removing one bit of belief-state uncertainty in a verifiable epistemic agent (test scored, model calibration improved, misconception corrected in a way validators can inspect).
+**Governance.** Disorder in decision systems, rule clarity, and DFAO parameter coherence. 1 bₑ_gov ≡ removing one bit of decision uncertainty under a codified rule set.
 
-**Spiritual.** Not adopted. Retained as a domain label in the `EntropyDomain` enum for schema stability. There is no accepted M_spiritual, so this domain MUST NOT mint XP under the canonical formula until such an operator is defined, tested, and adopted through governance. Treat as a reserved slot.
+**Temporal.** Disorder in scheduling, sequencing, coordination of events over time, and settlement-time predictability. 1 bₑ_temp ≡ resolving one bit of when-does-what-happen uncertainty in a bounded coordination context. This domain covers the packaging of time-sensitive coordination work whose ΔS is not reducible to informational or governance measurement and whose settlement is grounded in observable temporal alignment. See `packages/temporal/` for the reference implementation surface and Appendix P for the Base-10 Universal Times calendar that anchors many temporal-domain instruments.
 
 ## 5.2 Why a common unit at all
 
@@ -197,7 +197,7 @@ The mint layer needs a scalar. XP is a single number. If domains contributed inc
 
 ## 5.3 Intersectionality
 
-Real contributions often land across multiple domains at once. A teacher may reduce cognitive, social, and possibly temporal disorder in one act. A clean software deployment may reduce informational, economic, and possibly ecological disorder. The engine does not force a claim into one exclusive box. It measures a domain vector E and weights it contextually through the vector w (see §9).
+Real contributions often land across multiple domains at once. A teacher may reduce cognitive, social, and possibly temporal disorder in one act. A clean software deployment may reduce code, informational, and economic disorder together. The engine does not force a claim into one exclusive box. It measures a domain vector E and weights it contextually through the vector w (see §9).
 
 # 6. Cross-Domain Normalization and the Falsifier Contract
 
@@ -271,7 +271,7 @@ The formula is implemented in `packages/xp-formula/src/index.ts`. Every service 
 
 **ΔS_bₑ.** The measured entropy reduction, in bits-equivalent, produced by applying M_d to the evidence. This is the term §5 and §6 exist to make honest. If no meaningful ΔS can be measured, the mint fails preconditions.
 
-**(w · E).** The dot product of the governance-set domain weight vector w and the claim's measured domain vector E. This is where contextual nuance enters without abandoning a universal metric. A software-oriented DFAO may weight code (informational) and governance heavily. A neighborhood repair DFAO may weight social and ecological differently. The domain-weight vector w is a per-DFAO override on top of ecosystem-level defaults.
+**(w · E).** The dot product of the governance-set domain weight vector w and the claim's measured domain vector E. This is where contextual nuance enters without abandoning a universal metric. A software-oriented DFAO may weight code, informational, and governance heavily. A neighborhood repair DFAO may weight social, thermodynamic (physical restoration), and temporal differently. The domain-weight vector w is a per-DFAO override on top of ecosystem-level defaults.
 
 **min(log(1/Tₛ), log(1/T_floor)).** The bounded settlement-time factor. This is where the v3.1.3 correction lives. Tₛ is `exp(-λ_d · Δt)`, which is monotonically decreasing in elapsed time, has value 1 at Δt = 0, and asymptotes toward 0 as Δt grows. The clamp `Tₛ ∈ (T_floor, 1]` guarantees the log is bounded on both sides: it cannot diverge to +∞ at sub-second closures (which would allow speed-farming), and it cannot go negative for slow closures (which would silently zero legitimate mints, which was the actual bug in v3.1.2). With `T_floor = 0.01`, the log-decay cap is `log(100) ≈ 4.605`.
 
