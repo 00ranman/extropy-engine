@@ -1,3 +1,5 @@
+> **v3.1.3 (2026-07) — T_s floor patch, non-extraction invariant, protocol v0.1.** Fixed a load-bearing bug where the mint pipeline fed **raw wall-clock seconds** directly into `log(1/Tₛ)`, silently zeroing every realistic loop while making sub-second loops divergently profitable. Canonical formula moved to `@extropy/xp-formula` with a T_floor clamp and normalized settlement-time factor. Retired `XP = ΔS / c_L²` (see [`docs/REJECTED_FRAMINGS.md`](docs/REJECTED_FRAMINGS.md)). Shipped [`docs/NON_EXTRACTION.md`](docs/NON_EXTRACTION.md) (no cash-out, ever, at any layer), [`docs/NORMALIZATION.md`](docs/NORMALIZATION.md) (cross-domain ΔS common unit + falsification contract), and [`docs/PROTOCOL.md`](docs/PROTOCOL.md) v0.1 (implementation-agnostic protocol contract). Scaffold: [`packages/github-parasite/`](packages/github-parasite/) (GitHub App overlay, contribution-ratio XP, no external redemption surface). See [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
+>
 > **v3.1.2 (2026-05-08) — Canonical formula labels finalized.** Fixed a load-bearing semantic drift where the XP mint pipeline was feeding *validator reputation* into the R slot of the formula. R is now correctly identified as **Rarity** (action-class scarcity), F as **Frequency-of-decay**. Reputation legitimately governs vote weight (V+/V-) and the CT formula's ρ, but never enters XP minting. See [`docs/CHANGELOG.md`](docs/CHANGELOG.md) and migration [`packages/xp-mint/migrations/002_canonical_formula_v3_1_2.sql`](packages/xp-mint/migrations/002_canonical_formula_v3_1_2.sql). Pre-fix mints are quarantined under `formula_version='pre-canonical-v3.1.0'`.
 >
 > **v3.1 (2026-05-01) is the canonical spec.** See [`docs/SPEC_v3.1.md`](docs/SPEC_v3.1.md), [`docs/CHANGELOG.md`](docs/CHANGELOG.md), and [`docs/GAPS.md`](docs/GAPS.md) (63 open engineering gaps across 13 categories).
@@ -29,18 +31,20 @@ The Nash equilibrium is flipped. Honest contribution is the individually rationa
 ### XP — minted on every closed loop with verified ΔS > 0
 
 ```
-XP = R × F × ΔS × (w · E) × log(1/Tₛ)
+XP = R × F × ΔS × (w · E) × min(log(1/Tₛ), log(1/T_floor))
+Tₛ = exp(-λ · elapsedSeconds), clamped into (T_floor, 1]
 ```
 
 | Variable | Range | Description |
 |---|---|---|
 | R | [0.1, 10.0] | **Rarity** multiplier. Action-class scarcity / base difficulty. Property of the loop, NOT the actor. Reputation does not enter here. |
 | F | (0, 1] | **Frequency-of-decay** penalty. Diminishing returns for repeated instances of this action class. |
-| ΔS | (0, ∞) | Verified entropy reduction. Must be > 0 to mint. |
+| ΔS | (0, ∞) | Verified entropy reduction, in bits-equivalent (bₑ). See [NORMALIZATION.md](docs/NORMALIZATION.md). |
 | w · E | dot product | Weight vector × effort vector across energy dimensions |
-| Tₛ | (0, 1] | Timestamp decay: `exp(-λΔt)`. Recency factor. |
+| Tₛ | (T_floor, 1] | **Normalized** settlement-time factor, derived from elapsed seconds via per-domain λ. Unitless. |
+| T_floor | (0, 1) | Governance-set floor. Default 0.01 → log cap ≈ 4.605. Closes the speed-farming attack. |
 
-`log(1/Tₛ)` enforces diminishing returns as closure time approaches the domain's causal closure speed. XP cannot be farmed by closing loops arbitrarily fast — the log curve kills that incentive.
+The log-decay term is clamped at `log(1/T_floor)`. XP cannot be farmed by closing loops arbitrarily fast — the clamp caps the term, and the `exp(-λΔt)` normalization removes the raw-seconds pathology that made the pre-v3.1.3 formula both divergent and silently-zero at the same time.
 
 **Why R is rarity, not reputation.** XP measures entropy reduction from a single closed event. Every multiplier must describe the loop, not the actor's history. If reputation entered XP, past actions would inflate new mints and reputation would compound indefinitely — reputation laundering. Reputation belongs in vote weight (gating whether a loop closes) and in the CT formula (ρ, because CT is identity-bearing), but not in the XP mint amount.
 

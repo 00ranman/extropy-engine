@@ -46,3 +46,7 @@ pgdata/
 
 # pnpm
 .pnpm-store/
+
+# Codex build intermediates
+build/codex_v2.0.html
+build/codex_v2.0_comprehensive.html

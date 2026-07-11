@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>$title$</title>
+  <link rel="stylesheet" href="codex-v2.0.css" />
+</head>
+<body>
+$if(title)$
+<header id="title-block-header">
+  <h1 class="title">$title$</h1>
+$if(subtitle)$
+  <p class="subtitle">$subtitle$</p>
+$endif$
+  <p class="author">$author$</p>
+  <p class="date">$date$</p>
+$if(version)$
+  <p class="date">$version$</p>
+$endif$
+</header>
+$endif$
+
+$if(abstract)$
+<div class="abstract">
+<p class="abstract-title">Abstract</p>
+$abstract$
+</div>
+$endif$
+
+$body$
+
+</body>
+</html>
