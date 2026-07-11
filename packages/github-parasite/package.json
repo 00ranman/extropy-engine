@@ -1,7 +1,7 @@
 {
-  "name": "@extropy/xp-mint",
+  "name": "@extropy/github-parasite",
   "version": "0.1.0",
-  "description": "Mints XP tokens when loops close with verified DeltaS > 0, enforces strict criteria",
+  "description": "GitHub App parasite: listens to PR merges on host repos, computes ΔS-in-code claims, mints XP tied to contribution ratio (never market position). Non-extraction invariant enforced end-to-end.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
@@ -14,16 +14,10 @@
   "dependencies": {
     "@extropy/contracts": "*",
     "@extropy/xp-formula": "*",
-    "express": "^4.19.0",
-    "ioredis": "^5.3.0",
-    "pg": "^8.12.0",
-    "uuid": "^10.0.0",
-    "zod": "^3.23.0"
+    "express": "^4.19.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/pg": "^8.11.0",
-    "@types/uuid": "^10.0.0",
     "typescript": "^5.4.0",
     "tsx": "^4.7.0",
     "vitest": "^2.0.0"

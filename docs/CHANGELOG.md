@@ -1,5 +1,102 @@
 # Changelog
 
+## v3.1.3 — 2026-07 (T_s Floor, Non-Extraction, Protocol v0.1)
+
+### The bug
+
+Through v3.1.2 the XP mint pipeline in `packages/xp-mint/src/index.ts`
+was calling `Math.log(1 / settlementTimeSeconds)` on **raw wall-clock
+seconds**. That produced two failure modes at once:
+
+1. **Speed-farming.** For any settlement below 1 second the log term
+   diverged toward infinity as raw seconds → 0. A loop that closed in
+   1 millisecond minted ≈ 6.9 × the XP of a loop that closed in 1
+   second, all else equal. No cap.
+2. **Silent zeroing.** For any settlement above 1 second the log term
+   went negative, and the mint guard clamped negatives to zero. Every
+   realistic loop (multi-second, minute, hour, day) minted **zero XP**.
+   The `Math.max(fullXP, irreducibleXP)` fallback in the same function
+   was masking this by falling back to the ΔS / c_L² branch, which is
+   itself a rejected framing (see below).
+
+Both failure modes were live in the code paths that would trigger on
+real contribution loops.
+
+### The fix
+
+- **Canonical formula moved to `@extropy/xp-formula`** and stamped with
+  `canonical-v3.1.3`. All service code MUST now import from there.
+- **T_s is normalized-and-clamped at the formula boundary:**
+  `Tₛ = exp(-λ · elapsedSeconds)`, clamped into `(T_floor, 1]`.
+- **log-decay is capped:** `min(log(1/Tₛ), log(1/T_floor))`. Default
+  `T_floor = 0.01` → hard cap ≈ 4.605. That is the actual anti-speed-
+  farming invariant.
+- **Property tests** in `packages/xp-formula/src/index.test.ts` cover
+  bounded XP, log-decay bounds, sub-second attack neutralization, non-
+  zero mint for realistic settlements, and the compile-time invariant
+  that reputation cannot enter the formula.
+- **`packages/xp-mint`** now routes every mint through
+  `computeXPFromElapsedSeconds` and stamps the row with the formula
+  version imported from `@extropy/xp-formula`, so version drift between
+  the mint row and the executed math is now impossible.
+- **`XP = ΔS / c_L²` is retired.** See `docs/REJECTED_FRAMINGS.md` R1.
+  The `IrreducibleXPInputs` type is kept in `contracts` with a
+  `@deprecated` marker for one release, then removed.
+
+### Docs shipped in this release
+
+- **`docs/NORMALIZATION.md`** — cross-domain ΔS normalization spec.
+  Defines the bits-equivalent common unit bₑ, per-domain measurement
+  operators M_d, and the four falsification conditions (F1–F4) that
+  would sink the whole project if they hold in the wild.
+- **`docs/NON_EXTRACTION.md`** — the no-cash-out invariant as an
+  architectural constraint, parallel to Digital Autarky. XP and CT are
+  stateful access thresholds, not balances. Prediction markets over
+  loop outcomes are explicitly out of scope. Three tests every feature
+  must pass: extraction, counterparty, ratio.
+- **`docs/PROTOCOL.md` v0.1** — implementation-agnostic protocol
+  contract. Any implementation in any language can conform to this
+  document without depending on the reference TypeScript impl.
+- **`docs/REJECTED_FRAMINGS.md`** — explicit registry of framings the
+  project used to publish and no longer stands behind, with the
+  reasoning and the replacement. R1 covers XP = ΔS / c_L².
+
+### New package scaffold
+
+- **`packages/github-parasite/`** (v0.1 scaffold, no runtime yet). GitHub
+  App overlay: PR merges become code-contribution loops in the
+  informational domain. XP is a function of the actor's contribution
+  ratio ρ, not of any market position. Explicitly satisfies the three
+  Non-Extraction tests; nothing this package emits is redeemable,
+  transferable, or convertible into external value.
+
+### Migration notes
+
+- No database migration required. `settlementTimeSeconds` remains the
+  storage-layer column name; its documented semantics change to "raw
+  elapsed seconds at the storage boundary, normalize at the formula
+  boundary."
+- Pre-v3.1.3 mints are already quarantined under the
+  `pre-canonical-v3.1.0` formula-version tag (migration 002). No
+  further quarantine is required; the v3.1.3 stamp is applied to new
+  mints only.
+
+### Files touched
+
+- `packages/xp-formula/src/index.ts` (rewrite; adds `T_FLOOR_DEFAULT`,
+  `normalizeSettlementTime`, `computeXPFromElapsedSeconds`).
+- `packages/xp-formula/src/index.test.ts` (new, 17 property tests).
+- `packages/xp-mint/src/index.ts` (routes through @extropy/xp-formula;
+  removes `calculateIrreducibleXP`; removes raw-seconds log call).
+- `packages/xp-mint/package.json` (adds `@extropy/xp-formula` dep).
+- `packages/contracts/src/types.ts` (documents field semantics; adds
+  `T_FLOOR_DEFAULT`; marks `IrreducibleXPInputs` `@deprecated`).
+- `packages/github-parasite/` (new scaffold).
+- `docs/NORMALIZATION.md`, `docs/NON_EXTRACTION.md`,
+  `docs/PROTOCOL.md`, `docs/REJECTED_FRAMINGS.md` (new).
+
+---
+
 ## v3.1.2 — 2026-05-08 (Canonical Formula Labels)
 
 ### The bug
