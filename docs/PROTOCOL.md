@@ -95,6 +95,8 @@ with:
 
 The formula version stamped on the mint event MUST match the formula version the substrate is running. Formula-version drift between the stamp and the executed math is a critical bug and MUST fail closed.
 
+**X_d provenance precondition.** For any convention-tier domain (see [EMERGENT_EXCHANGE_RATES.md](./EMERGENT_EXCHANGE_RATES.md)), the mint reads ΔS through an explicit emergent exchange coefficient X_d, and MUST resolve a valid rate record for that domain and epoch before minting. A rate record is valid only if it carries domain, rate value, uncertainty, evidence provenance, epoch, version, and last-corroborated reference. If provenance is missing, incomplete, or expired past its corroboration horizon, the mint MUST fail closed. There is no default rate and no silent fallback.
+
 Distribution: XP is distributed to validators in proportion to their contribution to closure, and to the actor as loop opener. The exact split is a governance parameter but MUST NOT be zero for validators (that would kill validator incentive) nor zero for the actor (that would kill loop-opener incentive).
 
 ## 8. Non-transferability
@@ -140,6 +142,8 @@ The parameters listed below are governance-tunable per domain. Each has a defaul
 - retroactive validation window length
 
 Changes to these parameters MUST themselves close as loops in the `governance` domain, and MUST NOT retro-apply to already-confirmed mints.
+
+**Rate repricing is a governed loop.** Adjusting a convention-tier exchange coefficient X_d is not a routine mint operation. It closes as a high-rarity, broad-validator-neighborhood, quorum-gated, reversible loop, bounded per epoch by a velocity limit v_d, using evidence independent of any XP computed from the same X_d. If drift outruns independent corroboration, if evidence density falls below the declared minimum, or if repricing closes faster than independent confirmation, minting in that domain MUST halt and X_d MUST revert to its last corroborated value. The parameters X_d, v_d, epoch length, uncertainty thresholds, evidence-density minimums, and repricing quorum are governance-tunable and are specified in [EMERGENT_EXCHANGE_RATES.md](./EMERGENT_EXCHANGE_RATES.md). No numeric defaults are set for them in this release.
 
 ## 12. Conformance
 

@@ -121,6 +121,18 @@ If any of F1–F4 is empirically confirmed and remains open for two consecutive 
 
 This is intentional. A framework that cannot be falsified is not a framework; it is a brand.
 
+## 5a. Two-tier invariant and the X_d conversion stage
+
+The single-scalar ledger described above hid an assumption: that a bit measured in one domain is automatically the same quantity as a bit measured in another. That assumption was static, unversioned, and unfalsifiable. The two-tier invariant replaces it with an explicit, bounded, reversible conversion. The full specification lives in [EMERGENT_EXCHANGE_RATES.md](./EMERGENT_EXCHANGE_RATES.md); this section summarizes it without overstating what is implemented.
+
+**Grounded tier.** Domains whose M_d output is tied to a directly measured physical or informational quantity, with a stated instrument, a stated error model, and a reproducible mapping to bₑ. Scientific precision is required: a Shannon bit is a property of a probability distribution and is not automatically thermodynamic energy, and Landauer's principle supplies only a lower bound of k_B T ln 2 joules for the logically irreversible erasure of one bit in a physical medium at temperature T, under the idealized conditions of the principle. It is not a general conversion factor.
+
+**Convention tier.** Cognitive, code, social, economic, governance, and temporal domains, plus any informational claim that lacks a direct operational information or physical mapping. Convention-tier values are real and mintable but are not directly commensurable with grounded-tier bₑ.
+
+**The X_d conversion stage.** Each convention-tier comparison to the grounded tier passes through an explicit emergent exchange coefficient X_d, so that the ledger reads `ΔS_bₑ(d) = X_d · M_d(evidence, domain state)`. X_d is a protocol accounting conversion, not a physical constant and not a proof that unlike domains are ontologically identical. It is a velocity-bounded managed float: held fixed within an epoch, repriced only through a high-rarity, broad-neighborhood, quorum-gated, reversible loop, and required to carry full provenance. A missing or unprovenanced X_d does not mint; provenance failure fails closed. If drift outruns independent corroboration, minting in that domain halts and X_d reverts to its last corroborated value.
+
+**Status.** This is specification architecture only. No X_d value, velocity bound, epoch length, or threshold is set, no code path reads X_d, and empirical cross-domain comparability remains an open problem. See [EMERGENT_EXCHANGE_RATES.md](./EMERGENT_EXCHANGE_RATES.md) §12 and [GAPS.md](./GAPS.md).
+
 ## 6. What v3.1.3 actually delivers
 
 v3.1.3 does not solve the normalization problem. What it does deliver:

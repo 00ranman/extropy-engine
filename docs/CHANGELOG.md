@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased (Pending): Emergent Cross-Domain Exchange Rates
+
+**Type:** specification architecture only. No formula-code change. No claim of empirical validation.
+
+This entry is intentionally not assigned a version number. It changes documentation and protocol specification only. `@extropy/xp-formula` is untouched and remains `canonical-v3.1.3`. A version will be assigned when the accumulated specification corrections are released together.
+
+### What changed
+
+- **New `docs/EMERGENT_EXCHANGE_RATES.md`** (normative design document). Defines a two-tier normalization: a grounded tier of directly measured physical or informational quantities with operationally defined mappings, and a convention tier (cognitive, code, social, economic, governance, temporal, plus any informational claim lacking a direct operational mapping). Each convention-tier comparison to the grounded tier passes through an explicit emergent exchange coefficient X_d. X_d is a protocol accounting conversion, not a physical constant and not a proof of ontological identity. It is a velocity-bounded managed float, repriced through a high-rarity, broad-neighborhood, quorum-gated, reversible loop, using evidence independent of any XP computed from the same X_d. Missing provenance fails closed. Drift outrunning corroboration halts minting and reverts X_d to its last corroborated value.
+- **`docs/NORMALIZATION.md`** gains section 5a summarizing the two-tier invariant and the X_d conversion stage, without overstating implementation. It states plainly that a Shannon bit is not automatically thermodynamic energy and that Landauer supplies only a lower bound for irreversible erasure under specified conditions.
+- **`docs/PROTOCOL.md`** now names X_d provenance as a mint precondition (section 7) and rate repricing as a governed loop with halt and revert behavior (section 11).
+- **`docs/GAPS.md`** gains Addendum A with 8 stable-ID gaps (X1 to X8). Total moves from 65 across 13 categories to 73 across 14 categories, computed as 65 + 8. The addendum distinguishes the resolved architectural defect (hidden and static cross-domain equivalence), the reduced risk on gaps 19 and 24 (commensurability now explicit, reversible, fail-closed), and what remains open (per-domain M_d, X_d initialization, independent estimator and identifiability, evidence-density rules, v_d and epoch calibration, adversarial repricing, persistent rate registry, external validation).
+- **New `docs/GAP_FEEDBACK_CANDIDATES.md`** (non-normative). Candidate analysis of other gaps where the same corrective-feedback-loop mechanism might apply. Explicitly labeled candidate analysis, not adopted protocol.
+
+### What did not change
+
+- No numeric defaults were invented for X_d, v_d, epoch length, uncertainty thresholds, evidence density, or quorum.
+- Reputation stays outside mint math. XP stays non-transferable and non-extractive. Prediction markets and fiat cash-out remain rejected.
+- Canonical domains remain exactly cognitive, code, social, economic, thermodynamic, informational, governance, temporal.
+- **Codex unchanged.** `docs/CODEX_v2.0.md`, `docs/CODEX_v2.0_COMPREHENSIVE.md`, and the generated Codex PDFs are not touched. These corrections are being accumulated for a later major Codex revision and are deliberately not folded into the Codex now.
+
 ## v3.1.3 — 2026-07 (T_s Floor, Non-Extraction, Protocol v0.1)
 
 ### The bug

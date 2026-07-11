@@ -1,9 +1,9 @@
-# Open Engineering Gaps — 65 across 13 Categories
+# Open Engineering Gaps: 73 across 14 Categories
 
-**Source:** Section 19 of v3.1 spec
-**Total:** 65 (63 original + 2 added 2026-05-06)
-**Updated:** 2026-05-06
-**Note:** Categories and counts are verified. Per-gap descriptions are the v3.1 enumeration draft — reconciliation against the full PDF is welcomed via PR.
+**Source:** Section 19 of v3.1 spec, plus Addendum A (2026-07).
+**Total:** 73, computed as 65 core (63 original + 2 added 2026-05-06) + 8 in Addendum A (2026-07).
+**Updated:** 2026-07-11
+**Note:** Categories and counts are verified. Per-gap descriptions are the v3.1 enumeration draft; reconciliation against the full PDF is welcomed via PR. Addendum A uses stable IDs (X1 to X8) so the core numbering (1 to 65) is not renumbered.
 
 ---
 
@@ -113,5 +113,35 @@
 - **P1:** blockers for Phase 2 (26)
 - **P2:** robustness + security (23)
 - **P3:** ecosystem maturity (16)
+- **Addendum A:** emergent exchange-rate architecture (8)
+
+Grand total: 26 + 23 + 16 + 8 = 73.
 
 Gaps are not failures. They are the engineering backlog. Acknowledging incompleteness is a prerequisite for systematic completion.
+
+---
+
+## Addendum A: Emergent Cross-Domain Exchange-Rate Architecture (8, added 2026-07)
+
+Context: [EMERGENT_EXCHANGE_RATES.md](./EMERGENT_EXCHANGE_RATES.md) adopts a two-tier normalization with an explicit, provenance-carrying, velocity-bounded, reversible exchange coefficient X_d for convention-tier domains. This addendum records honestly what that change did and did not do. It uses stable IDs so the core 1 to 65 numbering is untouched.
+
+### What is resolved
+
+- **Resolved architectural defect: hidden and static cross-domain equivalence.** Earlier drafts silently treated a bit in one domain as automatically equal to a bit in another, through an unversioned, unfalsifiable, implicit rate of 1. That specific defect is resolved at the architecture level: cross-domain comparison is now an explicit X_d conversion that must exist, carry provenance, and fail closed if it does not. This is an architectural resolution, not an empirical one; it removes a hidden assumption rather than proving comparability.
+
+### What is reduced but not resolved
+
+- **Reduced risk on gaps 19 and 24 (Cross-Domain Measurement Calibration).** Commensurability is now explicit, reversible, and fail-closed rather than hidden and static. This reduces the risk that the ledger silently performs arithmetic on incommensurable units. It does not close gaps 19 or 24: harmonizing units and weighting inter-domain comparisons still requires constructed operators and estimated rates. Gaps 19 and 24 remain open and counted in P1.
+
+### What is still open (counted here)
+
+- **X1. Per-domain M_d constructibility.** No convention-tier domain yet has a measurement operator M_d that satisfies the NORMALIZATION.md §4 invariants under real evidence. Priority P1. Related: gaps 19 to 24.
+- **X2. X_d initialization.** There is no defined procedure for choosing an initial X_d at genesis, when no prior corroboration exists, without smuggling in an arbitrary default. Priority P1.
+- **X3. Independent estimator and identifiability.** No estimator of X_d has been shown to be constructible from evidence independent of the ledger's own XP, and identifiability (that the evidence picks out one rate, not many) is unproven. Falsifiers XF1 and XF2 in EMERGENT_EXCHANGE_RATES.md §11. Priority P1.
+- **X4. Evidence-density rules.** The declared minimum evidence density per epoch, below which a domain halts, is undefined. Priority P2.
+- **X5. v_d and epoch-length calibration.** The velocity bound v_d and the epoch length are provisional and uncalibrated. No numeric defaults are set. Priority P2.
+- **X6. Adversarial repricing resistance.** Whether a broad, quorum-gated repricing loop actually resists capture by a coordinating minority at feasible cost is unverified. Falsifier XF4. Priority P2.
+- **X7. Persistent rate registry.** There is no implemented store for rate records, their provenance, prior values, and corroboration history, and no enforcement of the fail-closed provenance precondition in code. Priority P2.
+- **X8. External validation of cross-domain comparability.** No empirical study has validated that any X_d reflects a real, stable relationship between domains rather than an accounting artifact. Priority P3.
+
+Addendum A subtotal: 8 (X1 to X8). By priority within this addendum: P1 = 3 (X1, X2, X3); P2 = 4 (X4, X5, X6, X7); P3 = 1 (X8).
