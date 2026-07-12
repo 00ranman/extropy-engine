@@ -28,6 +28,7 @@
     { "path": "./packages/temporal" },
     { "path": "./packages/token-economy" },
     { "path": "./packages/validation-neighborhoods" },
+    { "path": "./packages/validator-weight-lab" },
     { "path": "./packages/xp-formula" },
     { "path": "./packages/xp-mint" }
   ]

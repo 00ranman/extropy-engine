@@ -1,0 +1,7 @@
+{
+  "candidateWeights": { "domain": 0.4, "rep": 0.3, "load": 0.1, "accuracy": 0.2 },
+  "priorWeights": { "domain": 0.35, "rep": 0.3, "load": 0.15, "accuracy": 0.2 },
+  "maxAbsFactorDelta": 0.1,
+  "minAdmissibleSamples": 6,
+  "holdoutFraction": 0.3
+}

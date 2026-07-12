@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased (Pending): Calibration Lifecycle and Validator-Weight Prototype
+
+**Type:** specification architecture plus a non-normative offline prototype. No formula-code change. No claim of empirical validation. Stacked on the emergent exchange-rate work below and staged for a later major Codex revision.
+
+This entry is intentionally not assigned a version number. `@extropy/xp-formula` is untouched and remains `canonical-v3.1.3`.
+
+### What changed
+
+- **New `docs/CALIBRATION_LIFECYCLE.md`** (normative design document, gap 23). Specifies how the calibration behind a domain measurement operator M_d is monitored for drift and replaced under bounded, provenance-carrying, reversible control. Defines the CalibrationRecord schema (domain, operator and version, calibration version, training and replication evidence IDs, uncertainty, valid-from and last-corroborated epochs, status, supersedes, rollback target, provenance); a calibration state machine (proposed, shadow, corroborated, active, frozen, superseded, reverted, rejected); drift detection restricted to evidence independent of the calibration's own accepted outputs (blind replication residuals, persistent-outcome error, independent reference sets, downstream reversal and burn rates, cross-implementation disagreement); shadow-mode evaluation of a proposed replacement; bounded replacement so large discontinuities require wider review rather than silent auto-replacement; freeze and rollback when drift is detected without adequate replication; and an anti-circularity rule that forbids a calibration from certifying its successor using only its own accepted outputs.
+- **`docs/NORMALIZATION.md`** gains section 5b summarizing the calibration lifecycle and pointing to the new document, without overstating implementation.
+- **`docs/PROTOCOL.md`** section 11 now names calibration replacement as a governed lifecycle with a CalibrationRecord mint precondition, shadow-mode gating, bounded replacement, and freeze and revert behavior.
+- **New `packages/validator-weight-lab/`** (non-normative offline prototype, gap 14). An advisory analysis harness that reads an explicit event dataset through a documented schema, classifies the dataset source (production historical, test fixture, simulation, or absent), evaluates a candidate validator-weight vector against independent outcomes (retroactive burns, reversals, held-out verdict accuracy) with train and holdout separation, enforces bounded candidate updates symbolically with no invented production defaults, and emits a provenance-carrying report (dataset identity and hash, source classification, split method, metrics, sample counts, prior and proposed vectors, recommendation status). It fails closed when no real historical dataset exists, never writes production weights, and cannot claim validation from fixtures. See [GAP_FEEDBACK_CANDIDATES.md](./GAP_FEEDBACK_CANDIDATES.md) Candidate 2.
+- **`docs/GAPS.md`** adds status annotations for gaps 23 and 14. Both remain open and counted; totals are unchanged at 73 across 14 categories.
+- **`docs/GAP_FEEDBACK_CANDIDATES.md`** records Candidate 4 (gap 23) as architecture adopted with implementation and replication open, and Candidate 2 (gap 14) as prototype built but not adopted production behavior.
+
+### What did not change
+
+- No numeric defaults were invented for drift thresholds, replacement bounds, epoch length, sample-size minimums, evidence-density cutoffs, replication counts, or validator weights.
+- Reputation stays outside mint math and is never admissible as calibration evidence. XP stays non-transferable and non-extractive.
+- Canonical domains remain exactly cognitive, code, social, economic, thermodynamic, informational, governance, temporal.
+- No gap is marked fully closed. Gap 23 is architecture adopted only; gap 14 is a prototype only.
+- **Codex unchanged.** The Codex markdown documents and generated PDFs are not touched. These corrections are being accumulated for a later major Codex revision.
+
 ## Unreleased (Pending): Emergent Cross-Domain Exchange Rates
 
 **Type:** specification architecture only. No formula-code change. No claim of empirical validation.
