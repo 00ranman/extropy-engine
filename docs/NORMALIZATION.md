@@ -133,6 +133,14 @@ The single-scalar ledger described above hid an assumption: that a bit measured 
 
 **Status.** This is specification architecture only. No X_d value, velocity bound, epoch length, or threshold is set, no code path reads X_d, and empirical cross-domain comparability remains an open problem. See [EMERGENT_EXCHANGE_RATES.md](./EMERGENT_EXCHANGE_RATES.md) §12 and [GAPS.md](./GAPS.md).
 
+## 5b. Calibration lifecycle for M_d
+
+The invariants in §4 say what a conformant M_d must satisfy at a point in time. They do not say what happens as the calibration behind an M_d ages and drifts. A calibration is the versioned configuration (reference sets, fitted parameters, instrument settings, mapping to bₑ) that makes an abstract operator executable. Left unmanaged, a calibration can drift away from the quantity it claims to measure, and a silent recalibration can rewrite the ledger's measurement basis without provenance or review.
+
+[CALIBRATION_LIFECYCLE.md](./CALIBRATION_LIFECYCLE.md) specifies the lifecycle that governs this: a CalibrationRecord schema carrying provenance and rollback targets, a calibration state machine (proposed, shadow, corroborated, active, frozen, superseded, reverted, rejected), drift detection restricted to evidence independent of the calibration's own accepted outputs, shadow-mode evaluation of a proposed replacement, bounded replacement so that large discontinuities require wider review rather than silent auto-replacement, freeze and rollback when drift is detected without adequate replication, and an anti-circularity rule that forbids a calibration from certifying its successor using only its own accepted outputs. This addresses gap 23 in [GAPS.md](./GAPS.md).
+
+Calibration of M_d and the cross-domain coefficient X_d are separate concerns that share the same evidence-independence and halt/revert discipline. **Status.** Architecture adopted; implementation and external replication open. No drift threshold, replacement bound, epoch length, sample-size minimum, or evidence-density cutoff is set, and no code path enforces the lifecycle. See [CALIBRATION_LIFECYCLE.md](./CALIBRATION_LIFECYCLE.md) §12.
+
 ## 6. What v3.1.3 actually delivers
 
 v3.1.3 does not solve the normalization problem. What it does deliver:

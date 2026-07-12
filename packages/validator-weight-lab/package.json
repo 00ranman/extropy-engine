@@ -1,0 +1,27 @@
+{
+  "name": "@extropy/validator-weight-lab",
+  "version": "0.1.0",
+  "description": "Offline advisory analysis harness for gap 14 (validator 4-factor weighting). Not adopted production behavior. Never writes production weights.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run --passWithNoTests",
+    "report": "tsx src/cli.ts",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  },
+  "keywords": [
+    "extropy",
+    "validator",
+    "weighting",
+    "prototype",
+    "gap-14"
+  ],
+  "license": "MIT"
+}

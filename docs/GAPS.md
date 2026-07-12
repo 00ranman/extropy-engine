@@ -27,7 +27,7 @@
 13. CT lockup parameter optimization
 
 ### Validator Selection Optimization (5, P1)
-14. 4-factor weighting tuning (domain, rep, load, accuracy)
+14. 4-factor weighting tuning (domain, rep, load, accuracy). *Offline prototype added 2026-07-12 in `packages/validator-weight-lab/`; advisory analysis harness only, not adopted production behavior. Remains counted as open (not closed).*
 15. Cold-start validator bootstrapping
 16. Geographic / language balancing in SignalFlow
 17. Adversarial-load shedding policy
@@ -38,7 +38,7 @@
 20. Falsification-condition spec for Cognitive domain
 21. Falsification-condition spec for Social domain
 22. Falsification-condition spec for Governance domain
-23. Calibration drift detection + auto-replace policy
+23. Calibration drift detection + auto-replace policy. *Architecture adopted 2026-07-12 in [CALIBRATION_LIFECYCLE.md](./CALIBRATION_LIFECYCLE.md); implementation and external replication open. Remains counted as open (not closed).*
 24. Inter-domain ΔS comparison weighting
 
 ### Verdict Vocabulary Standardization (2, P1) — *added 2026-05-06*
@@ -118,6 +118,13 @@
 Grand total: 26 + 23 + 16 + 8 = 73.
 
 Gaps are not failures. They are the engineering backlog. Acknowledging incompleteness is a prerequisite for systematic completion.
+
+### Status annotations (2026-07-12)
+
+Two P1 gaps received work in this cycle without being closed. The counts above are unchanged: both remain open and counted.
+
+- **Gap 23 (Calibration drift detection + auto-replace policy).** Architecture adopted in [CALIBRATION_LIFECYCLE.md](./CALIBRATION_LIFECYCLE.md): CalibrationRecord schema, calibration state machine, independent-evidence drift detection, shadow evaluation with bounded replacement, freeze and rollback, and an anti-circularity rule. Implementation and external replication are open, so the gap is not closed. No numeric threshold, bound, or epoch length was set.
+- **Gap 14 (4-factor weighting tuning).** An offline analysis prototype was added in `packages/validator-weight-lab/` as recommended by Candidate 2 in [GAP_FEEDBACK_CANDIDATES.md](./GAP_FEEDBACK_CANDIDATES.md). It is an advisory harness that evaluates a candidate weight vector against independent outcomes (retroactive burns, reversals, held-out verdict accuracy) with train and holdout separation, fails closed when no real historical dataset exists, and never writes production weights. It is not adopted production behavior, so the gap is not closed. No production weight defaults were invented.
 
 ---
 

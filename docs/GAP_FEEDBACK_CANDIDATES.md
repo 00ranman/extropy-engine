@@ -27,6 +27,7 @@ For each candidate: (1) gap ID or name; (2) current fixed assumption or brittle 
 5. **Halt/revert rule:** if burn-rate or held-out-accuracy signal density is insufficient in an epoch, revert to the last corroborated weight vector; do not adjust on noise.
 6. **Reduce or relocate:** genuinely reduces, provided an outcome signal (burn rate) already exists in the protocol. It leans on retroactive validation, which is specified, so it relocates less than Candidate 1.
 7. **Recommendation:** prototype, with retroactive-burn outcome as the independent signal.
+8. **Status (2026-07-12): prototype built, not adopted production behavior.** An offline analysis harness was added in `packages/validator-weight-lab/`. It reads an explicit event dataset through a documented schema, classifies the dataset source (production historical, test fixture, simulation, or absent), evaluates a candidate weight vector against independent outcomes (retroactive burns, reversals, held-out verdict accuracy) with train and holdout separation, enforces bounded candidate updates symbolically with no invented production defaults, and emits a provenance-carrying advisory report. It fails closed when no real historical dataset exists, never writes production weights, and cannot claim validation from fixtures. This is a prototype for gap 14 in [GAPS.md](./GAPS.md); it is not adopted protocol.
 
 ## Candidate 3: Gap 41, IT 5%/mo decay rate
 
@@ -47,6 +48,7 @@ For each candidate: (1) gap ID or name; (2) current fixed assumption or brittle 
 5. **Halt/revert rule:** if drift is detected but corroborating replication is unavailable, halt auto-replace and revert to the last corroborated calibration; escalate to governance.
 6. **Reduce or relocate:** reduces if independent replication exists; relocates onto "who supplies independent replication" if it does not. This is the closest structural sibling to the adopted X_d loop.
 7. **Recommendation:** prototype in tandem with M_d construction. This is the most natural next application of the mechanism.
+8. **Status (2026-07-12): architecture adopted, implementation and external replication open.** Promoted from candidate to adopted architecture in [CALIBRATION_LIFECYCLE.md](./CALIBRATION_LIFECYCLE.md), which specifies the CalibrationRecord schema, the calibration state machine, independent-evidence drift detection, shadow evaluation with bounded replacement, freeze and rollback, and the anti-circularity rule. No code enforces the lifecycle yet and no numeric threshold, bound, or epoch length was set. The "who supplies independent replication" relocation risk is retained honestly as falsifier CF2 in that document. Gap 23 in [GAPS.md](./GAPS.md) remains open (not closed).
 
 ## Candidate 5: Gap named by PROTOCOL.md §11, verdict tolerance ε_d
 
@@ -75,9 +77,9 @@ For each candidate: (1) gap ID or name; (2) current fixed assumption or brittle 
 | Candidate | Reduce or relocate | Recommendation |
 | --------- | ------------------ | -------------- |
 | 1. Cartel threshold (gap 8) | partially relocates | prototype |
-| 2. Validator weighting (gap 14) | reduces | prototype |
+| 2. Validator weighting (gap 14) | reduces | prototype built 2026-07-12, not adopted |
 | 3. IT decay rate (gap 41) | reduces | prototype |
-| 4. Calibration drift (gap 23) | reduces if replication exists | prototype |
+| 4. Calibration drift (gap 23) | reduces if replication exists | architecture adopted 2026-07-12, implementation open |
 | 5. Verdict tolerance ε_d | reduces but hazards F3 | leave alone |
 | 6. Settlement floor T_floor | relocates | leave alone |
 
