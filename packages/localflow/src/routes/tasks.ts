@@ -1,9 +1,12 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
+import { EntropyDomain } from '@extropy/contracts';
 import { taskStore, userStore } from '../store.js';
 import { emitLoopOpen, emitLoopClose, getVerticesByTask } from '../dag.js';
-import type { Task } from '../types.js';
+import { buildBaseline, buildOutcome } from '../measurement.js';
+import { simulateNormalizedMeasurement } from '../simulation.js';
+import type { NormalizedMeasurement, Task } from '../types.js';
 
 export const tasksRouter: ExpressRouter = Router();
 
@@ -15,11 +18,13 @@ const CreateTaskSchema = z.object({
   radiusKm: z.number().positive().default(25),
   schedule: z.string().optional(),
   agreedTerms: z.string().optional(),
+  expectedDurationSeconds: z.number().positive().optional(),
+  domain: z.nativeEnum(EntropyDomain).optional(),
 });
 
 /**
- * POST /tasks — client opens a new task request.
- * Emits LOOPOPEN vertex to DAG.
+ * POST /tasks - client opens a new task request.
+ * Emits LOOPOPEN vertex to DAG and records the raw baseline observable.
  */
 tasksRouter.post('/', (req, res) => {
   const parsed = CreateTaskSchema.safeParse(req.body);
@@ -59,13 +64,13 @@ tasksRouter.get('/:id', (req, res) => {
   res.json(task);
 });
 
-/** GET /tasks/open/:zone — list open tasks in a zone (drivers poll this) */
+/** GET /tasks/open/:zone - list open tasks in a zone (drivers poll this) */
 tasksRouter.get('/open/:zone', (req, res) => {
   res.json(taskStore.getOpen(req.params.zone!));
 });
 
 /**
- * PATCH /tasks/:id/accept — driver accepts a task.
+ * PATCH /tasks/:id/accept - driver accepts a task.
  */
 tasksRouter.patch('/:id/accept', (req, res) => {
   const { driverId, agreedTerms } = req.body as { driverId: string; agreedTerms?: string };
@@ -102,7 +107,7 @@ tasksRouter.patch('/:id/accept', (req, res) => {
 });
 
 /**
- * PATCH /tasks/:id/complete — driver marks task done.
+ * PATCH /tasks/:id/complete - driver marks task done.
  */
 tasksRouter.patch('/:id/complete', (req, res) => {
   const task = taskStore.get(req.params.id!);
@@ -119,11 +124,56 @@ tasksRouter.patch('/:id/complete', (req, res) => {
   res.json(updated);
 });
 
+// Canonical, already-normalized XP formula inputs supplied by a validator.
+const NormalizedInputsSchema = z.object({
+  R: z.number(),
+  F: z.number(),
+  deltaS: z.number(),
+  w: z.array(z.number()),
+  E: z.array(z.number()),
+  Ts: z.number(),
+  Tfloor: z.number().optional(),
+});
+
+const ConfirmSchema = z
+  .object({
+    /**
+     * Explicitly supplied, validated normalized measurement. When present, XP
+     * settlement can proceed. Its absence keeps the loop pending.
+     */
+    normalizedMeasurement: z
+      .object({
+        domain: z.nativeEnum(EntropyDomain),
+        inputs: NormalizedInputsSchema,
+        normalizedBy: z.string().min(1),
+      })
+      .optional(),
+    /**
+     * Demo-only opt-in. Routes through the clearly-labeled simulation adapter
+     * to fabricate a normalized measurement. Never a production path.
+     */
+    simulate: z.boolean().optional(),
+  })
+  .optional();
+
 /**
- * PATCH /tasks/:id/confirm — client confirms receipt/completion.
- * This is the convergence event. Emits LOOPCLOSE + XPMINT_PROVISIONAL.
+ * PATCH /tasks/:id/confirm - client confirms receipt/completion.
+ *
+ * This is the convergence event. It always emits LOOPCLOSE + a canonical
+ * MEASUREMENT vertex carrying raw baseline and outcome evidence.
+ *
+ * XP settlement (XPMINT_PROVISIONAL) is gated on a validated normalized
+ * measurement supplied in the request body. If none is supplied, the loop
+ * closes but settlement stays pending. Elapsed time is never treated as a
+ * normalized entropy delta.
  */
 tasksRouter.patch('/:id/confirm', (req, res) => {
+  const parsedBody = ConfirmSchema.safeParse(req.body);
+  if (!parsedBody.success) {
+    res.status(400).json({ error: parsedBody.error.flatten() });
+    return;
+  }
+
   const task = taskStore.get(req.params.id!);
   if (!task || task.status !== 'completed') {
     res.status(409).json({ error: 'Task must be in completed state' });
@@ -141,12 +191,27 @@ tasksRouter.patch('/:id/confirm', (req, res) => {
     return;
   }
 
-  const result = emitLoopClose(updated);
+  let normalized: NormalizedMeasurement | undefined;
+  const body = parsedBody.data;
+
+  if (body?.normalizedMeasurement) {
+    normalized = {
+      ...body.normalizedMeasurement,
+      simulated: false,
+      normalizedAt: new Date().toISOString(),
+    };
+  } else if (body?.simulate) {
+    const baseline = buildBaseline(updated);
+    const outcome = buildOutcome(updated);
+    normalized = simulateNormalizedMeasurement(baseline, outcome, updated.domain);
+  }
+
+  const result = emitLoopClose(updated, normalized);
 
   if (result) {
-    taskStore.update(task.id, {
-      dagVertices: [...updated.dagVertices, result.closeVertex.id, result.mintVertex.id],
-    });
+    const vertexIds = [updated.dagVertices, result.closeVertex.id, result.measurementVertex.id].flat();
+    if (result.mintVertex) vertexIds.push(result.mintVertex.id);
+    taskStore.update(task.id, { dagVertices: vertexIds });
   }
 
   res.json({
@@ -154,15 +219,17 @@ tasksRouter.patch('/:id/confirm', (req, res) => {
     dag: result
       ? {
           loopClose: result.closeVertex.id,
-          xpMintProvisional: result.mintVertex.id,
-          xpProvisional: result.mintVertex.xpProvisional,
+          measurement: result.measurementVertex.id,
+          settlement: result.settlement,
+          xpMintProvisional: result.mintVertex?.id ?? null,
+          xpProvisional: result.mintVertex?.xpProvisional ?? null,
         }
       : null,
   });
 });
 
 /**
- * GET /tasks/:id/dag — return the DAG audit trail for a task.
+ * GET /tasks/:id/dag - return the DAG audit trail for a task.
  * Powers internal observability without exposing XP to users.
  */
 tasksRouter.get('/:id/dag', (req, res) => {

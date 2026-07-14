@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@extropy/contracts": "*",
+    "@extropy/xp-formula": "*",
     "express": "^4.19.0",
     "zod": "^3.23.0",
     "uuid": "^10.0.0",

@@ -14,23 +14,50 @@ LocalFlow is a free, local driver network coordination service — a DFAO vertic
 Each completed task is a **loop** in the Extropy Engine sense:
 
 ```
-Client posts task → LOOPOPEN vertex written
+Client posts task    -> LOOPOPEN vertex written; raw baseline captured
 Driver accepts
 Driver completes task
-Client confirms → LOOPCLOSE + XPMINT_PROVISIONAL vertices written (convergence point)
-30 days no dispute → XPMINT_CONFIRMED
+Client confirms       -> LOOPCLOSE + MEASUREMENT vertices written (convergence point)
+                         MEASUREMENT stores raw baseline + outcome and a
+                         normalization status (unavailable | pending | normalized)
+If a validated normalized measurement is supplied
+                      -> XPMINT_PROVISIONAL vertex written
+30 days no dispute    -> XPMINT_CONFIRMED (not yet implemented)
 ```
 
-The convergence vertex appears in both the client's and driver's person-DAG. Minting requires multi-party convergence — solo actions cannot mint XP. This is the structural fraud resistance built into the protocol.
+The convergence vertex appears in both the client's and driver's person-DAG. Minting requires multi-party convergence, so solo actions cannot mint XP. This is the structural fraud resistance built into the protocol.
+
+## Measurement integrity
+
+LocalFlow captures **raw observables** only:
+
+- At open: the client's expected duration or wait (raw baseline).
+- At close: actual elapsed duration, completion status, timestamps, and
+  independent confirmation metadata (raw outcome).
+
+LocalFlow does **not** derive a normalized entropy delta (deltaS_be) from these
+observables. Elapsed time is never treated as deltaS or as a normalized
+settlement-time factor. The canonical M_d normalization is out of scope for this
+package.
+
+XP settlement is gated: `XPMINT_PROVISIONAL` is emitted only when the confirm
+request carries an explicitly supplied, validated normalized measurement
+(canonical `XPFormulaInputs`). Without one, the loop closes and the MEASUREMENT
+vertex is recorded with status `unavailable`, but no XP is minted.
 
 ## XP Formula
 
-```
-XP = R × F × ΔS × (w · E) × log(1 + Ts)
-EP = XP × L
-```
+XP is computed by the canonical `@extropy/xp-formula` package (single source of
+truth). LocalFlow does not reimplement the formula; `src/xp.ts` delegates to it
+and applies only the local EP = XP x L merchant loyalty multiplier. XP is
+non-transferable and non-extractive.
 
-See `src/xp.ts` for implementation. Default LocalFlow weights: economic (45%) + temporal (20%) entropy heavy.
+## Simulation adapter (demo only)
+
+`src/simulation.ts` can fabricate a normalized measurement from raw observables
+so the demo can exercise the full mint path without a real validator. Its output
+is always flagged `simulated: true` and it is never a production measurement.
+Opt in per request with `{ "simulate": true }` on confirm.
 
 ## API
 
@@ -44,7 +71,7 @@ See `src/xp.ts` for implementation. Default LocalFlow weights: economic (45%) + 
 | GET | `/tasks/open/:zone` | Open tasks in zone |
 | PATCH | `/tasks/:id/accept` | Driver accepts |
 | PATCH | `/tasks/:id/complete` | Driver marks done |
-| PATCH | `/tasks/:id/confirm` | Client confirms — triggers LOOPCLOSE + XPMINT |
+| PATCH | `/tasks/:id/confirm` | Client confirms; triggers LOOPCLOSE + MEASUREMENT. Optional body `normalizedMeasurement` (validated) or `simulate: true` (demo) gates XPMINT |
 | GET | `/tasks/:id/dag` | DAG audit trail for task |
 | GET | `/health` | Liveness |
 | GET | `/mesh/vertices` | All DAG vertices (internal only) |
@@ -67,8 +94,21 @@ pnpm --filter @extropy/localflow test
 
 ## Status
 
-Prototype. In-memory store only. Production path:
-- Replace `store.ts` with Postgres via the existing extropy-engine DB layer
-- Wire `dag.ts` to publish to Redis pubsub → `dag-substrate` (port 4008)
-- Add Auth middleware using the existing `identity` service (port 4101)
-- Add a `docker-compose` service entry at port 4030
+Prototype. This slice is **measurement plumbing, not a validated M_d**. It
+proves that raw baseline and outcome evidence flow through LocalFlow and that XP
+settlement is gated on an explicitly validated normalized measurement. It does
+not establish that the normalization itself is correct.
+
+Still open (out of scope for this slice):
+- The canonical M_d normalization, coefficients, thresholds, and evidence
+  weights. LocalFlow only carries a supplied normalization; it does not compute
+  one. The simulation adapter is a demo stand-in, not a validated normalization.
+- Production persistence: replace `store.ts` (in-memory) with Postgres via the
+  existing extropy-engine DB layer.
+- Real DAG integration: wire `dag.ts` to publish to Redis pubsub so
+  `dag-substrate` (port 4008) consumes the vertices. Today they are in-memory.
+- Identity and auth via the existing `identity` service (port 4101).
+- Independent validators: LocalFlow records independent confirmation presence
+  but does not fabricate or verify it.
+- Disputes: the `disputed` status exists but no dispute workflow is implemented.
+- A `docker-compose` service entry at port 4030.

@@ -1,80 +1,56 @@
 /**
- * LocalFlow XP formula implementation.
+ * LocalFlow XP + EP computation.
  *
- * Canonical formula from Extropy Engine v3.1.2:
- *   XP = R × F × ΔS × (w · E) × log(1 / Ts)
+ * The canonical XP formula lives in @extropy/xp-formula and is the single
+ * source of truth. LocalFlow does NOT reimplement it. This module only:
+ *   1. delegates XP computation to the canonical package, and
+ *   2. applies the LocalFlow-specific EP = XP x L merchant loyalty multiplier.
  *
- * Ts is the normalized settlement-time factor in (T_floor, 1.0].
- * Faster settlement means smaller Ts, which yields a larger log(1/Ts)
- * and therefore higher XP. Slower settlement yields lower XP.
- *
- * EP = XP × L  (local merchant loyalty multiplier)
- *
- * All five terms are multiplicative. Any zero term produces zero XP.
+ * XP is non-transferable and non-extractive; EP is the local merchant loyalty
+ * layer and does not feed back into XP.
  */
 
-import type { XpFormulaInputs, XpResult } from './types.js';
+import { computeXP, FORMULA_VERSION } from '@extropy/xp-formula';
+import type { XPFormulaInputs, XPFormulaResult } from '@extropy/xp-formula';
+import type { NormalizedMeasurement, XpResult } from './types.js';
 
-const TFLOOR = 0.01;
+export { FORMULA_VERSION } from '@extropy/xp-formula';
 
 /**
- * Dot product of two equal-length vectors.
+ * Compute XP from canonical inputs by delegating to @extropy/xp-formula.
+ * Returns the full canonical result (including validity and breakdown).
  */
-function dot(a: number[], b: number[]): number {
-  if (a.length !== b.length) throw new Error('Vector length mismatch');
-  return a.reduce((sum, ai, i) => sum + ai * (b[i] ?? 0), 0);
+export function computeLocalflowXP(inputs: XPFormulaInputs): XPFormulaResult {
+  return computeXP(inputs);
 }
 
 /**
- * Compute XP from canonical five-term formula.
- * Returns 0 if any required term is non-positive.
- */
-export function computeXP(inputs: XpFormulaInputs): number {
-  const { R, F, deltaS, w, E, Ts } = inputs;
-
-  if (R <= 0 || F <= 0 || deltaS <= 0) return 0;
-
-  const wDotE = dot(w, E);
-  if (wDotE <= 0) return 0;
-
-  // Clamp Ts to floor (prevents log blow-up and grind attack via Ts -> 0).
-  // Also cap at 1.0 since Ts is defined on (T_floor, 1.0].
-  const tsClamped = Math.min(Math.max(Ts, TFLOOR), 1.0);
-  const timeFactor = Math.log(1 / tsClamped);
-
-  return R * F * deltaS * wDotE * timeFactor;
-}
-
-/**
- * Compute EP = XP × L (local multiplier).
+ * Compute EP = XP x L (local merchant loyalty multiplier).
  */
 export function computeEP(xp: number, L: number): number {
   return xp * L;
 }
 
 /**
- * Full XP + EP result with default LocalFlow inputs for an errand/ride task.
+ * Settle a LocalFlow loop from a validated, normalized measurement.
  *
- * Default domain weight vector:
- *   [cognitive, code, social, economic, thermodynamic, informational, governance, temporal]
- * LocalFlow primarily reduces economic (idx 3) and temporal (idx 7) entropy.
+ * Requires an explicitly normalized measurement. LocalFlow does not synthesize
+ * the canonical inputs; they must already be normalized upstream. Returns null
+ * when the canonical formula rejects the inputs, so a caller can keep the loop
+ * pending rather than mint invalid XP.
  */
-export function computeLocalflowLoop(
-  overrides: Partial<XpFormulaInputs> & { deltaS: number; Ts: number },
+export function settleFromNormalized(
+  measurement: NormalizedMeasurement,
   L = 1.2,
-): XpResult {
-  const defaults: XpFormulaInputs = {
-    R: 0.8, // routine local errand, common but not trivial
-    F: 1.0, // first occurrence full strength; caller should pass real F
-    deltaS: overrides.deltaS,
-    w: [0.05, 0, 0.1, 0.45, 0.05, 0.1, 0.05, 0.2], // economic + temporal heavy
-    E: [0, 0, 0.1, 0.5, 0.05, 0.1, 0.05, 0.2],     // evidence matches weights
-    Ts: overrides.Ts,
+): XpResult | null {
+  const result = computeLocalflowXP(measurement.inputs);
+  if (!result.valid) return null;
+
+  return {
+    xp: result.xp,
+    ep: computeEP(result.xp, L),
+    inputs: measurement.inputs,
+    L,
+    formulaVersion: FORMULA_VERSION,
   };
-
-  const inputs: XpFormulaInputs = { ...defaults, ...overrides };
-  const xp = computeXP(inputs);
-  const ep = computeEP(xp, L);
-
-  return { xp, ep, inputs, L };
 }

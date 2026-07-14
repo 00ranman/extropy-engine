@@ -1,16 +1,29 @@
 /**
  * LocalFlow DAG event emitter.
  *
- * Writes signed DAG vertices for every lifecycle event in a LocalFlow task.
- * In production this publishes to the dag-substrate service (port 4008) via Redis pubsub.
- * In prototype mode it logs to stdout and optionally to an in-memory store.
+ * Writes DAG vertices for every lifecycle event in a LocalFlow task.
+ * In production this publishes to the dag-substrate service (port 4008) via
+ * Redis pubsub. In prototype mode it logs to stdout and keeps an in-memory
+ * store.
  *
- * Users never see this. It runs silently in the background.
+ * Measurement integrity: closing a loop always emits a canonical MEASUREMENT
+ * vertex carrying raw baseline and outcome evidence. XP minting is gated on an
+ * explicitly supplied, validated normalized measurement. Elapsed time is never
+ * treated as a normalized entropy delta.
  */
 
 import { randomUUID } from 'crypto';
-import type { DagVertex, LocalflowVertexType, Task, UserId, VertexId } from './types.js';
-import { computeLocalflowLoop } from './xp.js';
+import {
+  CANONICAL_VERTEX_TYPE,
+  type DagVertex,
+  type LocalflowVertexType,
+  type NormalizedMeasurement,
+  type Task,
+  type UserId,
+  type VertexId,
+} from './types.js';
+import { assembleMeasurementRecord } from './measurement.js';
+import { settleFromNormalized } from './xp.js';
 
 /** Lightweight in-memory vertex store for prototype mode */
 const vertexStore: Map<VertexId, DagVertex> = new Map();
@@ -34,6 +47,7 @@ export function writeVertex(
   const vertex: DagVertex = {
     id: randomUUID(),
     type,
+    canonicalType: CANONICAL_VERTEX_TYPE[type],
     taskId: task.id,
     actorIds,
     payload,
@@ -46,7 +60,7 @@ export function writeVertex(
 
   // In production: publish to Redis channel `dag:vertex:localflow`
   // so dag-substrate (port 4008) picks it up via its event bus integration.
-  console.log(`[dag] ${type} | task=${task.id} | vertex=${vertex.id}`);
+  console.log(`[dag] ${type} (${vertex.canonicalType}) | task=${task.id} | vertex=${vertex.id}`);
 
   return vertex;
 }
@@ -60,37 +74,45 @@ export function emitLoopOpen(task: Task): DagVertex {
     description: task.description,
     zone: task.zone,
     requestedBy: task.requestedBy,
+    expectedDurationSeconds: task.expectedDurationSeconds,
+    domain: task.domain,
   });
 }
 
+export interface LoopCloseResult {
+  closeVertex: DagVertex;
+  /** Canonical MEASUREMENT vertex carrying raw baseline + outcome evidence. */
+  measurementVertex: DagVertex;
+  /** Present only when a validated normalized measurement allowed minting. */
+  mintVertex: DagVertex | null;
+  /** Explicit status: whether XP settlement proceeded or remained pending. */
+  settlement: 'minted' | 'pending';
+}
+
 /**
- * Emit LOOPCLOSE + XPMINT_PROVISIONAL when client confirms task completion.
- * Convergence requires both clientId and driverId — solo tasks cannot mint.
+ * Emit LOOPCLOSE + MEASUREMENT when the client confirms task completion, and
+ * gate XPMINT_PROVISIONAL on a validated normalized measurement.
+ *
+ * Convergence requires both clientId and driverId - solo tasks cannot close.
+ *
+ * If `normalized` is omitted, the loop closes and a MEASUREMENT vertex is
+ * written with normalizationStatus 'unavailable', but no XP is minted: the
+ * settlement stays 'pending'. This is the honest path when no validated
+ * normalization exists.
  */
-export function emitLoopClose(task: Task): { closeVertex: DagVertex; mintVertex: DagVertex } | null {
+export function emitLoopClose(
+  task: Task,
+  normalized?: NormalizedMeasurement,
+): LoopCloseResult | null {
   if (!task.driverId || !task.confirmedAt || !task.completedAt) {
-    console.warn('[dag] emitLoopClose called on incomplete task — skipping');
+    console.warn('[dag] emitLoopClose called on incomplete task - skipping');
     return null;
   }
 
-  // Compute settlement time factor Ts:
-  // Ts = elapsed_ms / target_ms, clamped to [0.01, 1.0]
-  const openMs = new Date(task.requestedBy).getTime();
-  const closeMs = new Date(task.confirmedAt).getTime();
-  const elapsedMs = closeMs - openMs;
-  // Default target: 4 hours for a local errand
-  const targetMs = 4 * 60 * 60 * 1000;
-  const Ts = Math.min(1.0, Math.max(0.01, elapsedMs / targetMs));
-
-  // deltaS: time saved proxy — inverse of normalized elapsed time
-  // Real instrument would use structured before/after measurement.
-  // Prototype uses a simple proxy: tasks completed faster than target get higher deltaS.
-  const deltaS = Math.max(0.01, 1.0 - Ts + 0.1);
-
-  const xpResult = computeLocalflowLoop({ deltaS, Ts });
-
+  const record = assembleMeasurementRecord(task, normalized);
   const priorVertices = task.dagVertices;
 
+  // Raw-only close vertex. No synthesized deltaS, no synthesized Ts.
   const closeVertex = writeVertex(
     'LOOPCLOSE',
     task,
@@ -99,13 +121,33 @@ export function emitLoopClose(task: Task): { closeVertex: DagVertex; mintVertex:
       convergence: true,
       confirmedAt: task.confirmedAt,
       completedAt: task.completedAt,
-      elapsedMs,
-      Ts,
-      deltaS,
+      actualDurationSeconds: record.outcome.actualDurationSeconds,
+      completionStatus: record.outcome.completionStatus,
+      independentConfirmation: record.outcome.independentConfirmation,
     },
     priorVertices,
   );
 
+  const measurementVertex = writeVertex(
+    'MEASUREMENT',
+    task,
+    [task.clientId, task.driverId],
+    { record: record as unknown as Record<string, unknown> },
+    [closeVertex.id],
+  );
+
+  // Gate: only mint when a validated normalized measurement is present and the
+  // canonical formula accepts it. Otherwise remain pending.
+  if (record.normalizationStatus !== 'normalized' || !record.normalized) {
+    return { closeVertex, measurementVertex, mintVertex: null, settlement: 'pending' };
+  }
+
+  const xpResult = settleFromNormalized(record.normalized);
+  if (!xpResult) {
+    return { closeVertex, measurementVertex, mintVertex: null, settlement: 'pending' };
+  }
+
+  const closeMs = new Date(task.confirmedAt).getTime();
   const mintVertex = writeVertex(
     'XPMINT_PROVISIONAL',
     task,
@@ -114,15 +156,18 @@ export function emitLoopClose(task: Task): { closeVertex: DagVertex; mintVertex:
       xpProvisional: xpResult.xp,
       ep: xpResult.ep,
       L: xpResult.L,
+      formulaVersion: xpResult.formulaVersion,
       formulaInputs: xpResult.inputs,
+      normalizedBy: record.normalized.normalizedBy,
+      simulated: record.normalized.simulated,
       settleAfter: new Date(closeMs + 30 * 24 * 60 * 60 * 1000).toISOString(),
     },
-    [closeVertex.id],
+    [measurementVertex.id],
   );
 
   mintVertex.xpProvisional = xpResult.xp;
 
-  return { closeVertex, mintVertex };
+  return { closeVertex, measurementVertex, mintVertex, settlement: 'minted' };
 }
 
 /**
@@ -137,4 +182,12 @@ export function getVerticesByTask(taskId: string): DagVertex[] {
  */
 export function getAllVertices(): DagVertex[] {
   return Array.from(vertexStore.values());
+}
+
+/**
+ * Reset the in-memory vertex store. Test-only helper.
+ */
+export function _resetVertexStore(): void {
+  vertexStore.clear();
+  lamportClock = 0;
 }
