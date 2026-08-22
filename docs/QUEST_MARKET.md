@@ -80,6 +80,8 @@ Default: validators see a **1/10th blind slice** of a claim. Aggregation across 
 
 Validator nodes (full-context validation) remain supported for high-stakes or low-decomposability claims.
 
+**Cold-start:** there is no validator priesthood to bootstrap. Validation *is* a quest. You post a task that pays XP; people do it. The remaining constraint is subscriber density — enough people in range to pick the work up. See `docs/GAPS.md` §15.
+
 ## Marketplace UX expectations
 
 The marketplace must surface to a participant:
@@ -100,7 +102,7 @@ The marketplace must surface to a participant:
 
 ## Open questions
 
-- Bootstrap density: does the marketplace work below N participants? (provisional N=1000 per DFAO)
+- Bootstrap density: the marketplace *is* the validator. Below N participants, tasks sit until reward escalation pulls someone in. Remaining problem is subscriber density, not validator identity. (provisional N=1000 per DFAO)
 - Geographic coverage: how does routing degrade in low-density areas?
 - Cross-DFAO quest mobility: when can a quest from one DFAO be fulfilled by a participant primarily in another?
 - Escalation cap: 10× is provisional and may be too high for stable economies
