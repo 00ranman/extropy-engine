@@ -2,8 +2,10 @@
 
 **Source:** Section 19 of v3.1 spec
 **Total:** 65 (63 original + 2 added 2026-05-06)
-**Updated:** 2026-05-06
+**Updated:** 2026-08-21
 **Note:** Categories and counts are verified. Per-gap descriptions are the v3.1 enumeration draft — reconciliation against the full PDF is welcomed via PR.
+
+**2026-08-21:** Gap 15 reframed. “Who validates the first validators?” is the wrong shape. Validation is a paid task (quest market / LocalFlow). Remaining cold-start is subscriber density. Codex v2.1 stays frozen; do not spin a new edition for this.
 
 ---
 
@@ -28,7 +30,7 @@
 
 ### Validator Selection Optimization (5, P1)
 14. 4-factor weighting tuning (domain, rep, load, accuracy)
-15. Cold-start validator bootstrapping
+15. Cold-start validator bootstrapping — **reframed 2026-08.** Not a trust-priesthood problem. You publish a task that pays XP; people do it (see `QUEST_MARKET.md`, LocalFlow). Remaining issue is adoption density: enough subscribers in-range to pick the work up. Provisional N≈1000 per DFAO is still untested. Geographic thin-coverage is the real bootstrap, not “who validates the first validators.”
 16. Geographic / language balancing in SignalFlow
 17. Adversarial-load shedding policy
 18. Sybil-resistant load distribution under burst traffic
