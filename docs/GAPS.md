@@ -2,10 +2,12 @@
 
 **Source:** Section 19 of v3.1 spec
 **Total:** 65 (63 original + 2 added 2026-05-06)
-**Updated:** 2026-08-21
+**Updated:** 2026-08-23
 **Note:** Categories and counts are verified. Per-gap descriptions are the v3.1 enumeration draft — reconciliation against the full PDF is welcomed via PR.
 
 **2026-08-21:** Gap 15 reframed. “Who validates the first validators?” is the wrong shape. Validation is a paid task (quest market / LocalFlow). Remaining cold-start is subscriber density. Codex v2.1 stays frozen; do not spin a new edition for this.
+
+**2026-08-23:** Mechanics that kept falling out of the public story — XP decay vs IT decay, settle window as a knob, late burn, SignalFlow vs LocalFlow — are captured in [`docs/CODEX_3_NOTES.md`](./CODEX_3_NOTES.md) for Codex 3.0. Still do not spin a new Codex for this. Gap 32 (30-day window) is a knob, not a law. Gap 41 (IT 5%/mo) is not XP; XP default is ρ = 0.01 per 30 loop cycles.
 
 ---
 
@@ -57,7 +59,7 @@
 31. PSLL-anchor receipt cadence
 
 ### Retroactive Validation Specifics (4, P2)
-32. 30-day window edge cases (validator churn)
+32. Settle-window edge cases (validator churn). Window itself is a knob (~30 days was a starting number).
 33. Burn-cascade limits when one loop's burn invalidates dependents
 34. Settlement reliability under network partition
 35. Retro-validation incentive structure
@@ -70,8 +72,8 @@
 40. Cross-tier proposal escalation rules
 
 ### Token Economy Equilibrium (4, P2)
-41. IT 5%/mo decay rate validation
-42. CT/EP/GT/RT decay rate finalization
+41. IT 5%/mo decay rate validation (this is IT, not XP)
+42. CT/EP/GT/RT decay rate finalization. **XP decay ρ = 0.01 / 30 cycles is specified; keep it off this mash.**
 43. Multi-token attack-surface analysis
 44. Token-velocity equilibrium modeling
 
