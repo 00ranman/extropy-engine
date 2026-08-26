@@ -9,6 +9,7 @@ INSTALL_DIR="${INSTALL_DIR:-$HOME/extropy-engine}"
 echo ""
 echo -e "${CYAN}Extropy Engine — Neighborhood MESO${NC}"
 echo "  How-to: https://extropyengine.com/hoa"
+echo "  Board:  https://extropyengine.com/hoa/board"
 echo ""
 
 if ! command -v docker >/dev/null 2>&1; then
@@ -42,11 +43,11 @@ fi
 NAME="${HOA_MESO_NAME:-}"
 if [ -z "$NAME" ]; then
   if [ -r /dev/tty ]; then
-    printf "Neighborhood name (e.g. Sunset Oaks): "
+    printf "Neighborhood name [Sunset Oaks]: "
     read -r NAME </dev/tty || true
   fi
 fi
-NAME="${NAME:-neighborhood}"
+NAME="${NAME:-Sunset Oaks}"
 
 echo -e "${YELLOW}  starting Engine… first run builds, coffee is allowed${NC}"
 docker compose up -d postgres redis
@@ -56,8 +57,13 @@ docker compose --profile sandbox up --build -d node-handshake || docker compose 
 SEED_DIR="$HOME/.extropy-engine"
 mkdir -p "$SEED_DIR"
 SEED="$SEED_DIR/hoa-meso.json"
+PRESET="$INSTALL_DIR/presets/hoa-meso/preset.json"
+if [ "$NAME" = "Sunset Oaks" ] && [ -f "$INSTALL_DIR/presets/sunset-oaks/meso.json" ]; then
+  PRESET="$INSTALL_DIR/presets/sunset-oaks/meso.json"
+  cp "$INSTALL_DIR/presets/sunset-oaks/micros.json" "$SEED_DIR/sunset-oaks-micros.json" 2>/dev/null || true
+fi
 if command -v python3 >/dev/null 2>&1; then
-  python3 - "$INSTALL_DIR/presets/hoa-meso/preset.json" "$SEED" "$NAME" <<'PY'
+  python3 - "$PRESET" "$SEED" "$NAME" <<'PY'
 import json, sys
 src, dest, name = sys.argv[1], sys.argv[2], sys.argv[3]
 data = json.load(open(src))
@@ -66,7 +72,7 @@ json.dump(data, open(dest, "w"), indent=2)
 print(dest)
 PY
 else
-  cp presets/hoa-meso/preset.json "$SEED"
+  cp "$PRESET" "$SEED"
 fi
 
 if curl -sf http://localhost:4009/health >/dev/null 2>&1 || curl -sf http://localhost:4009/ >/dev/null 2>&1; then
@@ -78,6 +84,7 @@ fi
 
 echo ""
 echo -e "${GREEN}  You are a node.${NC} Neighborhood: $NAME (MESO, SHADOW)"
+echo "  Board          https://extropyengine.com/hoa/board"
 echo "  Face           http://localhost:4015"
 echo "  SignalFlow     http://localhost:4002"
 echo "  Loop ledger    http://localhost:4003"
@@ -92,7 +99,7 @@ echo "  Stop: cd $INSTALL_DIR && docker compose --profile sandbox down"
 echo ""
 
 if [[ "${OSTYPE:-}" == darwin* ]]; then
-  open "http://localhost:4015" 2>/dev/null || true
+  open "https://extropyengine.com/hoa/board" 2>/dev/null || true
 elif command -v xdg-open >/dev/null 2>&1; then
-  xdg-open "http://localhost:4015" 2>/dev/null || true
+  xdg-open "https://extropyengine.com/hoa/board" 2>/dev/null || true
 fi
