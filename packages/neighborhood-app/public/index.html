@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neighborhood MESO — Extropy Engine</title>
+  <style>
+    :root { --bg:#0b0b0c; --fg:#ece6d8; --dim:#8a8376; --gold:#c9a227; --line:rgba(201,162,39,.22); }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font: 16px/1.5 system-ui, sans-serif; }
+    main { max-width: 42rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+    h1 { font-size: 2rem; font-weight: 500; letter-spacing: .04em; margin: .3rem 0 1rem; }
+    .k { font: 11px/1.4 ui-monospace, monospace; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
+    .dim { color: var(--dim); font-size: .9rem; }
+    input, select, button { font: inherit; color: var(--fg); background: transparent; border: 1px solid var(--line); padding: .5rem .7rem; }
+    button { cursor: pointer; color: var(--gold); border-color: rgba(201,162,39,.4); background: rgba(201,162,39,.08); }
+    button.ghost { color: var(--dim); border-color: rgba(236,230,216,.2); background: transparent; }
+    .row { display: flex; gap: .5rem; flex-wrap: wrap; margin: .8rem 0; }
+    .row input { flex: 1; min-width: 12rem; }
+    nav { display: flex; gap: .4rem; margin: 1.2rem 0; }
+    nav button[aria-pressed="true"] { color: var(--gold); }
+    li { list-style: none; border: 1px solid rgba(236,230,216,.12); padding: .8rem 1rem; margin: 0 0 .5rem; }
+    ul, ol { margin: 0; padding: 0; }
+    .dag { border-left: 2px solid rgba(201,162,39,.4); padding-left: .8rem; margin: .5rem 0; font: 12px/1.5 ui-monospace, monospace; }
+    a { color: var(--gold); }
+  </style>
+</head>
+<body>
+<main>
+  <p class="k" id="meso">MESO</p>
+  <h1>Job board + DAG</h1>
+  <p class="dim">This runs on <em>this</em> computer. Hostinger is not the book. Yard’s not mowed — post it. Somebody takes it. Neighbors sign it closed. That’s XP later. That’s the season.</p>
+  <label class="k">your name<br>
+    <input id="who" placeholder="who is logging" style="width:100%;margin-top:.4rem" />
+  </label>
+  <nav>
+    <button class="ghost" data-tab="jobs" aria-pressed="true">jobs</button>
+    <button class="ghost" data-tab="dag">dag</button>
+    <button class="ghost" data-tab="crews">crews</button>
+    <button class="ghost" id="exp">export</button>
+  </nav>
+  <section id="jobs"></section>
+  <section id="dag" hidden></section>
+  <section id="crews" hidden></section>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+const whoEl = $("#who");
+whoEl.value = localStorage.getItem("extropy-who") || "";
+whoEl.oninput = () => localStorage.setItem("extropy-who", whoEl.value);
+const who = () => whoEl.value.trim();
+
+let state = { meso: "", crews: [], dag: [], jobs: [] };
+
+async function api(path, method, body) {
+  const r = await fetch(path, {
+    method: method || "GET",
+    headers: body ? { "content-type": "application/json" } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function refresh() {
+  state = await api("/api/state");
+  $("#meso").textContent = state.meso + " · MESO · this machine";
+  draw();
+}
+
+function draw() {
+  const tab = document.querySelector("nav [aria-pressed='true']")?.dataset.tab || "jobs";
+  $("#jobs").hidden = tab !== "jobs";
+  $("#dag").hidden = tab !== "dag";
+  $("#crews").hidden = tab !== "crews";
+
+  const jobs = [...(state.jobs || [])].reverse();
+  $("#jobs").innerHTML = `
+    <div class="row">
+      <select id="crew">${(state.crews||[]).map(c => `<option>${c}</option>`).join("")}</select>
+      <input id="title" placeholder="mow the common · dead light · garden bed 3" />
+      <button id="post">post</button>
+    </div>
+    <ul>${jobs.length ? jobs.map(j => `
+      <li>
+        <p class="k">${j.crew} · ${j.status} · ${j.id}</p>
+        <p>${esc(j.title)}</p>
+        <p class="dim">by ${esc(j.by)}</p>
+        <p>${j.status === "open" ? `<button data-take="${j.id}">take</button>` : ""}
+           ${j.status !== "closed" ? `<button class="ghost" data-close="${j.id}">sign closed</button>` : `<span class="dim">in the book</span>`}</p>
+      </li>`).join("") : `<p class="dim">No jobs yet. Post one.</p>`}</ul>`;
+  $("#post")?.addEventListener("click", post);
+  $("#title")?.addEventListener("keydown", (e) => e.key === "Enter" && post());
+  $("#jobs").querySelectorAll("[data-take]").forEach(b => b.onclick = () => act(b.dataset.take, "take"));
+  $("#jobs").querySelectorAll("[data-close]").forEach(b => b.onclick = () => act(b.dataset.close, "close"));
+
+  $("#dag").innerHTML = (state.dag||[]).map(v => `
+    <div class="dag"><span style="color:var(--gold)">${v.id}</span> ${v.kind} · ${esc(v.title)}
+      <div class="dim">${new Date(v.t).toISOString()} · ${esc(v.by)}${v.parentIds?.length ? " · parents " + v.parentIds.join(",") : ""}</div>
+    </div>`).join("");
+
+  $("#crews").innerHTML = `
+    <ul>${(state.crews||[]).map(c => `<li><span class="k">MICRO</span> ${esc(c)} <span class="dim">· nested under ${esc(state.meso)}</span></li>`).join("")}</ul>
+    <div class="row">
+      <input id="newcrew" placeholder="new MICRO name" />
+      <button id="addcrew">nest it</button>
+    </div>`;
+  $("#addcrew")?.addEventListener("click", addCrew);
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&"+"amp;",
+    "<": "&"+"lt;",
+    ">": "&"+"gt;",
+    '"': "&"+"quot;",
+    "'": "&#39;"
+  }[c]));
+}
+
+async function post() {
+  if (!who()) return alert("name yourself");
+  const title = $("#title").value.trim();
+  if (!title) return;
+  await api("/api/jobs", "POST", { title, by: who(), crew: $("#crew").value });
+  $("#title").value = "";
+  refresh();
+}
+async function act(id, kind) {
+  if (!who()) return alert("name yourself");
+  await api(`/api/jobs/${id}/${kind}`, "POST", { by: who() });
+  refresh();
+}
+async function addCrew() {
+  if (!who()) return alert("name yourself");
+  const name = $("#newcrew").value.trim();
+  if (!name) return;
+  await api("/api/crews", "POST", { name, by: who() });
+  refresh();
+}
+
+document.querySelectorAll("nav [data-tab]").forEach((b) => {
+  b.onclick = () => {
+    document.querySelectorAll("nav [data-tab]").forEach((x) => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true");
+    draw();
+  };
+});
+$("#exp").onclick = () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = (state.meso || "meso").toLowerCase().replace(/\s+/g, "-") + "-dag.json";
+  a.click();
+};
+
+refresh().catch((e) => { document.querySelector("h1").after(Object.assign(document.createElement("p"), { className: "dim", textContent: "Could not reach /api — is node server.mjs running?" })); console.error(e); });
+</script>
+</body>
+</html>
