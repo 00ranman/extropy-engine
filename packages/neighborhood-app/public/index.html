@@ -29,6 +29,7 @@
 <main>
   <p class="k" id="meso">MESO</p>
   <h1>Job board + DAG</h1>
+  <p class="dim" id="didline">First boot writes a did:key on this box. No registrar.</p>
   <p class="dim">This runs on <em>this</em> computer. Hostinger is not the book. Yard’s not mowed — post it. Somebody takes it. Neighbors sign it closed. That’s XP later. That’s the season.</p>
   <label class="k">your name<br>
     <input id="who" placeholder="who is logging" style="width:100%;margin-top:.4rem" />
@@ -65,6 +66,13 @@ async function api(path, method, body) {
 async function refresh() {
   state = await api("/api/state");
   $("#meso").textContent = state.meso + " · MESO · this machine";
+  if (state.did) {
+    const el = $("#didline");
+    el.textContent = state.did;
+    el.title = "click to copy";
+    el.style.cursor = "pointer";
+    el.onclick = () => navigator.clipboard.writeText(state.did);
+  }
   draw();
 }
 

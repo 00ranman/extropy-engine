@@ -27,6 +27,8 @@ export type { IdentityKeyPair } from './crypto.js';
 
 export {
   encodeDid,
+  encodeDidKey,
+  isDidKey,
   parseDid,
   isExtropyDid,
   publicKeyHexFromDid,

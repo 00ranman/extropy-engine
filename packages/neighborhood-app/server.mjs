@@ -10,6 +10,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadOrCreateIdentity, signPayload } from "./did.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 4016);
@@ -18,6 +19,25 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const FILE = path.join(DATA_DIR, "board.json");
 const PUBLIC = path.join(__dirname, "public");
 const MESO = process.env.MESO_NAME || "Sunset Oaks";
+const identity = loadOrCreateIdentity(DATA_DIR);
+
+function stamp(v) {
+  const body = {
+    id: v.id,
+    t: v.t,
+    kind: v.kind,
+    title: v.title,
+    by: v.by,
+    crew: v.crew,
+    parentIds: v.parentIds,
+    status: v.status ?? null,
+  };
+  return {
+    ...v,
+    did: identity.did,
+    sig: signPayload(identity.privateKey, body),
+  };
+}
 
 const CREWS0 = ["Grounds", "Lights", "Storm", "Garden", "Mediation"];
 
@@ -27,7 +47,7 @@ function emptyState() {
     scale: "MESO",
     crews: [...CREWS0],
     dag: [
-      {
+      stamp({
         id: "v0",
         t: Date.now(),
         kind: "genesis",
@@ -35,7 +55,7 @@ function emptyState() {
         by: "system",
         crew: "MESO",
         parentIds: [],
-      },
+      }),
     ],
   };
 }
@@ -125,9 +145,19 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
+    if (url.pathname === "/api/did" && req.method === "GET") {
+      return json(res, 200, {
+        did: identity.did,
+        also: identity.also,
+        publicKeyMultibase: identity.publicKeyMultibase,
+        method: identity.method,
+        curve: identity.curve,
+        created: identity.created,
+      });
+    }
     if (url.pathname === "/api/state" && req.method === "GET") {
       const s = load();
-      return json(res, 200, { ...s, jobs: jobs(s) });
+      return json(res, 200, { ...s, jobs: jobs(s), did: identity.did });
     }
     if (url.pathname === "/api/jobs" && req.method === "POST") {
       const b = await readBody(req);
@@ -144,9 +174,10 @@ const server = http.createServer(async (req, res) => {
         status: "open",
         parentIds: [last],
       };
-      s.dag.push(v);
+      const signed = stamp(v);
+      s.dag.push(signed);
       save(s);
-      return json(res, 201, v);
+      return json(res, 201, signed);
     }
     const take = url.pathname.match(/^\/api\/jobs\/([^/]+)\/take$/);
     if (take && req.method === "POST") {
@@ -156,15 +187,17 @@ const server = http.createServer(async (req, res) => {
       if (!job) return json(res, 404, { error: "no job" });
       if (job.status !== "open") return json(res, 409, { error: "not open" });
       job.status = "taken";
-      s.dag.push({
-        id: `v${s.dag.length}`,
-        t: Date.now(),
-        kind: "take",
-        title: `took: ${job.title}`,
-        by: String(b.by || "anon").slice(0, 80),
-        crew: job.crew,
-        parentIds: [job.id],
-      });
+      s.dag.push(
+        stamp({
+          id: `v${s.dag.length}`,
+          t: Date.now(),
+          kind: "take",
+          title: `took: ${job.title}`,
+          by: String(b.by || "anon").slice(0, 80),
+          crew: job.crew,
+          parentIds: [job.id],
+        }),
+      );
       save(s);
       return json(res, 200, job);
     }
@@ -176,15 +209,17 @@ const server = http.createServer(async (req, res) => {
       if (!job) return json(res, 404, { error: "no job" });
       if (job.status === "closed") return json(res, 409, { error: "already closed" });
       job.status = "closed";
-      s.dag.push({
-        id: `v${s.dag.length}`,
-        t: Date.now(),
-        kind: "close",
-        title: `closed: ${job.title}`,
-        by: String(b.by || "anon").slice(0, 80),
-        crew: job.crew,
-        parentIds: [job.id],
-      });
+      s.dag.push(
+        stamp({
+          id: `v${s.dag.length}`,
+          t: Date.now(),
+          kind: "close",
+          title: `closed: ${job.title}`,
+          by: String(b.by || "anon").slice(0, 80),
+          crew: job.crew,
+          parentIds: [job.id],
+        }),
+      );
       save(s);
       return json(res, 200, job);
     }
@@ -194,19 +229,21 @@ const server = http.createServer(async (req, res) => {
       const s = load();
       const name = String(b.name).slice(0, 80);
       if (!s.crews.includes(name)) s.crews.push(name);
-      s.dag.push({
-        id: `v${s.dag.length}`,
-        t: Date.now(),
-        kind: "crew",
-        title: name,
-        by: String(b.by || "anon").slice(0, 80),
-        crew: name,
-        parentIds: ["v0"],
-      });
+      s.dag.push(
+        stamp({
+          id: `v${s.dag.length}`,
+          t: Date.now(),
+          kind: "crew",
+          title: name,
+          by: String(b.by || "anon").slice(0, 80),
+          crew: name,
+          parentIds: ["v0"],
+        }),
+      );
       save(s);
       return json(res, 201, { name });
     }
-    if (url.pathname === "/health") return json(res, 200, { ok: true, meso: load().meso });
+    if (url.pathname === "/health") return json(res, 200, { ok: true, meso: load().meso, did: identity.did });
   } catch (e) {
     return json(res, 500, { error: String(e.message || e) });
   }
@@ -223,6 +260,7 @@ server.listen(PORT, HOST, () => {
   console.log(`  MESO     ${MESO}`);
   console.log(`  local    http://127.0.0.1:${PORT}`);
   if (lan) console.log(`  LAN      http://${lan.address}:${PORT}`);
+  console.log(`  DID      ${identity.did}`);
   console.log(`  book     ${FILE}`);
   console.log(`  this machine is the node. next house: same repo, or hit the LAN address.`);
 });

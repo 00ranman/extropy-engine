@@ -1,6 +1,6 @@
 # Neighborhood app
 
-Job board + MICRO crews + DAG **on your machine**. Hostinger is not the book. Phone app is a luxury.
+Job board + MICRO crews + DAG **on your machine**. First boot writes a W3C `did:key` (Ed25519) to `data/keys/node.pem`. No registrar. Hostinger is not the book.
 
 Need [Node 18+](https://nodejs.org/) or Docker.
 
@@ -14,11 +14,15 @@ node server.mjs
 
 Open http://localhost:4016
 
-Name yourself. Post a job (yard's not mowed). Take it. Sign it closed. That's the book, as a JSON file in `data/board.json`. Next house on the LAN can hit the IP this process prints.
+The DID prints in the terminal and at the top of the board. Backup `data/keys/node.pem`. Lose it and you are a new node.
+
+Name yourself. Post a job. Take it. Sign it closed. Vertices are signed by that key.
 
 ```bash
 MESO_NAME="Sunset Oaks" node server.mjs
 ```
+
+`GET /api/did` returns the public document (no private key).
 
 ## Full Engine
 
@@ -28,7 +32,5 @@ Docker Desktop, then:
 HOA_MESO_NAME="Sunset Oaks" curl -fsSL https://raw.githubusercontent.com/00ranman/extropy-engine/main/scripts/join-hoa-meso.sh | bash
 ```
 
-That boots SignalFlow, loop-ledger, XP mint, DFAO registry, and this app on :4016.
-
 How-to: https://extropyengine.com/hoa
-Sunset Oaks: https://extropyengine.com/hoa/sunset-oaks
+The node: https://extropyengine.com/#node

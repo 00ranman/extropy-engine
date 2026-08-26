@@ -64,6 +64,15 @@ export function encodeDid(publicKeyHex: string): string {
   return `${DID_PREFIX}${publicKeyHex.toLowerCase()}`;
 }
 
+/** W3C did:key (Ed25519). Same bytes as publicKeyMultibase. No registrar. */
+export function encodeDidKey(publicKeyHex: string): string {
+  return `did:key:${publicKeyMultibase(publicKeyHex)}`;
+}
+
+export function isDidKey(did: string): boolean {
+  return /^did:key:z[1-9A-HJ-NP-Za-km-z]+$/.test(did);
+}
+
 export function parseDid(did: string): { method: string; identifier: string } {
   const m = did.match(/^did:([a-z0-9]+):(.+)$/i);
   if (!m) throw new Error(`parseDid: malformed DID: ${did}`);

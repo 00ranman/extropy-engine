@@ -16,7 +16,7 @@ Backup the file. Lose it and you are a new node. Standing does not teleport.
 
 `did:web` is optional if you want a domain on the DID document. Not required.
 
-**Today:** `packages/neighborhood-app` is a JSON book. It does **not** mint a DID yet. Wire first-boot `did:key` before pretending otherwise. Handshake (`packages/node-handshake`) is HTTPS + signatures, not production P2P.
+**Today:** `packages/neighborhood-app` writes `did:key` on first boot (`data/keys/node.pem`, public `data/did.json`). Handshake (`packages/node-handshake`) is HTTPS + signatures, not production P2P. ZKP circuits are Codex 3.
 
 ## ZKP
 
