@@ -1,0 +1,15 @@
+services:
+  neighborhood-app:
+    build:
+      context: ../..
+      dockerfile: packages/neighborhood-app/Dockerfile
+    ports:
+      - "4016:4016"
+    environment:
+      MESO_NAME: ${HOA_MESO_NAME:-Sunset Oaks}
+      DATA_DIR: /data
+    volumes:
+      - neighborhood-data:/data
+
+volumes:
+  neighborhood-data:
