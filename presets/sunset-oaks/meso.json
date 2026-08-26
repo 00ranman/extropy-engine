@@ -1,0 +1,19 @@
+{
+  "id": "sunset-oaks",
+  "name": "Sunset Oaks",
+  "legalNameOnPaper": "San Marcos Sunset Oaks Homeowners Association, Inc.",
+  "county": "Hays",
+  "city": "San Marcos",
+  "state": "TX",
+  "scale": "MESO",
+  "status": "SHADOW",
+  "preset": "hoa-meso",
+  "engine": "extropy-engine",
+  "board": "https://extropyengine.com/hoa/board",
+  "managementOnCertificate": {
+    "listedAs": "Spencer Powell / AMG",
+    "phone": "(210) 485-4088",
+    "web": "https://www.amghoa.com"
+  },
+  "children": ["grounds", "lights", "storm", "garden", "mediation"]
+}

@@ -1,0 +1,7 @@
+[
+  { "id": "grounds", "name": "Grounds", "scale": "MICRO", "parent": "sunset-oaks", "jobs": ["grounds"] },
+  { "id": "lights", "name": "Lights", "scale": "MICRO", "parent": "sunset-oaks", "jobs": ["access"] },
+  { "id": "storm", "name": "Storm", "scale": "MICRO", "parent": "sunset-oaks", "jobs": ["storm", "waste"] },
+  { "id": "garden", "name": "Garden", "scale": "MICRO", "parent": "sunset-oaks", "jobs": ["garden"], "note": "Community garden. Starter crew. No truck required." },
+  { "id": "mediation", "name": "Mediation", "scale": "MICRO", "parent": "sunset-oaks", "jobs": ["mediate"] }
+]
