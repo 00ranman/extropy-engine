@@ -1,29 +1,24 @@
 # HOA MESO — Engine wrapper
 
-This is the Extropy Engine. The HOA is a skin: the jobs an association already does, posted as LocalFlow, confirmed, XP minted.
+The Extropy Engine with an HOA-shaped job list. You download Docker Desktop, paste one line, name the street. Your laptop is a node. The DAG starts when the first job is signed closed.
 
-Site: https://extropyengine.com/hoa
+**How-to (what to download, what it does, what you can do today):** https://extropyengine.com/hoa
 
-## Become a node
+## Start
 
-Install Docker Desktop once. Then:
+1. [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+2. Terminal (Mac) or WSL / Git Bash (Windows):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/00ranman/extropy-engine/main/scripts/join-hoa-meso.sh | bash
 ```
 
-Windows: Docker Desktop + WSL or Git Bash, same line.
+Next laptop: same command, same neighborhood name.
 
-What it does: clones this repo into `~/extropy-engine` if needed, starts the Engine (SignalFlow, loop ledger, XP mint, DFAO registry, node handshake), loads this preset, asks the neighborhood name, registers a MESO DFAO in SHADOW.
+Face after it comes up: http://localhost:4015
 
-First run builds images. Later runs just start. Sandbox handshake is HTTPS, not libp2p. The loop is real. A boxed plug-and-play kit is later — this is the same stack.
+Stop: `cd ~/extropy-engine && docker compose --profile sandbox down`
 
-Stop:
+Sandbox handshake is HTTPS, not libp2p. First run builds. The loop is the Engine as it exists in this repo.
 
-```bash
-cd ~/extropy-engine && docker compose --profile sandbox down
-```
-
-## What this is not
-
-Not a dissolution filing. Dues, liens, and deed architectural control stay on the recorded paper until that paper changes. The wrapper runs the *jobs*.
+Dues, liens, and deed architectural control stay on the recorded paper. This wrapper runs the **jobs**.
