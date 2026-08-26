@@ -1,48 +1,47 @@
-# Neighborhood DFAO vs an HOA
+# Do the HOA’s jobs
 
 Protocol example. Extropy Engine. August 2026.
 
-**Not legal advice.** Recorded CC&Rs run with the land. Forming a DFAO, a Wyoming DUNA, a Wyoming DAO LLC, or a Texas nonprofit does **not** dissolve them. Talk to a Texas property attorney before anyone tries to amend a declaration.
+Landing page (plain English): https://extropyengine.com/hoa
 
-Plain-language landing page: https://extropyengine.com/hoa
+**Not legal advice.** In Texas the declaration / CC&Rs stick to the house until owners vote the percentage in that document and record it. A new group does not erase that. Keep paying dues so they cannot lien you.
 
-## The mistake
+## The takeover
 
-Dissolving the HOA *corporation* does not kill the covenants. Texas lawyers have been writing that one down for years. Anonymous posts about throwing eggs at a vehicle are a crime and they make you the entropy.
+You already pay them. Then you still mow, still call about the light, still mediate the fence. The takeover is taking **every job they are supposed to do**, doing it, and having neighbors confirm it happened. When that is what keeps the place running, they are a leftover bill.
 
-The fungus path: do the work until the association is the expensive duplicate. Same as the fiat layer at the grocery.
+Do not egg cars. That is a crime and it makes you the problem.
 
-## Loop
+## Their jobs. We take them.
 
-Post the job. Someone does it. You confirm. LocalFlow is the face. SignalFlow proposes ΔS. That is already a DFAO. Scale: neighborhood = **MESO**. Crews under it are MICROs. You are NANO until the second person closes a loop.
+| Job | How |
+| --- | --- |
+| Common grass / landscaping | Post the mow. Crew takes it. Before/after. Confirm or it does not count. |
+| Lights, gates, fountains | Dead bulb is a job. Buy the part. Confirm. |
+| Drainage / trash / bulk | Ditch, pile, dumpster. Post. Do. Confirm. |
+| Pool / amenity | Whoever actually shows up. Hours on the door are a job. |
+| Neighbor disputes | Fence, parking, noise. Mediate. Both sides sign off. |
+| Vendors the board sits on | If a neighbor can do it and it is confirmed, the vendor theater dies. |
+| **Not yet** | Liens, foreclosure, architectural control in the deed. Those stay on the paperwork until a real vote. |
 
-Start **SHADOW**. No binding theater. Keep paying assessments in the declaration. Chapter 209 is the rights you already have (open meetings, elections, petition if they skip the annual meeting). Amendment percentage lives in *your* CC&Rs — often a supermajority, sometimes lender consent, always recorded in the county.
+## Smart contracts, in English
 
-## Wrapper (optional, later)
+A smart contract is not a coin. It is a rule that runs itself.
 
-Wyoming is the state with a statute. **Not Montana.**
+- If the common is confirmed mowed, credit posts. If not, nothing posts. No “next quarter.”
+- If two neighbors confirm a light is fixed, the job closes. If they don’t, it stays open.
+- The rule lives where both sides can check it. Changing it is a vote in this group, not a silent board edit.
+- You do not need Ethereum trivia. You need if-then. The software is how we stop arguing about whether the work happened.
 
-| Shape | What it is | Why you might | Why you might not |
-| --- | --- | --- | --- |
-| **Wyoming DUNA** (2024) | Decentralized unincorporated **nonprofit** association | Commons work. Members don’t take profit. Closest statutory shape to a neighborhood DFAO. | Still a WY filing + registered agent. Must foreign-qualify to operate in Texas. |
-| **Wyoming DAO LLC** (W.S. 17-31) | For-profit LLC subtype | Bank account, limited liability, smart-contract operating agreement. | Profit-distribution shape is a bad fit for common-area work. |
-| **Tennessee DO LLC** | LLC with decentralized-organization status | Same idea as WY LLC | Out of state. |
-| **Texas nonprofit corporation** | Ordinary local nonprofit | You live here. Bank, insurance, no interstate theater. | Not a “DAO statute.” Governance is still bylaws + Ch. 209 if you ever *become* the association. |
+## Order of operations
 
-A wrapper is a bank account and a liability box. It is not a magic CC&R eraser.
+1. Do a job this week. Confirm it.
+2. Keep paying the HOA bill.
+3. Use Chapter 209 (open meetings, elections, petition if they skip the annual meeting).
+4. When people trust the list, let if-then rules bind inside the group.
+5. Bank account later if you need one: Wyoming DUNA (nonprofit) or a Texas nonprofit. Not Montana. Wrapper ≠ erased CC&Rs.
+6. They become irrelevant when they have no jobs left. Paperwork is a later lawyer-and-county step if enough owners want it.
 
-## Make them irrelevant
+Templates: [articles](articles/NEIGHBORHOOD_DFAO.md) · [bylaws](articles/BYLAWS.md)
 
-1. Close loops on the actual disorder: mow, lights, drainage, mediation.
-2. Keep dues current.
-3. HYBRID when people trust the confirmation loop.
-4. Optional wrapper when you need a checking account.
-5. If owners later hit the declaration’s percentage, record an amendment or termination. Lawyer. County clerk.
-6. If they never do: you still reduced entropy. The HOA can sit there.
-
-Templates:
-
-- [Articles of decentralized incorporation](articles/NEIGHBORHOOD_DFAO.md)
-- [Bylaws / knobs](articles/BYLAWS.md)
-
-Node: clone https://github.com/00ranman/extropy-engine — `docker compose up`. See `docs/VPS_NODE.md`.
+Node (optional, after the first mow): https://github.com/00ranman/extropy-engine — `docker compose up`. See `docs/VPS_NODE.md`.
