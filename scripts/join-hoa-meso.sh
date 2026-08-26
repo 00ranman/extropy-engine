@@ -9,7 +9,7 @@ INSTALL_DIR="${INSTALL_DIR:-$HOME/extropy-engine}"
 echo ""
 echo -e "${CYAN}Extropy Engine — Neighborhood MESO${NC}"
 echo "  How-to: https://extropyengine.com/hoa"
-echo "  Board:  https://extropyengine.com/hoa/board"
+echo "  How-to: https://extropyengine.com/hoa"
 echo ""
 
 if ! command -v docker >/dev/null 2>&1; then
@@ -53,6 +53,10 @@ echo -e "${YELLOW}  starting Engine… first run builds, coffee is allowed${NC}"
 docker compose up -d postgres redis
 docker compose up --build -d epistemology-engine signalflow loop-ledger reputation xp-mint dag-substrate dfao-registry governance homeflow
 docker compose --profile sandbox up --build -d node-handshake || docker compose --profile node-handshake up --build -d node-handshake || true
+export HOA_MESO_NAME="$NAME"
+docker compose -f packages/neighborhood-app/compose.yaml up -d --build neighborhood-app \
+  || (command -v node >/dev/null && mkdir -p "$HOME/.extropy-engine" && MESO_NAME="$NAME" nohup node "$INSTALL_DIR/packages/neighborhood-app/server.mjs" >"$HOME/.extropy-engine/neighborhood-app.log" 2>&1 &) \
+  || echo -e "${YELLOW}  neighborhood-app did not start — cd packages/neighborhood-app && node server.mjs${NC}"
 
 SEED_DIR="$HOME/.extropy-engine"
 mkdir -p "$SEED_DIR"
@@ -84,7 +88,7 @@ fi
 
 echo ""
 echo -e "${GREEN}  You are a node.${NC} Neighborhood: $NAME (MESO, SHADOW)"
-echo "  Board          https://extropyengine.com/hoa/board"
+echo "  Board          http://localhost:4016"
 echo "  Face           http://localhost:4015"
 echo "  SignalFlow     http://localhost:4002"
 echo "  Loop ledger    http://localhost:4003"
@@ -99,7 +103,7 @@ echo "  Stop: cd $INSTALL_DIR && docker compose --profile sandbox down"
 echo ""
 
 if [[ "${OSTYPE:-}" == darwin* ]]; then
-  open "https://extropyengine.com/hoa/board" 2>/dev/null || true
+  open "http://localhost:4016" 2>/dev/null || true
 elif command -v xdg-open >/dev/null 2>&1; then
-  xdg-open "https://extropyengine.com/hoa/board" 2>/dev/null || true
+  xdg-open "http://localhost:4016" 2>/dev/null || true
 fi
