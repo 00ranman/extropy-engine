@@ -1,0 +1,23 @@
+{
+  "id": "hoa-meso",
+  "kind": "hoa-wrapper",
+  "engine": "extropy-engine",
+  "scale": "MESO",
+  "status": "SHADOW",
+  "description": "The Extropy Engine with an HOA-shaped job list. Not a deed eraser. Confirmed work mints XP.",
+  "jobs": [
+    { "id": "grounds", "hoa": "Common grass / landscape", "loop": "localflow" },
+    { "id": "access", "hoa": "Lights, gates, access", "loop": "localflow" },
+    { "id": "storm", "hoa": "Drainage / storm / freeze", "loop": "localflow" },
+    { "id": "waste", "hoa": "Trash / bulk / dumpster", "loop": "localflow" },
+    { "id": "amenity", "hoa": "Pool / amenity hours", "loop": "localflow" },
+    { "id": "mediate", "hoa": "Neighbor dispute", "loop": "localflow" },
+    { "id": "vendor", "hoa": "Vendor / work order", "loop": "micro-crew" },
+    { "id": "govern", "hoa": "Meetings / votes", "loop": "dfao-governance" }
+  ],
+  "notThisWrapper": ["dues", "liens", "foreclosure", "architectural-control-in-deed"],
+  "tokens": {
+    "XP": "mint on confirmed deltaS > 0",
+    "IT": "governance weight, decays if you vanish"
+  }
+}
