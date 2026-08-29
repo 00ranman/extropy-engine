@@ -17,7 +17,7 @@ No central AI thinks for the network. No service performs decomposition on behal
 
 The `epistemology-engine` package is preserved and redefined. v3.0 mistakenly framed it as the place where decomposition happens. v3.1 recognizes it for what it always was: **the mesh's emergent peer-review system**, surfaced as a witness and aggregation layer over the network's reputation-weighted validation activity. The engine has no central authority over truth. It runs wherever the mesh runs. It observes consensus emerging from incentive-aligned peer review and exposes that emergent epistemology as a queryable, auditable layer.
 
-This system treats entropy reduction not as metaphor but as measurement. The same mathematical grounding that links thermodynamic entropy and informational entropy is extended into operational instrumentation across cognitive, code, social, economic, thermodynamic, informational, governance, and temporal domains. Value is minted only when measurable disorder decreases in real systems under falsifiable conditions, with reliability weighting, domain weighting, and time-aware settlement.
+This system treats entropy reduction not as metaphor but as measurement. The same mathematical grounding that links thermodynamic entropy and informational entropy is extended into operational instrumentation across cognitive, code, social, economic, thermodynamic, informational, governance, and temporal domains. Value is minted only when measurable disorder decreases in real systems under falsifiable conditions, with action-class rarity weighting, domain weighting, and time-aware settlement.
 
 v3.1 is the first specification that fully integrates the personal AI handshake model, the hybrid OAuth + local KYC + DID + ZKP identity layer, the Personal Signed Local Log, the micro-quest marketplace, the native substrate decision, and the replacement of the old central decomposition model with edge-native intelligence.
 
@@ -173,8 +173,8 @@ Where:
 
 | Variable | Range | Description |
 |---|---|---|
-| **R** | [0.1, 10.0] | Reliability coefficient — domain-specific, earned through validated contributions. |
-| **F** | [0.0, 1.0] | Falsifiability score — how testable the claim is. |
+| **R** | [0.1, 10.0] | Rarity coefficient — action-class scarcity of the loop being closed. Property of the loop, not the actor. |
+| **F** | (0.0, 1.0] | Frequency-of-decay penalty — multiplicative dampener on repeated submissions of the same claim shape. |
 | **ΔS** | [0.0, ∞) | Entropy reduction magnitude — the heart of the system. |
 | **w** | [0.0, 5.0] vector | Domain-weight vector — governance-adjustable per DFAO. |
 | **E** | [0.0, 1.0] vector | Eight-domain entropy vector — measured per claim. |
@@ -182,15 +182,24 @@ Where:
 
 The formula lives in one place: [`packages/xp-formula/src/index.ts`](../packages/xp-formula/src/index.ts). Every service that mints XP imports from there. No reimplementations.
 
-### 6.1 Reliability Coefficient R
-- Bounded between 0 and 1 in normalized form, scaled to [0.1, 10.0] for formula application.
-- Updated over time. Sensitive to accuracy, not status. Decays in confidence if activity goes stale.
-- Purpose: weight claims according to demonstrated epistemic trustworthiness; reward consistent accuracy; resist spam and noise amplification.
+> **v3.1.2 correction.** v3.1.1 conflated R with Reliability/Reputation and F with Falsifiability. v3.1.2 corrects both. **R is Rarity. F is Frequency-of-decay.** Reputation never re-enters XP. Reputation density (ρ) lives only in CT. This is a hard architectural invariant. See `docs/THREE_LAYER_SEPARATION.md` and `docs/CONTRIBUTION_GRAPH.md`.
 
-### 6.2 Falsifiability Score F
-- High-F claims have explicit disproof conditions, measurable evidence paths, and clear settlement criteria.
-- Low-F claims are vague, subjective, or weakly instrumented.
-- The engine does not forbid low-F claims. It refuses to pretend they are equal to claims that can actually be tested.
+### 6.1 Rarity Coefficient R
+- **R is a property of the loop, not the actor.** Same loop closed by a different person yields the same R. Math is invariant under actor swap.
+- Measures action-class scarcity within a domain: how hard-to-replicate the contribution shape is, not how trusted the submitter is.
+- Past actions never inflate new XP. There is no "R bank" tied to a person, a wallet, or a validator history. R is set by the rarity table for the claim class, not by who is closing it.
+- Bounded to [0.1, 10.0] in formula application. Common claim classes sit near 0.1; structurally rare, hard-to-fake reductions sit near 10.0.
+- Reputation, reliability, accuracy history, and validator track record do not enter R. They are CT-side concerns and surface only as ρ (reputation density) inside the CT formula.
+
+### 6.2 Frequency-of-Decay Penalty F
+- F is a multiplicative dampener that reduces XP yield when the same submitter repeats the same claim shape too often. Anti-grind, anti-spam, anti-Goodhart. Not a measure of how testable a claim is.
+- Fingerprint: F is keyed on the tuple `(submitter_id, claim_type, primary_domain, DFAO_id)`. Different domains, different DFAOs, and different claim types do not penalize each other.
+- Production curves shipped in code:
+  - `extropialingo`: `F = 1 / (1 + log1p(sessionFrequency - 1))` — log-tail decay; long-running learners are not punished as harshly as the harmonic curve would punish them.
+  - `levelup-academy`: `F = 1 / (attempts + 1)` — harmonic decay; sharper drop, used where each attempt should yield meaningfully less than the last.
+- Both curves bounded in `(0, 1]` and approach zero asymptotically. `n=1` yields `F=1`, meaning the first instance of a claim in a fingerprint is full strength.
+- Reset rules: F resets per fingerprint when (a) the season rolls over under temporal policy, (b) the DFAO redefines the claim type, or (c) a calibration event triggers.
+- **Falsifiability is a separate concept.** Falsifiability is a claim-quality criterion enforced by validation rules and surfaced through the mesh/falsifiability route on the redefined epistemology layer (see §17.2). It is not a variable in the XP formula. v3.1.1 conflated the two. v3.1.2 corrects the record.
 
 ### 6.3 Entropy Reduction Magnitude ΔS
 - **General method:** measure state before, measure state after, compute reduction under the domain's instrument model.
