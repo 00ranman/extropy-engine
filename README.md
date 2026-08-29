@@ -97,6 +97,8 @@ packages/
 
 **v3.1 packages are skeletons.** Interface contracts are the source of truth; implementation is incremental. See each package's README for status.
 
+Archived standalones (homeflow, signalflow, levelup-academy, xp-net, xp-dag-mesh, extropy-master-control-hub) were folded into this repo. See [`docs/ARCHIVED.md`](docs/ARCHIVED.md). The public site talks about this git, not those.
+
 The 6-token economy exists specifically to prevent the failure mode that killed most Web3 governance: token conflation. XP (reputation) is non-transferable. IT (governance weight) is non-transferable and decays at 5%/month. You cannot buy influence. You have to earn it, and if you stop contributing it bleeds out.
 
 ---
