@@ -6,8 +6,11 @@
  *  Core formula:  XP = R × F × ΔS × (w · E) × log(1/Tₛ)
  *
  *  Where:
- *    R   = Validator reputation (compressed evidence of past accuracy)
- *    F   = Feedback closure strength [0,1]
+ *    R   = Rarity multiplier (action-class scarcity / base difficulty).
+ *          Property of the loop's action class — NOT actor reputation.
+ *          Reputation belongs in vote weight and the CT formula (ρ), not here.
+ *    F   = Frequency-of-decay penalty (diminishing returns for repeated
+ *          instances of this action class). 1.0 = first occurrence.
  *    ΔS  = Net entropy reduction (Joule/Kelvin) across a closed causal loop
  *    w   = Domain-authority weight vector
  *    E   = Essentiality factor (how critical the task is to the loop)
