@@ -61,22 +61,24 @@ const FORMULA_VERSION = 'canonical-v3.1.2';
 // Per-domain rarity coefficients (R in the XP formula).
 // R is the action-class scarcity / base difficulty multiplier. It is a
 // property of the LOOP, not the actor. Reputation must NEVER feed into R.
-// Values are governance-tunable; defaults below are seeded for v3.1.2.
-const RARITY_DEFAULTS: Record<string, number> = {
+// Values are governance-tunable. Keyed by the canonical EntropyDomain enum
+// so the table cannot drift from the canonical domain set at compile time.
+// Retired domains (ecological, spiritual) are no longer members of the enum,
+// so they can no longer appear here. Canonical domains without an explicit
+// entry (code, temporal) fall back to RARITY_FALLBACK.
+const RARITY_DEFAULTS: Partial<Record<EntropyDomain, number>> = {
   thermodynamic: 1.0,
   informational: 1.2,
   social:        1.0,
   economic:      1.1,
-  ecological:    1.5,
   governance:    1.3,
   cognitive:     1.4,
-  spiritual:     1.0,
 };
 const RARITY_FALLBACK = 1.0;
 
 function rarityForDomain(domain: string | undefined): number {
   if (!domain) return RARITY_FALLBACK;
-  return RARITY_DEFAULTS[domain] ?? RARITY_FALLBACK;
+  return RARITY_DEFAULTS[domain as EntropyDomain] ?? RARITY_FALLBACK;
 }
 
 const pool = createPool();
