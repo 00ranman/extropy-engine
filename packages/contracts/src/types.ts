@@ -1325,14 +1325,35 @@ export interface XPFormulaInputs {
   domainWeight: number;
   /** E — Essentiality factor [0, 1] */
   essentiality: number;
-  /** Tₛ — Settlement time in seconds (must be > 0) */
+  /**
+   * Tₛ — Raw elapsed seconds since loop opened.
+   * NOTE (v3.1.3): This is the raw storage value. Do NOT feed it into
+   * log(1/·) directly. Route through `@extropy/xp-formula`'s
+   * `normalizeSettlementTime(elapsedSeconds, lambda)` first, which produces
+   * the unitless Tₛ ∈ (T_floor, 1] required by the canonical formula.
+   * Field name is retained for schema compatibility; semantics are
+   * "elapsed seconds at storage layer only".
+   */
   settlementTimeSeconds: number;
 }
 
 /**
- * Irreducible form: XP = ΔS / c_L²
- * This is the physics floor — the minimum XP that MUST be minted
- * for a given entropy reduction in a given domain.
+ * Default T_s floor. Governance-tunable per Codex GOVERNANCE_DEFAULTS.
+ * Codex §20.1 lists T_floor default as 0.01, giving a hard cap of
+ * log(1/0.01) ≈ 4.605 on the settlement-time factor. That cap is what
+ * prevents the speed-farming attack on the settlement-time term.
+ *
+ * Kept in `contracts` so services that stamp mint rows or validate
+ * governance parameters can reference the same constant used inside
+ * `@extropy/xp-formula` without a runtime dependency on that package.
+ */
+export const T_FLOOR_DEFAULT = 0.01;
+
+/**
+ * @deprecated (v3.1.3) The XP = ΔS / c_L² framing is retired from the
+ * canonical spec. See `docs/REJECTED_FRAMINGS.md` for the reasoning.
+ * Kept temporarily so migration 002-adjacent code still typechecks; no
+ * production path should construct this type as of v3.1.3.
  */
 export interface IrreducibleXPInputs {
   /** ΔS — Net entropy reduction */
