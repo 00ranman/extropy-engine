@@ -44,8 +44,8 @@ Login-with-favorite-model is up to those companies. Until they allow it, you plu
 **UI (rough, not shipped)**
 The assistant you trust *is* the UI. Character-sheet-ish is a sketch, not a spec. Do not freeze a skin in 3.0. Freeze the split: SignalFlow is the mouth. LocalFlow is a face.
 
-**Claim path (this is the lawn)**
-1. You mow the lawn. You do not put yourself in for “this much XP.”
+**Claim path (this is the lawn — including yours)**
+1. You mow the lawn. Your own counts. You do not put yourself in for “this much XP.”
 2. SignalFlow talks to your LLM and the network: what is this task, how long did it take.
 3. Supporting documentation attaches — before/after photos, etc. DAG stores them so they can be referenced later.
 4. SignalFlow + LLM propose an approximate ΔS and put it in provisionally (if-then / smart-contract shaped).
@@ -160,6 +160,21 @@ The load-bearing split is jobs: standing (XP) ≠ this door (CT → L → EP) �
 
 ---
 
+## Own lawn, rest, retirement (30 Aug 2026)
+
+The extractive picture: clock in, clock out, rest is a hole, only what you sold to someone else counted, retirement is unemployment with a cake.
+
+Kill that in 3.0.
+
+- **Own lawn.** The ΔS is the grass. HomeFlow can close it. Neighbor-mows-yours is two households. You-mow-yours is one house taking care of itself. Same physical reduction. You do not type a score. F still applies if it is every Saturday.
+- **No PTO token.** Standing already minted is what you live on while you rest. XP leak is ~1%/month of remaining, not a pink slip. Sick is not a clawback. Care is a loop for the person who shows up. Recovery can be biological ΔS if the loop closes.
+- **Buying is coupling, not a mint.** Patronage updates this-door CT / L. Cash cannot mint XP.
+- **Anything verifiable.** Self-report, sensor, claim, assistant — then the other side agrees. Work-for-a-boss is one input. Living was never inside that box.
+
+FAQ: https://extropyengine.com/faq#own-lawn
+
+---
+
 ## What 3.0 should actually decide
 
 1. Name the settle-window default and say it is a knob. Say it is only provisional → standing.
@@ -173,6 +188,7 @@ The load-bearing split is jobs: standing (XP) ≠ this door (CT → L → EP) �
 9. Leave 2.1 alone until that list is actually written.
 10. Public language: record / meter / till spark. Not token. Domain vs lane. CAT is the skill record. DT is not a bag.
 11. Kill wallet DT and CAT amount-mints in `token-economy`. Mentorship is a record, not `+0.1`.
+12. Own lawn mints. Rest is not a hole. No PTO pile. Retirement is not extractive-economy unemployment.
 
 ---
 
