@@ -117,6 +117,49 @@ Lives in `packages/xp-formula`. No reimplementations.
 
 ---
 
+## Records, meters, sparks — stop saying token (29 Aug 2026)
+
+Public copy. The crowd hears “token” and reaches for a bag. That is not this ledger.
+
+**Record** — unique signed vertex. One of one. Closed loop, CAT stamp, lane claim, complaint, EP at the till (written then burned). Same job as what people meant by non-fungible token, without the Ethereum mouth.
+
+**Meter / standing** — a number over records. XP remaining, L, IT weight, CT standing. Not a collectible. Not transferable.
+
+**Till spark** — EP. Born and dead in the sale. `EP = XP × L`.
+
+Token, in this project, does not mean bag. We are still dropping the word in public so people stop minting tickers. Internals can keep `TokenType` until the wallet schema matches.
+
+### Domain vs lane
+
+- **Domain** = the eight entropy instruments. Protocol enum. Not user-minted.
+- **Lane** = skill specialization (dentistry, folding, this till). CAT lives here.
+
+Do not use “domain” for both.
+
+### CAT is a record
+
+`(DID, lane, level, settled count, issuer)`. Unique. Peers already holding CAT in that lane sign. They stake IT and local CT. Patients do not mint it. Mentorship `+0.1 CAT` in `packages/token-economy` is bag-shape. Kill it in the kernel pass. Credentials do not steer XP mint.
+
+### DT has no job as a bag
+
+README said Domain Token / expertise marker. Site later said Decay Token. Both jobs are already covered: CAT-per-lane is the expertise record; XP’s `0.99ⁿ` is the leak.
+
+If the letter DT survives, it is only as a unique **lane-claim record**: minted when a loop actually closed, DID + lane + time + issuer on it, contestable. Not a Domain Coin. Not a dropdown. Not transferable.
+
+`TokenType.DT` in the wallet JSON is leftover. Marked transferable in code today. That is a bug. Remove the balance. Do not salvage the letter with a new pile.
+
+### Six was never physics
+
+The load-bearing split is jobs: standing (XP) ≠ this door (CT → L → EP) ≠ voice (IT) ≠ skill record (CAT). The number six was accretion. GT/RT vs CAT/DT already drifted in the same README. Do not grow a seventh bag because seven is prime.
+
+### Kernel / docs follow-ups
+
+- `packages/token-economy`: CAT as certification row only; stop minting CAT amounts; drop DT balance; mark CAT non-transferable.
+- Docs still saying “exactly six tokens”: README, `docs/ONE_PAGER.md`, `docs/CONTRIBUTION_GRAPH.md`, `docs/THREE_LAYER_SEPARATION.md`, `DEPENDENCY_GRAPH.md`.
+- Site nav: Tokens → Ledger. Glossary heading: Records and meters.
+
+---
+
 ## What 3.0 should actually decide
 
 1. Name the settle-window default and say it is a knob. Say it is only provisional → standing.
@@ -128,6 +171,8 @@ Lives in `packages/xp-formula`. No reimplementations.
 7. Decide whether a burn-floor axiom exists.
 8. Say the box is a for-profit product intent, not a 501(c), surplus into R&D/nodes.
 9. Leave 2.1 alone until that list is actually written.
+10. Public language: record / meter / till spark. Not token. Domain vs lane. CAT is the skill record. DT is not a bag.
+11. Kill wallet DT and CAT amount-mints in `token-economy`. Mentorship is a record, not `+0.1`.
 
 ---
 

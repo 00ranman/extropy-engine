@@ -62,9 +62,26 @@ CT = C × F × ρ × Δ × E
 
 Minted via `POST /ct/mint` on the token-economy service. Has lockup. See [`packages/token-economy/src/index.ts`](packages/token-economy/src/index.ts).
 
-### Six canonical tokens
+### Ledger objects (not a six-token bag)
 
-`XP` (non-transferable, decays), `CT` (cross-platform, restricted, lockup), `CAT` (Capability Token, portable skill cert), `IT` (Influence Token, governance weight), `DT` (Domain Token, expertise marker), `EP` (Emergence Points, merchant loyalty, `EP = XP × L`).
+Public copy uses **record / meter / till spark**. The crowd hears “token” and reaches for Ethereum. Drop it.
+
+| Object | Kind | Job |
+|---|---|---|
+| XP | Meter | Standing from verified ΔS. Non-transferable. Leaks `0.99ⁿ`. |
+| CT | Meter | This-door contribution. Feeds L. Not purchased with XP. |
+| L | Meter | Local rank in `[0, 1]`. |
+| EP | Till spark | `EP = XP × L`. Born and burned in the sale. |
+| CAT | Record | Skill credential in a **lane**. Unique. `(DID, lane, level, issuer)`. |
+| IT | Meter | Governance / stake weight. Idle leak ~5%/month. |
+| Domain | Enum | Eight entropy instruments. Not minted. |
+| Lane | Field | Skill specialization. Claim is a signed vertex, not a dropdown. |
+
+**DT is not a bag.** Old copy said Domain Token or Decay Token. Expertise is CAT-per-lane. The leak is already on XP. If the letter survives it is a unique lane-claim record, contestable, non-transferable. `TokenType.DT` in the wallet is leftover — remove it.
+
+Six was accretion, not physics. Same README used to list GT/RT in the package tree. Do not grow a seventh pile.
+
+The split exists so standing cannot buy votes and a skill stamp cannot print XP. See [`docs/CODEX_3_NOTES.md`](docs/CODEX_3_NOTES.md).
 
 ---
 
@@ -86,7 +103,7 @@ packages/
 ├── dag-substrate/      # DAG ledger: every action is a vertex with causal parents
 ├── dfao-registry/      # Fractal org structure: MICRO(2-7) → ECOSYSTEM(1000+)
 ├── governance/         # Proposals, conviction voting, quorum, execution
-├── token-economy/      # 6 token types: XP, CT, EP, IT, GT, RT
+├── token-economy/      # XP, CT, L, EP, CAT, IT. DT wallet slot is leftover — kill it.
 ├── temporal/           # Seasons, decay scheduling, loop timeouts
 ├── identity/           # v3.1: OAuth + on-device KYC + DID + ZKP (BBS+ default)
 ├── psll-sync/          # v3.1: Personal Signed Local Log maintenance + DAG anchoring
@@ -99,7 +116,7 @@ packages/
 
 Archived standalones (homeflow, signalflow, levelup-academy, xp-net, xp-dag-mesh, extropy-master-control-hub) were folded into this repo. See [`docs/ARCHIVED.md`](docs/ARCHIVED.md). The public site talks about this git, not those.
 
-The 6-token economy exists specifically to prevent the failure mode that killed most Web3 governance: token conflation. XP (reputation) is non-transferable. IT (governance weight) is non-transferable and decays at 5%/month. You cannot buy influence. You have to earn it, and if you stop contributing it bleeds out.
+The ledger exists specifically to prevent the failure mode that killed most Web3 governance: **conflation**. XP (standing) is non-transferable. IT (voice) is non-transferable and decays at 5%/month. You cannot buy influence. You have to earn it, and if you stop contributing it bleeds out. CAT is a skill **record**, not a pile.
 
 ---
 
