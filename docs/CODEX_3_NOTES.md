@@ -175,6 +175,45 @@ FAQ: https://extropyengine.com/faq#own-lawn
 
 ---
 
+## Slam window, three clocks, attacks (30 Aug 2026)
+
+Tₛ is **not** recency decay. The old comment in `packages/xp-formula` that said “recency” was a lie. Kill it.
+
+```
+Tₛ = exp(−λ min(Δt, Δt_cap))
+log(1/Tₛ) = λ · clip(Δt, 0, Δt_cap)
+```
+
+Δt → 0 ⇒ Tₛ = 1 ⇒ log = 0 ⇒ XP = 0. Slam-shut. On purpose. Do **not** change this to `log(1 + 1/Tₛ)` so Tₛ=1 pays. That pays slam-bots.
+
+Δt_cap is a knob. Default: the action class’s expected duration (quest grain 2–5 min unless the class says otherwise). Unbounded λΔt is a stall-farm. Cap it. Code: `DEFAULT_DELTA_T_CAP_SECONDS = 300`.
+
+Three clocks. Do not mash:
+
+| Clock | Job |
+| --- | --- |
+| Tₛ | This loop’s elapsed time. Slam-shut at 0. Capped. |
+| F | Repeating the action class. |
+| 0.99ⁿ | Standing after settlement. ~1%/month of remaining. |
+
+Settle window is provisional → standing. IT ~5%/month is voice. Neither is Tₛ.
+
+Rarity-splitting 400 fake classes is a **DAG** job. The formula will not catch it.
+
+### Experiments to write as tests (not vibes)
+
+1. ΔS calibration — 100 identical tasks, error → correction → converge, or fail.
+2. Farming resistance — assume everyone manufactures XP. R/F/Tₛ/confirm/evidence/late burn.
+3. L as extraction machine — captured DFAO juices L. Economic attack.
+4. Late mint — citation-gated delta, not a second paycheck. Simulate 20-year discovery.
+5. (w · E) — does the vector improve predictions or become a vote.
+
+You do not need ΔS perfect. You need the error to get expensive.
+
+FAQ: https://extropyengine.com/faq#three-clocks
+
+---
+
 ## What 3.0 should actually decide
 
 1. Name the settle-window default and say it is a knob. Say it is only provisional → standing.
@@ -189,6 +228,7 @@ FAQ: https://extropyengine.com/faq#own-lawn
 10. Public language: record / meter / till spark. Not token. Domain vs lane. CAT is the skill record. DT is not a bag.
 11. Kill wallet DT and CAT amount-mints in `token-economy`. Mentorship is a record, not `+0.1`.
 12. Own lawn mints. Rest is not a hole. No PTO pile. Retirement is not extractive-economy unemployment.
+13. Tₛ is a slam window with Δt cap, not recency. Three clocks. Do not “fix” Tₛ=1. Experiments: ΔS calibration, farming, L-extraction, late mint, w·E as a knob.
 
 ---
 
