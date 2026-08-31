@@ -214,6 +214,22 @@ FAQ: https://extropyengine.com/faq#three-clocks
 
 ---
 
+## Overlay / imported CAT (30 Aug 2026)
+
+You do not start a new civilization. You convert one that exists.
+
+Overlay. Shops, licenses, neighborhoods, the handshake already on the wire. Both-edges, contest, leak, DAG go on top of infrastructure people already use. Greenfield is a fantasy of a clean page.
+
+An off-system credential is **opening evidence** for a CAT record: issuer = the old board, lane = the practice. Not XP. Not IT. Not a throne.
+
+Once they are in, this graph is what continues. Retired weight that can issue new CATs and argue rarity in that lane is DAG history in here, not the framed diploma. If the paper was a lie, contest and late burn still apply. License is the door. It is not the house.
+
+Do not invent a bootstrap bag to hold this.
+
+FAQ: https://extropyengine.com/faq#overlay
+
+---
+
 ## What 3.0 should actually decide
 
 1. Name the settle-window default and say it is a knob. Say it is only provisional → standing.
@@ -229,6 +245,7 @@ FAQ: https://extropyengine.com/faq#three-clocks
 11. Kill wallet DT and CAT amount-mints in `token-economy`. Mentorship is a record, not `+0.1`.
 12. Own lawn mints. Rest is not a hole. No PTO pile. Retirement is not extractive-economy unemployment.
 13. Tₛ is a slam window with Δt cap, not recency. Three clocks. Do not “fix” Tₛ=1. Experiments: ΔS calibration, farming, L-extraction, late mint, w·E as a knob.
+14. Overlay, not a new country. Imported credentials are opening CAT records. License is the door, not the house.
 
 ---
 
