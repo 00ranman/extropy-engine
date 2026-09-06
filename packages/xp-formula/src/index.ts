@@ -1,37 +1,31 @@
 /**
  * @package xp-formula
- * Canonical XP formula implementation for the Extropy Engine.
+ * Canonical meter math for the Extropy Engine.
  *
  * XP = R × F × ΔS × (w · E) × log(1/Tₛ)
  *
- * Where:
- *   R  = Rarity multiplier (action-class scarcity / base difficulty).
- *        Property of the loop's action class — NOT actor reputation.
- *        Reputation belongs in vote weight (V+/V-) and CT (ρ), not here.
- *   F  = Frequency-of-decay penalty (diminishing returns for repeated
- *        instances of this action class). 1.0 = first occurrence.
- *   ΔS = Entropy delta (verified disorder reduction score, must be > 0)
- *   w  = Weight vector for energy / domain components
- *   E  = Effort / domain vector (same length as w)
- *   Tₛ = Slam window, NOT recency decay and NOT the 0.99ⁿ standing leak.
- *        Tₛ = exp(−λ min(Δt, Δt_cap)). Instant confirm → Tₛ = 1 → log = 0 → XP = 0.
- *        That is slam-shut, on purpose. Do not rewrite as log(1+1/Tₛ).
+ *   R  = Rarity of the action class. Not reputation. Not a room.
+ *   F  = Frequency of Decay on repeats. Not fidelity. Not ℱ.
+ *   ΔS = bits-equivalent proxy for verified reduction inside a declared
+ *        boundary. Not XP. Not SI social heat.
+ *   w · E = weighted emergence (eight-domain weights · this loop's effort).
+ *   Tₛ = slam window: exp(−λ min(Δt, Δt_cap)). Instant close → XP = 0.
  *
- * Three clocks. Do not mash them:
- *   1. Tₛ  — this loop's elapsed time (capped)
- *   2. F   — repeating the action class
- *   3. 0.99ⁿ — standing leak after settlement (not in this package)
+ * After the mint:
+ *   XP(n) = XP_settled · 0.99ⁿ
+ *   L     = clip(H · CT_d · β, 0, 1)
+ *   EP    = XP × L   born and burned in that sale. Not a bag.
  *
- * Both xp-mint and xp-dag-mesh MUST import from this package.
- * Do NOT reimplement the formula elsewhere.
+ * CT is this-door standing. It does not transfer. It does not cash out.
+ * CAT and IT stay off this package.
  */
 
 export interface XPFormulaInputs {
-  /** Rarity/difficulty multiplier. Typically 1.0–3.0 */
+  /** Rarity of the action class. Typically 0.1–10. Not reputation. */
   R: number;
-  /** Frequency decay factor. 1.0 = first occurrence, <1 = repeated */
+  /** Frequency of Decay. 1.0 = first occurrence in class. */
   F: number;
-  /** Verified entropy reduction delta. Must be > 0 to mint. */
+  /** Bits-equivalent proxy. Must be > 0 to mint. */
   deltaS: number;
   /** Weight vector for each energy / domain dimension */
   w: number[];
@@ -54,8 +48,25 @@ export interface XPFormulaResult {
   reason?: string;
 }
 
+export interface LocalStandingInputs {
+  /** House slider on this till. 0 parks the overlay. */
+  H: number;
+  /** This-door standing. Not XP. Not Sam's Club at the laundromat. */
+  CT: number;
+  /** Optional door-local band (ZKP / mapper). Default 1. */
+  beta?: number;
+}
+
+export interface TillSparkResult {
+  L: number;
+  EP: number;
+  burned: true;
+}
+
 /** Quest-grain default: 5 minutes. Action class may pass a longer expected duration. */
 export const DEFAULT_DELTA_T_CAP_SECONDS = 5 * 60;
+
+export const XP_MONTHLY_KEEP = 0.99;
 
 /**
  * Compute XP according to the canonical Extropy formula.
@@ -64,7 +75,6 @@ export const DEFAULT_DELTA_T_CAP_SECONDS = 5 * 60;
 export function computeXP(inputs: XPFormulaInputs): XPFormulaResult {
   const { R, F, deltaS, w, E, Ts } = inputs;
 
-  // Precondition: entropy reduction must be positive
   if (deltaS <= 0) {
     return { xp: 0, breakdown: { R, F, deltaS, wDotE: 0, logDecay: 0 }, valid: false, reason: 'deltaS must be > 0' };
   }
@@ -99,10 +109,6 @@ export function computeTimestampDecay(
   return Math.exp(-lambda * dt);
 }
 
-/**
- * Convenience: compute XP from raw elapsed time instead of pre-computed Ts.
- * Pass expectedDurationSec from the action class when it is longer than the quest grain.
- */
 export function computeXPWithDecay(
   inputs: Omit<XPFormulaInputs, 'Ts'>,
   deltaT: number,
@@ -111,4 +117,32 @@ export function computeXPWithDecay(
 ): XPFormulaResult {
   const Ts = computeTimestampDecay(deltaT, lambda, deltaTCap);
   return computeXP({ ...inputs, Ts });
+}
+
+export function clip01(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(1, Math.max(0, n));
+}
+
+/** L on this ticket. House owns H. CT is this door only. */
+export function computeL(inputs: LocalStandingInputs): number {
+  const beta = inputs.beta ?? 1;
+  return clip01(inputs.H * inputs.CT * beta);
+}
+
+/** Till spark. Does not persist. Caller must burn it in the sale. */
+export function computeEP(xp: number, L: number): number {
+  if (xp <= 0 || L <= 0) return 0;
+  return xp * clip01(L);
+}
+
+export function sparkTill(xp: number, standing: LocalStandingInputs): TillSparkResult {
+  const L = computeL(standing);
+  return { L, EP: computeEP(xp, L), burned: true };
+}
+
+/** Standing leak. n is months (or epochs of that length). */
+export function leakXP(xpSettled: number, n: number): number {
+  if (xpSettled <= 0 || n <= 0) return Math.max(0, xpSettled);
+  return xpSettled * Math.pow(XP_MONTHLY_KEEP, n);
 }

@@ -1,26 +1,22 @@
-> **v3.1.2 (2026-05-08) — Canonical formula labels finalized.** Fixed a load-bearing semantic drift where the XP mint pipeline was feeding *validator reputation* into the R slot of the formula. R is now correctly identified as **Rarity** (action-class scarcity), F as **Frequency-of-decay**. Reputation legitimately governs vote weight (V+/V-) and the CT formula's ρ, but never enters XP minting. See [`docs/CHANGELOG.md`](docs/CHANGELOG.md) and migration [`packages/xp-mint/migrations/002_canonical_formula_v3_1_2.sql`](packages/xp-mint/migrations/002_canonical_formula_v3_1_2.sql). Pre-fix mints are quarantined under `formula_version='pre-canonical-v3.1.0'`.
+> **Canonical mint labels.** R is rarity of the action class. F is Frequency of Decay. ΔS is a bits-equivalent proxy, not XP. Tₛ is the slam window, not the 0.99ⁿ leak. L is this ticket. EP is the till spark (`EP = XP × L`) and burns in the sale. Public letter key: https://extropyengine.com/key — meter math: https://extropyengine.com/docs/METER-MATH.md
 >
-> **v3.1 (2026-05-01) is the canonical spec.** See [`docs/SPEC_v3.1.md`](docs/SPEC_v3.1.md), [`docs/CHANGELOG.md`](docs/CHANGELOG.md), and [`docs/GAPS.md`](docs/GAPS.md) (63 open engineering gaps across 13 categories).
->
-> **What's new in v3.1:** Digital Autarky vision, personal-AI + handshake model, mandatory hybrid identity (OAuth + on-device KYC + ZKP DID), Personal Signed Local Log, micro-quest marketplace with dynamic reward escalation, native substrate decision, three borrowed Holochain patterns renamed (PSLL, Validation Neighborhoods, Rule Modules). The `epistemology-engine` is **redefined, not removed** — v3.0 read it as a central decomposition service; v3.1 recognizes it as the mesh's emergent peer-review witness layer. Decomposition itself moves to personal AI at the edge.
->
-> **Sandbox testing:** [`packages/node-handshake/`](packages/node-handshake/) implements the proof-of-concept VPS↔local-laptop handshake. See [`docs/VPS_NODE.md`](docs/VPS_NODE.md).
+> Codex v2.1 stays signed. Code mint lives here in `packages/xp-formula`. If this README and the letter key disagree on names, the key wins.
 
 # Extropy Engine
 
-A physics-grounded value accounting protocol. The unit of value is entropy reduction.
+A value-accounting protocol. Standing comes from a closed loop with a declared boundary. You cannot sell that standing.
 
-This is not a metaphor.
+ΔS is a bits-equivalent **proxy** so eight domain-native measurements can sit on one graph. It is not SI social heat. Landauer is a conversion floor for erased information, not a license to add a lawn to a heat bath.
+
+House rule: we do not play their markets. No offset registry. No transferable tonne. No cash-out.
 
 ---
 
 ## The Claim
 
-All genuine value creation is physically real disorder reduction. Landauer's principle establishes that information processing is thermodynamic — every bit stored, transmitted, or erased has a minimum energy cost. This means cognitive work, code quality, social coordination, governance decisions, and thermodynamic efficiency are all entropy reduction at different scales with different measurement instruments.
+Useful work is a drop in disorder you can put evidence under and argue with later. The Engine is the audit loop for that claim: both edges, a versioned mapper, provisional mint, late burn, leak.
 
-The Extropy Engine operationalizes that claim into a working protocol: a contribution loop that closes when validators reach weighted consensus on a measured ΔS, mints XP proportional to that reduction, and settles or burns that XP retroactively based on whether the measurement held up.
-
-The Nash equilibrium is flipped. Honest contribution is the individually rational strategy, not the altruistic one.
+Honest contribution is cheaper than farming a bag because there is no bag.
 
 ---
 
@@ -38,29 +34,26 @@ XP = R × F × ΔS × (w · E) × log(1/Tₛ)
 | F | (0, 1] | **Frequency-of-decay** penalty. Diminishing returns for repeated instances of this action class. |
 | ΔS | (0, ∞) | Verified entropy reduction. Must be > 0 to mint. |
 | w · E | dot product | Weight vector × effort vector across energy dimensions |
-| Tₛ | (0, 1] | Timestamp decay: `exp(-λΔt)`. Recency factor. |
+| Tₛ | (0, 1] | Slam window: `exp(-λ min(Δt, Δt_cap))`. Instant close → log = 0 → XP = 0. Not recency. Not the standing leak. |
 
-`log(1/Tₛ)` enforces diminishing returns as closure time approaches the domain's causal closure speed. XP cannot be farmed by closing loops arbitrarily fast — the log curve kills that incentive.
+`log(1/Tₛ)` zeros a slam-shut script. F eats repeats. Standing leak is a different clock: `0.99ⁿ`.
 
-**Why R is rarity, not reputation.** XP measures entropy reduction from a single closed event. Every multiplier must describe the loop, not the actor's history. If reputation entered XP, past actions would inflate new mints and reputation would compound indefinitely — reputation laundering. Reputation belongs in vote weight (gating whether a loop closes) and in the CT formula (ρ, because CT is identity-bearing), but not in the XP mint amount.
+**Why R is rarity, not reputation.** Every mint multiplier describes the loop. Actor history in R is reputation laundering. Vote weight and door-local CT are other meters.
 
-The formula lives in one place: [`packages/xp-formula/src/index.ts`](packages/xp-formula/src/index.ts). Every service that mints XP imports from there. No reimplementations.
+The formula lives in one place: [`packages/xp-formula/src/index.ts`](packages/xp-formula/src/index.ts). `computeL` / `computeEP` / `leakXP` live there too. No reimplementations.
 
-### CT — Contribution Token, identity-bearing
+### CT, L, EP — this door, this ticket, this sale
+
+CT is standing *at this door*. Sam's Club CT does not pay the laundromat. A DFAO may vote how CT is scored *here*. It cannot rewrite the XP mint. It cannot cash CT out.
 
 ```
-CT = C × F × ρ × Δ × E
+L  = clip(H · CT_d · β, 0, 1)
+EP = XP × L
 ```
 
-| Variable | Description |
-|---|---|
-| C | **Capability** of the contributor |
-| F | **Frequency-of-decay** penalty (same semantics as XP's F) |
-| ρ | **Reputation density** (rho). CT is explicitly identity-bearing, so reputation legitimately enters here — unlike XP, where it is forbidden. |
-| Δ | Entropy reduction delta |
-| E | Eight-domain weighting / essentiality (governance-adjustable) |
+H is the house slider. β is an optional door-local band. EP is born and burned in that sale. The shop eats its own discount. There is no treasury reimbursement.
 
-Minted via `POST /ct/mint` on the token-economy service. Has lockup. See [`packages/token-economy/src/index.ts`](packages/token-economy/src/index.ts).
+A leftover CT sketch (`C × F × ρ × Δ × E`) still sits in `packages/contracts` as door-local inputs. Do not treat ρ there as a license to put reputation in XP.
 
 ### Ledger objects (not a six-token bag)
 
@@ -87,7 +80,7 @@ The split exists so standing cannot buy votes and a skill stamp cannot print XP.
 
 ## Architecture
 
-12 microservices, TypeScript strict mode, PostgreSQL (8+ schemas), Redis event bus, Docker Compose.
+Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is the meters and the loop, not a 12-service org chart. Skeletons stay skeletons until a door ships.
 
 ```
 packages/

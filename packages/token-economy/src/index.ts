@@ -3,13 +3,15 @@
  *  Token Economy Service — Multi-Token Economy Layer
  * ═══════════════════════════════════════════════════════════════════════════════
  *
- *  Manages the six-token economy:
- *    XP  — Per-action entropy reduction score (non-transferable, per-action)
- *    CT  — Contribution Token (cross-platform, 2-week lockup on mint)
- *    CAT — Capability Token (skill certification, log-scale threshold levels)
- *    IT  — Influence Token (governance weight, non-transferable)
- *    DT  — Domain Token (subject-matter expertise)
- *    EP  — Emergence Points (merchant loyalty, derived from XP × L)
+ *  Meter layer — not a six-token bag
+ *
+ *    XP  — global standing. Non-transferable. Leaks 0.99ⁿ. No cash-out.
+ *    CT  — this-door standing. Non-transferable. Feeds L.
+ *    L   — this ticket: clip(H · CT · β, 0, 1)
+ *    EP  — till spark EP = XP × L. Born and burned in the sale.
+ *    CAT — skill record. Off the mint.
+ *    IT  — governance weight. Off the mint. Idle leak ~5%/month.
+ *    DT  — leftover wallet slot. Do not mint.
  *
  *  Port: 4012
  * ═══════════════════════════════════════════════════════════════════════════════
@@ -75,7 +77,13 @@ const SENTINEL_VERTEX_ID   = '00000000-0000-0000-0000-000000000000' as VertexId;
 const SENTINEL_SEASON_ID   = '00000000-0000-0000-0000-000000000000' as SeasonId;
 
 // Non-transferable token types
-const NON_TRANSFERABLE_TYPES = new Set<TokenType>([TokenType.XP, TokenType.IT]);
+const NON_TRANSFERABLE_TYPES = new Set<TokenType>([
+  TokenType.XP,
+  TokenType.CT,
+  TokenType.CAT,
+  TokenType.IT,
+  TokenType.EP,
+]);
 
 // ─────────────────────────────────────────────────────────────────────────────────
 //  Row → Domain-object mappers
@@ -143,11 +151,11 @@ function defaultBalances(): Record<TokenType, number> {
 function defaultNonTransferable(): Record<TokenType, boolean> {
   return {
     [TokenType.XP]:  true,
-    [TokenType.CT]:  false,
-    [TokenType.CAT]: false,
+    [TokenType.CT]:  true,
+    [TokenType.CAT]: true,
     [TokenType.IT]:  true,
-    [TokenType.DT]:  false,
-    [TokenType.EP]:  false,
+    [TokenType.DT]:  true,
+    [TokenType.EP]:  true,
   };
 }
 

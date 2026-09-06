@@ -1774,12 +1774,12 @@ export interface TemporalDecayConfig {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export enum TokenType {
-  XP  = 'xp',   // Per-action entropy reduction score (non-transferable)
-  CT  = 'ct',   // Contribution Token (cross-platform, restricted transfer)
-  CAT = 'cat',  // Capability Token (skill certification, portable)
-  IT  = 'it',   // Influence Token (governance weight, non-transferable)
-  DT  = 'dt',   // Domain Token (subject-matter expertise)
-  EP  = 'ep',   // Emergence Points (merchant loyalty, local only)
+  XP  = 'xp',   // Global standing meter. Non-transferable. Leaks. No cash-out.
+  CT  = 'ct',   // This-door standing meter. Non-transferable. Feeds L.
+  CAT = 'cat',  // Skill record (DID, lane, level, issuer). Not a pile.
+  IT  = 'it',   // Governance weight. Non-transferable. Idle leak ~5%/month.
+  DT  = 'dt',   // Leftover slot. Do not mint. Expertise is CAT-per-lane.
+  EP  = 'ep',   // Till spark. EP = XP × L. Born and burned in the sale.
 }
 
 export enum TokenStatus {
@@ -1869,33 +1869,34 @@ export interface CATCertification {
 }
 
 /**
- * CT formula: CT = C × F × ρ × Δ × E
- *   C = Capability of the contributor
- *   F = Frequency-of-decay penalty (same semantics as XP formula's F)
- *   ρ = Reputation density (rho) — this is where reputation legitimately
- *       enters token issuance, because CT is identity-bearing.
- *   Δ = Entropy reduction delta
- *   E = Eight-domain weighting / essentiality
+ * Legacy CT sketch. DFAO may vote its own this-door inputs.
+ * Planetary rule: CT does not transfer, does not cash out, does not buy XP.
+ * L = clip(H · CT_d · β, 0, 1). Do not put reputation in the XP mint.
  */
 export interface CTFormulaInputs {
-  /** C — Capability of the contributor */
+  /** C — Capability of the contributor (door-local) */
   capability: number;
   /** F — Frequency-of-decay penalty */
   frequencyOfDecay: number;
-  /** ρ — Reputation density (rho). CT is identity-bearing, so reputation
-   *  legitimately enters here — unlike XP, where reputation is forbidden. */
+  /** Leftover name. Not a license to put actor reputation in XP. */
   reputationDensity: number;
-  /** Δ — Waste/entropy reduction achieved */
+  /** Δ — door-local reduction term */
   delta: number;
-  /** E — Eight-domain weighting / essentiality (governance-adjustable) */
+  /** E — eight-domain weighting / essentiality (governance-adjustable) */
   essentiality: number;
 }
 
-/** EP conversion: EP = XP × L */
+/** EP spark: EP = XP × L. L is this ticket. Spark burns in the sale. */
 export interface EPConversionInputs {
   xpAmount: number;
-  /** L — Local loyalty multiplier */
+  /** L — local standing on this ticket, in [0, 1] */
   localLoyaltyMultiplier: number;
+}
+
+export interface LocalStandingInputs {
+  H: number;
+  CT: number;
+  beta?: number;
 }
 
 /** XP decay: XP_t = XP_{t-1} × (1 - ρ) where ρ=0.01 per 30 loop cycles */
