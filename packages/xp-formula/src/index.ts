@@ -70,8 +70,25 @@ export interface TillSparkResult {
 
 export const DEFAULT_DELTA_T_CAP_SECONDS = 5 * 60;
 export const XP_MONTHLY_KEEP = 0.99;
-/** Small XP-equivalent. EP = XP·L + λ·L. */
+/** Small XP-equivalent. EP = XP·L + λ·L. Web W may republish with 30 days notice. */
 export const DEFAULT_EP_FLOOR = 0.15;
+/** This till this week. Auto may move it. */
+export const DEFAULT_H_CAP = 0.5;
+export const DEFAULT_S = 1;
+export const S_TEETH_DAYS = 14;
+export const LAMBDA_NOTICE_DAYS = 30;
+export const BETA_ALLOWLIST_NOTICE_DAYS = 14;
+
+/**
+ * Trailing 4-week cash position → H_cap.
+ * cash_in: drawer + overlay-touch. cash_out: inbound + rent + payroll due.
+ * Healthy books (ratio ≈ 1) sit at 0.5.
+ */
+export function hCapFromCash(cashIn4w: number, cashOut4w: number): number {
+  const out = Math.max(cashOut4w, 1e-9);
+  const ratio = Math.max(0, cashIn4w) / out;
+  return clip01(DEFAULT_H_CAP * ratio);
+}
 
 export function computeXP(inputs: XPFormulaInputs): XPFormulaResult {
   const { R, F, deltaS, w, E, Ts } = inputs;
@@ -123,8 +140,8 @@ export function clip01(n: number): number {
 
 /** L = clip(H_cap · S · κ · CT_W · β, 0, 1) */
 export function computeL(inputs: LocalStandingInputs): number {
-  const Hcap = clip01(inputs.H_cap ?? inputs.H ?? 0);
-  const S = clip01(inputs.S ?? 1);
+  const Hcap = clip01(inputs.H_cap ?? inputs.H ?? DEFAULT_H_CAP);
+  const S = clip01(inputs.S ?? DEFAULT_S);
   const kappa = inputs.kappa ?? 1;
   const beta = inputs.beta ?? 1;
   return clip01(Hcap * S * kappa * inputs.CT * beta);

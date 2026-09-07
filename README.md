@@ -40,7 +40,8 @@ XP = R × F × ΔS × (w · E) × log(1/Tₛ)
 
 **Why R is rarity, not reputation.** Every mint multiplier describes the loop. Actor history in R is reputation laundering. Vote weight and door-local CT are other meters.
 
-The formula lives in one place: [`packages/xp-formula/src/index.ts`](packages/xp-formula/src/index.ts). `computeL` / `computeEP` / `leakXP` live there too. No reimplementations.
+Defaults and who may change them: [`docs/DEFAULTS.md`](docs/DEFAULTS.md).
+
 
 ### CT, L, EP — community meter, house cap, this person, this ticket
 
