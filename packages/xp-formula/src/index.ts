@@ -70,6 +70,10 @@ export interface TillSparkResult {
 
 export const DEFAULT_DELTA_T_CAP_SECONDS = 5 * 60;
 export const XP_MONTHLY_KEEP = 0.99;
+/** CT used to burn on transfer. Transfer is gone. Leak is the burn now. Between XP 1% and IT 5%. */
+export const CT_MONTHLY_KEEP = 0.97;
+/** IT idle leak. Gavel rots faster than standing. */
+export const IT_MONTHLY_KEEP = 0.95;
 /** Small XP-equivalent. EP = XP·L + λ·L. Web W may republish with 30 days notice. */
 export const DEFAULT_EP_FLOOR = 0.15;
 /** This till this week. Auto may move it. */
@@ -166,4 +170,14 @@ export function sparkTill(xp: number, standing: LocalStandingInputs): TillSparkR
 export function leakXP(xpSettled: number, n: number): number {
   if (xpSettled <= 0 || n <= 0) return Math.max(0, xpSettled);
   return xpSettled * Math.pow(XP_MONTHLY_KEEP, n);
+}
+
+export function leakCT(ctSettled: number, n: number): number {
+  if (ctSettled <= 0 || n <= 0) return Math.max(0, ctSettled);
+  return ctSettled * Math.pow(CT_MONTHLY_KEEP, n);
+}
+
+export function leakIT(itSettled: number, n: number): number {
+  if (itSettled <= 0 || n <= 0) return Math.max(0, itSettled);
+  return itSettled * Math.pow(IT_MONTHLY_KEEP, n);
 }
