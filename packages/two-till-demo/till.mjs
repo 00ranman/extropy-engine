@@ -12,14 +12,16 @@ function ctW({ U, rhoW, C, P, F }) {
   return clip01(U * rhoW * C * P * (1 - F));
 }
 
-function ticket({ listPrice, xp, H, kappa, CT, beta = 1 }) {
-  const L = clip01(H * kappa * CT * beta);
-  const EP = xp > 0 && L > 0 ? xp * L : 0;
-  const touch = Math.min(listPrice, EP); // demo: $1 standing ≈ $1 cap, pennies in real mesh
+function ticket({ listPrice, xp, H_cap, S, kappa, CT, beta = 1, lambda = 0.15 }) {
+  const clip01 = (n) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0);
+  const L = clip01(H_cap * S * kappa * CT * beta);
+  const EP = L > 0 ? xp * L + lambda * L : 0;
+  const touch = Math.min(listPrice, EP);
   const cash = Math.max(0, listPrice - touch);
   return {
     listPrice,
-    H,
+    H_cap,
+    S,
     kappa,
     CT: Number(CT.toFixed(4)),
     L: Number(L.toFixed(4)),
@@ -39,7 +41,8 @@ const customer = {
 const grocery = {
   id: "grocery",
   name: "Oak Grocery",
-  H: 0.5,
+  H_cap: 0.5,
+  S: 0.8,
   kappa: 1,
   wrap: null,
 };
@@ -47,7 +50,8 @@ const grocery = {
 const laundry = {
   id: "laundry",
   name: "Spin Laundromat",
-  H: 0.5,
+  H_cap: 0.5,
+  S: 0.8,
   kappa: 1,
   wrap: null,
 };
@@ -59,7 +63,8 @@ function sale(shop, item, price) {
   const r = ticket({
     listPrice: price,
     xp: customer.xp,
-    H: shop.H,
+    H_cap: shop.H_cap,
+    S: shop.S,
     kappa: shop.kappa,
     CT: standing,
   });
@@ -112,7 +117,7 @@ console.log("XP network still exists. CT no longer compatible. Overlay touch:", 
 
 banner("PARK H  ·  hard times / overlay off");
 grocery.kappa = 1;
-grocery.H = 0;
+grocery.H_cap = 0;
 const g4 = sale(grocery, "milk + eggs", 8);
 console.log("H=0 vertex on the house", g4);
 

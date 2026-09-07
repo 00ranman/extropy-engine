@@ -1886,17 +1886,21 @@ export interface CTFormulaInputs {
   essentiality: number;
 }
 
-/** EP spark: EP = XP × L. L is this ticket. Spark burns in the sale. */
+/** EP spark: EP = XP·L + λ·L. Spark burns in the sale. */
 export interface EPConversionInputs {
   xpAmount: number;
-  /** L — local standing on this ticket, in [0, 1] */
   localLoyaltyMultiplier: number;
 }
 
 export interface LocalStandingInputs {
-  H: number;
+  H_cap?: number;
+  H?: number;
+  S?: number;
   CT: number;
+  kappa?: number;
   beta?: number;
+  lambda?: number;
+  listPrice?: number;
 }
 
 /** XP decay: XP_t = XP_{t-1} × (1 - ρ) where ρ=0.01 per 30 loop cycles */

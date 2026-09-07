@@ -42,20 +42,22 @@ XP = R × F × ΔS × (w · E) × log(1/Tₛ)
 
 The formula lives in one place: [`packages/xp-formula/src/index.ts`](packages/xp-formula/src/index.ts). `computeL` / `computeEP` / `leakXP` live there too. No reimplementations.
 
-### CT, L, EP — community standing, house slider, this ticket
+### CT, L, EP — community meter, house cap, this person, this ticket
 
-CT is community standing on web W. Same CT at the grocery and the laundromat if both rooms still speak base CT. A wrap that breaks the rules, or a different mesh, is the only way it does not read. The door does not own CT. The door owns **H**. H is how much of that community standing this till will let into L.
+CT_W is community standing. Same readout at grocery and laundry if they still speak base CT. The door does not own CT.
 
-L = clip(H · κ · CT_W · β, 0, 1). EP = XP × L. Burns in that sale.
+H_cap — this till this week. Inbound dollars. Same for everyone in line.
+S — this person at this house.
+β — CAT / on-duty proof this ticket. Not a wrap.
+κ — 1 on the language. 0 if they left it.
 
 ```
-L  = clip(H · CT_d · β, 0, 1)
-EP = XP × L
+L  = clip(H_cap · S · κ · CT_W · β, 0, 1)
+EP = XP · L + λ · L
 ```
 
-H is the house slider. β is an optional door-local band. EP is born and burned in that sale. The shop eats its own discount. There is no treasury reimbursement.
+λ is small so leaked XP cannot erase a real local L. Clip EP to the list. Burns in that sale. Official skins show cash collected and the remainder, not raw XP.
 
-A leftover CT sketch (`C × F × ρ × Δ × E`) still sits in `packages/contracts` as door-local inputs. Do not treat ρ there as a license to put reputation in XP.
 
 ### Ledger objects (not a six-token bag)
 

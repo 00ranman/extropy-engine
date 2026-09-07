@@ -3,21 +3,16 @@
  * Canonical meter math for the Extropy Engine.
  *
  * XP = R × F × ΔS × (w · E) × log(1/Tₛ)
+ * XP(n) = XP_settled · 0.99ⁿ
  *
- *   R  = Rarity of the action class. Not reputation. Not a room.
- *   F  = Frequency of Decay on repeats. Not fidelity. Not ℱ.
- *   ΔS = bits-equivalent proxy for verified reduction inside a declared
- *        boundary. Not XP. Not SI social heat.
- *   w · E = weighted emergence (eight-domain weights · this loop's effort).
- *   Tₛ = slam window: exp(−λ min(Δt, Δt_cap)). Instant close → XP = 0.
+ * L  = clip(H_cap · S · κ · CT_W · β, 0, 1)
+ * EP = XP · L + λ · L     clipped to the list price
  *
- * After the mint:
- *   XP(n) = XP_settled · 0.99ⁿ
- *   L     = clip(H · CT_d · β, 0, 1)
- *   EP    = XP × L   born and burned in that sale. Not a bag.
- *
- * CT is community standing on web W. Same readout at every compatible till.
- * CAT and IT stay off this package.
+ * CT_W is the community meter. Same readout at every compatible till.
+ * H_cap is this till this week (inbound dollars). Same for the line.
+ * S is this person at this house.
+ * β is proofs shown this ticket (CAT / on-duty). Not a CT wrap.
+ * λ is a small floor so leaked XP cannot erase a real local L.
  */
 
 export interface XPFormulaInputs {
@@ -49,14 +44,22 @@ export interface XPFormulaResult {
 }
 
 export interface LocalStandingInputs {
-  /** House slider on this till. 0 parks the overlay. */
-  H: number;
-  /** Community standing on web W. Not XP. Same at every compatible door. */
+  /** This till this week. 0 parks the overlay. Inbound cash lives here. */
+  H_cap?: number;
+  /** Alias for H_cap when S is omitted. */
+  H?: number;
+  /** This person at this house. Default 1 if omitted. */
+  S?: number;
+  /** Community standing on web W. Same at every compatible door. */
   CT: number;
   /** Compatibility with web W. 1 base. 0 if they left the language. Default 1. */
   kappa?: number;
-  /** Optional door-local band (ZKP / mapper). Default 1. */
+  /** Proofs this ticket: CAT, on-duty bit. Default 1. Off the clock, drop it. */
   beta?: number;
+  /** Floor coefficient so thin XP cannot zero a real L. Default 0.15. */
+  lambda?: number;
+  /** Clip spark to the sticker. */
+  listPrice?: number;
 }
 
 export interface TillSparkResult {
@@ -65,15 +68,11 @@ export interface TillSparkResult {
   burned: true;
 }
 
-/** Quest-grain default: 5 minutes. Action class may pass a longer expected duration. */
 export const DEFAULT_DELTA_T_CAP_SECONDS = 5 * 60;
-
 export const XP_MONTHLY_KEEP = 0.99;
+/** Small XP-equivalent. EP = XP·L + λ·L. */
+export const DEFAULT_EP_FLOOR = 0.15;
 
-/**
- * Compute XP according to the canonical Extropy formula.
- * Returns xp=0 with valid=false if preconditions are not met.
- */
 export function computeXP(inputs: XPFormulaInputs): XPFormulaResult {
   const { R, F, deltaS, w, E, Ts } = inputs;
 
@@ -98,10 +97,6 @@ export function computeXP(inputs: XPFormulaInputs): XPFormulaResult {
   };
 }
 
-/**
- * Slam-window factor. Instant confirm (deltaT → 0) returns 1, so log(1/Ts) = 0.
- * deltaT is clipped to deltaTCap so stalling past the class duration does not print.
- */
 export function computeTimestampDecay(
   deltaT: number,
   lambda = 0.001,
@@ -126,25 +121,31 @@ export function clip01(n: number): number {
   return Math.min(1, Math.max(0, n));
 }
 
-/** L on this ticket. House owns H. CT is the web. κ is compatibility. */
+/** L = clip(H_cap · S · κ · CT_W · β, 0, 1) */
 export function computeL(inputs: LocalStandingInputs): number {
-  const beta = inputs.beta ?? 1;
+  const Hcap = clip01(inputs.H_cap ?? inputs.H ?? 0);
+  const S = clip01(inputs.S ?? 1);
   const kappa = inputs.kappa ?? 1;
-  return clip01(inputs.H * kappa * inputs.CT * beta);
+  const beta = inputs.beta ?? 1;
+  return clip01(Hcap * S * kappa * inputs.CT * beta);
 }
 
-/** Till spark. Does not persist. Caller must burn it in the sale. */
-export function computeEP(xp: number, L: number): number {
-  if (xp <= 0 || L <= 0) return 0;
-  return xp * clip01(L);
+/** EP = XP · L + λ · L. Thin XP cannot erase a real local L. */
+export function computeEP(xp: number, L: number, lambda = DEFAULT_EP_FLOOR): number {
+  const L0 = clip01(L);
+  if (L0 <= 0) return 0;
+  return Math.max(0, xp) * L0 + Math.max(0, lambda) * L0;
 }
 
 export function sparkTill(xp: number, standing: LocalStandingInputs): TillSparkResult {
   const L = computeL(standing);
-  return { L, EP: computeEP(xp, L), burned: true };
+  let EP = computeEP(xp, L, standing.lambda ?? DEFAULT_EP_FLOOR);
+  if (standing.listPrice != null && Number.isFinite(standing.listPrice)) {
+    EP = Math.min(Math.max(0, standing.listPrice), EP);
+  }
+  return { L, EP, burned: true };
 }
 
-/** Standing leak. n is months (or epochs of that length). */
 export function leakXP(xpSettled: number, n: number): number {
   if (xpSettled <= 0 || n <= 0) return Math.max(0, xpSettled);
   return xpSettled * Math.pow(XP_MONTHLY_KEEP, n);
