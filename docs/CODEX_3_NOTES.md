@@ -39,7 +39,8 @@ Must land in 3.0, already specified in code/defaults, not in the signed 2.1 PDF:
 - Smart contracts: named cases after both edges signed. No bag in the “then.”
 - Official skins: cash collected + remainder. No raw XP on a forehead.
 - CT idle leak 0.99ⁿ (~1%), same keep as XP. Active on that web resets n. CT does not travel.
-- IT leaks 0.95ⁿ (~5% idle). Vote uses weight; does not spend IT. Half-life ~13.5 months idle.
+- IT is not a pile. IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). Burns in the tally. Not XP · G.
+
 
 
 Scratched for 3.0 so they stop eating pages: CT lockup, first-validator priesthood, universal ESF.

@@ -11,7 +11,7 @@ Public copy: https://extropyengine.com/docs/DEFAULTS.md
 | XP mint shape | R × F × ΔS × (w·E) × log(1/Tₛ) | Planetary. Fork. |
 | XP leak | 0.99 per ~30 days (~1% of remaining) | Planetary. Fork. |
 | CT leak | 0.99 per idle ~30 days (~1% of remaining) | Same keep as XP. Idle on web W. A close / till spark / posted task on W resets the clock. Does not travel to the next town. |
-| IT leak | 0.95 per ~30 days (~5% of remaining, idle) | Planetary default. A room may not slow it below 0.96 without a fork. |
+| IT leak | — | No pile. IT is recomputed each proposal. |
 | Cash-out of standing | Forbidden | Lose-condition. |
 
 ## Web W (MESO / city parent publishes)
@@ -20,7 +20,8 @@ Public copy: https://extropyengine.com/docs/DEFAULTS.md
 |---|---|---|
 | λ | 0.15 | Vertex. 30 days notice. One number for the web. |
 | β allow-list (max) | CAT on-duty, asked domain band, signed if-then between two rooms on this language | Vertex. 14 days notice. House may only narrow. |
-| Fat U_W | Requires a stranger close | Web rule. |
+| H_gov | 1 | This room. 0 = one DID one nullifier. Park is immediate. |
+| S_gov | 1 if in the room, else 0 | Party to the dispute: 0. |
 
 ## This house (MICRO)
 

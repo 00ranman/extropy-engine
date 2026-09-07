@@ -19,6 +19,6 @@ Do not remap. Public key: https://extropyengine.com/key
 | L | clip(H_cap · S · κ · CT_W · β, 0, 1) |
 | EP | XP · L + λ · L. Burns in the sale. |
 | CAT | Skill record. Feeds β. Off the mint. |
-| IT | Governance weight. Off the mint. Idle leak 0.95ⁿ (~5%/month). |
+| IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). This proposal. Burns in the tally. |
 
 Code: `packages/xp-formula` (`computeXP`, `computeL`, `computeEP`, `leakXP`).

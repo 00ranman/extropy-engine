@@ -12,7 +12,9 @@
  * H_cap is this till this week (inbound dollars). Same for the line.
  * S is this person at this house.
  * β is proofs shown this ticket (CAT / on-duty). Not a CT wrap.
- * λ is a small floor so leaked XP cannot erase a real local L.
+ * IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1)
+ * Weight this proposal. Burns in the tally. No pile.
+ * Not XP · G — that is an XP oligarchy.
  */
 
 export interface XPFormulaInputs {
@@ -68,12 +70,27 @@ export interface TillSparkResult {
   burned: true;
 }
 
+export interface VoteSparkResult {
+  IT: number;
+  burned: true;
+}
+
+export interface GovStandingInputs {
+  /** How hard standing counts this vote. 0 = one DID one nullifier. Default 1. */
+  H_gov?: number;
+  /** You in this room. 0 if you are not in it. Default 1 if omitted. */
+  S_gov?: number;
+  CT: number;
+  kappa?: number;
+  /** Lane / on-duty / not-a-party-to-the-dispute. Default 1. */
+  beta_gov?: number;
+}
+
 export const DEFAULT_DELTA_T_CAP_SECONDS = 5 * 60;
 export const XP_MONTHLY_KEEP = 0.99;
 /** CT idle leak. Same keep as XP. n = idle months on web W. A close / till spark / posted task on W resets n. */
 export const CT_MONTHLY_KEEP = 0.99;
-/** IT idle leak. Gavel rots faster than standing. */
-export const IT_MONTHLY_KEEP = 0.95;
+export const DEFAULT_H_GOV = 1;
 /** Small XP-equivalent. EP = XP·L + λ·L. Web W may republish with 30 days notice. */
 export const DEFAULT_EP_FLOOR = 0.15;
 /** This till this week. Auto may move it. */
@@ -177,7 +194,19 @@ export function leakCT(ctSettled: number, n: number): number {
   return ctSettled * Math.pow(CT_MONTHLY_KEEP, n);
 }
 
-export function leakIT(itSettled: number, n: number): number {
-  if (itSettled <= 0 || n <= 0) return Math.max(0, itSettled);
-  return itSettled * Math.pow(IT_MONTHLY_KEEP, n);
+/** IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). This proposal. Not XP. */
+export function computeIT(inputs: GovStandingInputs): number {
+  const Hgov = clip01(inputs.H_gov ?? DEFAULT_H_GOV);
+  const Sgov = clip01(inputs.S_gov ?? DEFAULT_S);
+  const kappa = inputs.kappa ?? 1;
+  const beta = inputs.beta_gov ?? 1;
+  return clip01(Hgov * Sgov * kappa * inputs.CT * beta);
+}
+
+export function sparkVote(inputs: GovStandingInputs): VoteSparkResult {
+  return { IT: computeIT(inputs), burned: true };
+}
+
+export function sparkVote(inputs: GovStandingInputs): VoteSparkResult {
+  return { IT: computeIT(inputs), burned: true };
 }

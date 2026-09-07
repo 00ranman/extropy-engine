@@ -1,32 +1,39 @@
-# IT — the gavel that rots
+# IT — this proposal, then it burns
 
-https://extropyengine.com/it
+https://extropyengine.com/tokenomics/it
 
-IT is governance weight. Not Insight Token. Not a bag. Off the XP mint. You cannot buy it with cash. You cannot buy it with XP. You cannot send it to a friend.
+IT is not a pile. It is this-proposal standing. Same shape as L. Born when a case is open. Burned in the tally. The receipt is the vertex.
 
-## Why 5%
+```
+IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1)
+```
 
-XP leaks 1% of remaining per ~30 days. World standing should last if you keep closing loops.
+Not `XP · G`. That is an XP oligarchy. World standing does not buy extra gavels.
 
-CT idle-leaks at 1%, same keep as XP. A close, a till spark, or a posted task on that web resets the clock. Vanish and it thins. Move and you leave it. Transfer-burn is gone; this is that burn, slower, and only while idle.
+## Why no pile
 
-IT leaks 5% while idle. A seat that does not show up should empty before a year and a half. Half-life ~13.5 months at 0.95ⁿ. That is the anti-capture clock. Hire a roomful of quiet holders and watch the gavel turn to dust.
+A 5% leak on a balance still leaves a year-one holder at half voice after twelve quiet months. That is a gavel you sit on.
 
-Remaining after n months: IT × 0.95ⁿ. Never zero in the reals. Idle means no voice-bearing close in the period.
+Clip to 1 means two years here and twenty years here can both sit at full voice. Extra years do not mint extra votes. New people climb by coupling (CT), not by buying IT.
 
-## How it moves
+Governance work still mints XP and can move CT, like any other closed loop. It does not mint a second meter.
 
-A room publishes which loops are voice-bearing: contesting a puff, teaching a mapper, looking at a graph (which writes a vertex), closing a governance case. Those closes mint IT. Unsettled claims do not.
+## Letters this ticket
 
-A vote uses remaining IT as weight. It does not spend IT. Leak is the only spend.
+| Letter | Job |
+|---|---|
+| H_gov | How hard standing counts this vote. Default 1. 0 = one DID, one nullifier. |
+| S_gov | You in this room. 0 if you are not in it. Party to the dispute: 0. |
+| κ | 1 on the language. |
+| CT_W | Town coupling. Already idle-leaks at 1%. |
+| β_gov | Lane / CAT this case asked for. 1 if the room asked for nothing. |
 
-PLANETARY grammar and cash-out are not IT votes. A MICRO cannot vote the XP mint slower. A room may not publish an IT leak gentler than 0.96 without a fork.
+## Fractal
 
-## What it is for
+- MICRO (this shop): S_gov is membership here. H_gov is the house.
+- MESO / city: CT_W is the web. Tourists have S_gov = 0 unless a signed case says otherwise.
+- PLANETARY grammar and cash-out are not IT votes.
 
-Named cases still run without a meeting. IT is for the unnamed case and for changing a published case. Smart contracts eat the caste that existed only to perform a decision that was already determined. IT is the weight when the case is not named yet.
+Named cases still run without a meeting. Smart contracts. IT is only the unnamed case.
 
-Corporate capture is still expensive labor, not a token sale. People with remaining IT can be pointed. Decay is why that lease expires.
-
-Defaults: /docs/DEFAULTS.md  
-Letters: /key
+Code: `computeIT`, `sparkVote` in `packages/xp-formula`.
