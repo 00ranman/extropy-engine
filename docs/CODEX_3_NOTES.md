@@ -1,7 +1,8 @@
 # Codex 3.0 — capture notes
 
 **Status:** Codex v2.1 stays frozen. Do not spin a new edition for this.
-**Date:** 2026-08-23
+**Date:** 2026-08-23; addendum 2026-09-07
+
 **Why this file exists:** Load-bearing mechanics keep falling out of the public story, and critiques (NotebookLM and otherwise) then attack a cartoon. They are in the type system. They are not in the Codex. Put them in 3.0.
 
 The source rant is at the bottom. Do not “clean” it into something else.
@@ -22,6 +23,25 @@ Do not deny that. Do not call it low-hanging fruit and walk away. The answer on 
 - A MICRO vote cannot rewrite a MACRO, and only PLANETARY hits the mesh.
 
 Unsolved (keep it unsolved in 3.0 if it still is): whether nesting actually stops a popular MICRO from laundering a story upward.
+
+---
+
+## 2026-09-07 addendum — put this in Codex 3.0
+
+Do not reprint “63 gaps” or “65 gaps.” Public count is 16 live.
+
+Must land in 3.0, already specified in code/defaults, not in the signed 2.1 PDF:
+
+- CT_W is community-web standing. Same readout at compatible tills. Door owns H_cap and S, not CT.
+- L = clip(H_cap · S · κ · CT_W · β, 0, 1). EP = XP · L + λ · L.
+- H_cap default 0.5; auto from trailing 4-week cash. λ default 0.15; web publishes; 30-day notice.
+- β is CAT / on-duty / signed case. Not a CT wrap.
+- Smart contracts: named cases after both edges signed. No bag in the “then.”
+- Official skins: cash collected + remainder. No raw XP on a forehead.
+- First live till is P0. Hostile spec for one door beats another inventory.
+
+Scratched for 3.0 so they stop eating pages: CT lockup, first-validator priesthood, universal ESF.
+
 
 ---
 

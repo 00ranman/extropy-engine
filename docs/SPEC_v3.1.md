@@ -490,7 +490,9 @@ See `docs/operationalization/` for per-domain falsification thresholds and revie
 
 ## 16. Open Engineering Gaps
 
-63 identified implementation gaps across 13 categories. See [`GAPS.md`](./GAPS.md) for the full enumeration. The most significant unresolved questions:
+Public gap count as of 2026-09-07: **16 live** (12 open, 4 narrowed). See [`GAPS.md`](./GAPS.md) and https://extropyengine.com/open-problems. The 63-item list below is the v3.1 engineering inventory, not the public number.
+
+The most significant unresolved questions:
 
 - Gödel Boundary Watchdog: paradox-safe self-referential claim handling remains incomplete.
 - `cₗ` calibration bootstrap: per-domain propagation constants need operational data we do not yet have.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-07 — Public gap count
+
+Public list is **16 live** (12 open, 4 narrowed). Three questions scratched as the wrong shape (CT lockup, validator priesthood, universal ESF). Do not quote 63 or 65. See `docs/GAPS.md` and https://extropyengine.com/open-problems.
+
 ## v3.1.2 — 2026-05-08 (Canonical Formula Labels)
 
 ### The bug

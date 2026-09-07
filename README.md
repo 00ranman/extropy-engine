@@ -1,4 +1,4 @@
-> **Canonical mint labels.** R is rarity of the action class. F is Frequency of Decay. ΔS is a bits-equivalent proxy, not XP. Tₛ is the slam window, not the 0.99ⁿ leak. L is this ticket. EP is the till spark (`EP = XP × L`) and burns in the sale. Public letter key: https://extropyengine.com/key — meter math: https://extropyengine.com/docs/METER-MATH.md
+> **Canonical mint labels.** R is rarity of the action class. F is Frequency of Decay. ΔS is a bits-equivalent proxy, not XP. Tₛ is the slam window, not the 0.99ⁿ leak. L is this ticket. EP is the till spark (`EP = XP · L + λ · L`) and burns in the sale. Public letter key: https://extropyengine.com/key — meter math: https://extropyengine.com/docs/METER-MATH.md — gaps: https://extropyengine.com/open-problems
 >
 > Codex v2.1 stays signed. Code mint lives here in `packages/xp-formula`. If this README and the letter key disagree on names, the key wins.
 
@@ -67,9 +67,9 @@ Public copy uses **record / meter / till spark**. The crowd hears “token” an
 | Object | Kind | Job |
 |---|---|---|
 | XP | Meter | Standing from verified ΔS. Non-transferable. Leaks `0.99ⁿ`. |
-| CT | Meter | This-door contribution. Feeds L. Not purchased with XP. |
+| CT | Meter | Community standing on web W. Same readout at compatible tills. |
 | L | Meter | Local rank in `[0, 1]`. |
-| EP | Till spark | `EP = XP × L`. Born and burned in the sale. |
+| EP | Till spark | `EP = XP · L + λ · L`. Born and burned in the sale. |
 | CAT | Record | Skill credential in a **lane**. Unique. `(DID, lane, level, issuer)`. |
 | IT | Meter | Governance / stake weight. Idle leak ~5%/month. |
 | Domain | Enum | Eight entropy instruments. Not minted. |
@@ -146,7 +146,8 @@ This is the section you should actually read before forming an opinion.
 
 **Measurement gaming:** Each of the 8 entropy domains has explicit falsification conditions — observable outcomes that would invalidate the measurement instrument. If a domain's ΔS does not predict the real-world outcomes it claims to measure over a defined observation window, the instrument is declared miscalibrated and must be replaced.
 
-**63 open engineering gaps** across 13 categories are catalogued in the full technical spec. Gaps are not hidden.
+**Public gaps (7 Sep 2026):** 16 live on https://extropyengine.com/open-problems — 12 open, 4 specified but untested. Three old questions scratched (CT lockup, validator priesthood, universal ESF). The v3.1 “63/65” list is a legacy engineering inventory in [`docs/GAPS.md`](docs/GAPS.md). Do not quote 65 as the current number. Gaps are not hidden.
+
 
 ---
 
