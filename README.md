@@ -71,7 +71,7 @@ Public copy uses **record / meter / till spark**. The crowd hears “token” an
 | L | Meter | Local rank in `[0, 1]`. |
 | EP | Till spark | `EP = XP · L + λ · L`. Born and burned in the sale. |
 | CAT | Record | Skill credential in a **lane**. Unique. `(DID, lane, level, issuer)`. |
-| IT | Meter | Governance / stake weight. Idle leak ~5%/month. |
+| IT | This proposal | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). Burns in the tally. |
 | Domain | Enum | Eight entropy instruments. Not minted. |
 | Lane | Field | Skill specialization. Claim is a signed vertex, not a dropdown. |
 
@@ -115,7 +115,7 @@ packages/
 
 Archived standalones (homeflow, signalflow, levelup-academy, xp-net, xp-dag-mesh, extropy-master-control-hub) were folded into this repo. See [`docs/ARCHIVED.md`](docs/ARCHIVED.md). The public site talks about this git, not those.
 
-The ledger exists specifically to prevent the failure mode that killed most Web3 governance: **conflation**. XP (standing) is non-transferable. IT (voice) is non-transferable and decays at 5%/month. You cannot buy influence. You have to earn it, and if you stop contributing it bleeds out. CAT is a skill **record**, not a pile.
+The ledger exists specifically to prevent the failure mode that killed most Web3 governance: **conflation**. XP (standing) is non-transferable. IT is this-proposal standing, clipped to 1, burned in the tally. You cannot buy a gavel. CAT is a skill **record**, not a pile.
 
 ---
 
@@ -143,7 +143,7 @@ This is the section you should actually read before forming an opinion.
 
 **Collusion:** Two-phase minting creates a 30-day exposure window. Retroactive slashing makes sustained collusion risky but does not prevent it. A cartel controlling >50% of domain reputation can self-validate indefinitely. Partial mitigation: the XP oracle layer ingests external platform data as independent verification. The oracle is currently specified, not built.
 
-**Economic capture:** XP is non-transferable. IT decays. External capital cannot be directly converted into governance power. Residual risk: "corporate capture" — a well-funded adversary can employ real validators whose governance votes are externally directed. This is expensive but not theoretically prevented.
+**Economic capture:** XP is non-transferable. IT is not a pile. External capital cannot buy a gavel. Residual risk: "corporate capture" — a well-funded adversary can employ real members whose live CT and S_gov are directed. That is expensive labor, not a token sale.
 
 **Measurement gaming:** Each of the 8 entropy domains has explicit falsification conditions — observable outcomes that would invalidate the measurement instrument. If a domain's ΔS does not predict the real-world outcomes it claims to measure over a defined observation window, the instrument is declared miscalibrated and must be replaced.
 

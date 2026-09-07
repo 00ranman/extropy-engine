@@ -1777,7 +1777,7 @@ export enum TokenType {
   XP  = 'xp',   // Global standing meter. Non-transferable. Leaks. No cash-out.
   CT  = 'ct',   // This-door standing meter. Non-transferable. Feeds L.
   CAT = 'cat',  // Skill record (DID, lane, level, issuer). Not a pile.
-  IT  = 'it',   // Governance weight. Non-transferable. Idle leak ~5%/month.
+  IT  = 'it',   // This-proposal standing. Burns in the tally. Not a pile.
   DT  = 'dt',   // Leftover slot. Do not mint. Expertise is CAT-per-lane.
   EP  = 'ep',   // Till spark. EP = XP × L. Born and burned in the sale.
 }

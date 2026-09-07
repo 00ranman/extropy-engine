@@ -86,14 +86,14 @@ The assistant you trust *is* the UI. Character-sheet-ish is a sketch, not a spec
 
 ## Two different clocks of death
 
-Do not mash these together. 5%/month is **IT**, not XP.
+Do not mash these together. IT is not a 5%/month pile. That line is dead.
 
 | Thing | What it does | Code default (knob) |
 | --- | --- | --- |
 | **Settle window** | Time from provisional XP → standing XP | Thrown out as ~30 days. Could be 5, 10, 15, 40. Per-DFAO votable. Not scripture. This is only the promotion window, not the end of burn. |
 | **Late burn** | Standing XP can still be destroyed | No expiry on burnability. Five days later or thirty years later. Nothing says settled means immortal. |
 | **XP decay** | Standing XP erodes on a schedule even with no dispute | `xpDecayRate` ρ = **0.01 per 30 loop cycles** (~1%/month). You keep working or the pile shrinks. Access economy: you do not spend XP; it gets eaten. |
-| **IT decay** | Governance weight bleeds if you vanish | **~5%/month**. Anti-capture. Different token, different job. IT holders can vote to lower the rate inside their DFAO. |
+| **IT** | This-proposal standing | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). Burns in the tally. Not XP · G. |
 
 Possible axiom (not written yet): some XP and some IT always burn. Floor, not a vibe. Capture for 3.0 if we mean it.
 
@@ -233,7 +233,7 @@ Three clocks. Do not mash:
 | F | Repeating the action class. |
 | 0.99ⁿ | Standing after settlement. ~1%/month of remaining. |
 
-Settle window is provisional → standing. IT ~5%/month is voice. Neither is Tₛ.
+Settle window is provisional → standing. IT is this-proposal standing, not a leak clock. Neither is Tₛ.
 
 Rarity-splitting 400 fake classes is a **DAG** job. The formula will not catch it.
 
@@ -270,7 +270,7 @@ FAQ: https://extropyengine.com/faq#overlay
 ## What 3.0 should actually decide
 
 1. Name the settle-window default and say it is a knob. Say it is only provisional → standing.
-2. Put XP decay on the page next to IT decay, with different rates.
+2. Put XP decay next to CT idle leak. IT is not a third leak clock.
 3. State late-burn explicitly: settled ≠ immortal.
 4. Keep LocalFlow / SignalFlow / PSLL / Digital Autarky as separate nouns. Highlight SignalFlow as a first-class engine piece.
 5. Write the claim path: no self-score; evidence on the DAG; if-then provisional mint.

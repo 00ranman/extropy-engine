@@ -95,7 +95,7 @@ Variable ranges:
 
 - **XP** — non-transferable, 1% decay / 30 loops
 - **CT** — 2% friction + 14-day lockup
-- **IT** — non-transferable, 5% / month decay
+- **IT** — this-proposal standing, clip to 1, burned in the tally. Not a pile.
 
 ## 8. Domains (8)
 

@@ -540,7 +540,8 @@ app.post('/reputation/decay-tick', async (_req, res) => {
 /**
  * POST /governance/weight-decay — Decay governance weights in DFAOs (cron endpoint)
  *
- * Applies 5% monthly decay: new_weight = current_weight × 0.95
+ * POST /governance/weight-decay — leftover cron.
+ * IT is this-proposal standing (computeIT). There is no pile to drip at 5%.
  */
 app.post('/governance/weight-decay', async (_req, res) => {
   try {

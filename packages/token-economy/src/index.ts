@@ -10,7 +10,7 @@
  *    L   — this ticket: clip(H · CT · β, 0, 1)
  *    EP  — till spark EP = XP × L. Born and burned in the sale.
  *    CAT — skill record. Off the mint.
- *    IT  — governance weight. Off the mint. Idle leak ~5%/month.
+ *    IT  — this-proposal standing. clip(H_gov · S_gov · κ · CT_W · β_gov). Burns in the tally.
  *    DT  — leftover wallet slot. Do not mint.
  *
  *  Port: 4012

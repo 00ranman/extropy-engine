@@ -29,7 +29,7 @@ Live public gaps: **12 open + 4 narrowed** (16 live). Three old questions scratc
 ### P2
 27–35 DAG + settle + burn  
 36–40 DFAO nesting  
-41 IT decay  
+41 IT pile decay — scratched. IT is computeIT per proposal.
 42–44 token mash — narrowed  
 45–49 ZKP / PSLL  
 

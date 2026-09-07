@@ -31,7 +31,7 @@ The node keeps a private state; the mesh stores only commitments (Merkle / KZG /
 | --- | --- | --- |
 | `C_xp` | standing XP after decay and late-burn | epoch-stamped |
 | `C_R` | per-domain reputation vector | epoch-stamped |
-| `C_IT` | governance weight after 5% drip | per DFAO |
+| `C_IT` | this-proposal standing (computeIT) | per proposal |
 | `C_slash` | burns, penalties, open disputes | accumulator |
 | `C_hist` | Merkle of settled loop IDs + domains (not payloads) | for membership proofs |
 

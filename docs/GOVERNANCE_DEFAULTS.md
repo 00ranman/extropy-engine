@@ -15,7 +15,7 @@ See `docs/CODEX_3_NOTES.md` for the Codex 3.0 capture of mechanics that kept fal
 | Retroactive **settle** window | ~30 days (starting number) | Per-DFAO; PLANETARY to hit everyone | Time from provisional XP → standing XP. Could be 5, 10, 15, 40. Not scripture. |
 | Late burn | no expiry | Ecosystem / dispute path | Standing XP can still burn years later. Settled ≠ immortal. |
 | **XP decay** ρ | **0.01 per 30 loop cycles (~1%/month)** | Per-DFAO | Not 5%. That is IT. Access economy: you do not spend XP; it gets eaten. You keep working or the pile shrinks. |
-| IT decay | 5%/month | Per-DFAO | Anti-capture pressure. Different token, different job. |
+| IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1) | This room | No pile. Burns in the tally. H_gov = 0 is one DID one nullifier. |
 | CT lockup | 14 days | Ecosystem | Limited transferability |
 | EP decay | TBD | Ecosystem | Pending Phase 2 modeling |
 | GT decay | TBD | Ecosystem | Pending Phase 2 modeling |

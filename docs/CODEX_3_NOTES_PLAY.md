@@ -65,7 +65,7 @@ That is **role occupancy from dependence**, not a poll.
 - **Parameter changes** (settle window, decay, `b` for access bands) still vote, in the DFAO they affect. PLANETARY stays hard.
 - **Who holds a working role** (steward of this MICRO, curator of this slice of DAG, the person the till already knows) defaults to *sustained presence + domain CAT + no serious burn*. Challenge is possible; it is expensive; it is not a season election.
 
-IT still decays if you vanish (~5%). That is what empties a seat. You do not get a diplomatic reset to take it.
+IT is this-proposal standing. Clip to 1. Burns in the tally. You do not get a diplomatic reset to take a pile, because there is no pile.
 
 ---
 
