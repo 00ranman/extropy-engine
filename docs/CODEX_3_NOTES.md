@@ -168,7 +168,7 @@ Kill that in 3.0.
 
 - **Own lawn.** The ΔS is the grass. HomeFlow can close it. Neighbor-mows-yours is two households. You-mow-yours is one house taking care of itself. Same physical reduction. You do not type a score. F still applies if it is every Saturday.
 - **No PTO token.** Standing already minted is what you live on while you rest. XP leak is ~1%/month of remaining, not a pink slip. Sick is not a clawback. Care is a loop for the person who shows up. Recovery can be biological ΔS if the loop closes.
-- **Buying is coupling, not a mint.** Patronage updates this-door CT / L. Cash cannot mint XP.
+- **Buying is coupling, not a mint.** Patronage can move CT_W on the web. Cash cannot mint XP. The till only chooses H.
 - **Anything verifiable.** Self-report, sensor, claim, assistant — then the other side agrees. Work-for-a-boss is one input. Living was never inside that box.
 
 FAQ: https://extropyengine.com/faq#own-lawn

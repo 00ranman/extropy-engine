@@ -42,9 +42,11 @@ XP = R × F × ΔS × (w · E) × log(1/Tₛ)
 
 The formula lives in one place: [`packages/xp-formula/src/index.ts`](packages/xp-formula/src/index.ts). `computeL` / `computeEP` / `leakXP` live there too. No reimplementations.
 
-### CT, L, EP — this door, this ticket, this sale
+### CT, L, EP — community standing, house slider, this ticket
 
-CT is standing *at this door*. Sam's Club CT does not pay the laundromat. A DFAO may vote how CT is scored *here*. It cannot rewrite the XP mint. It cannot cash CT out.
+CT is community standing on web W. Same CT at the grocery and the laundromat if both rooms still speak base CT. A wrap that breaks the rules, or a different mesh, is the only way it does not read. The door does not own CT. The door owns **H**. H is how much of that community standing this till will let into L.
+
+L = clip(H · κ · CT_W · β, 0, 1). EP = XP × L. Burns in that sale.
 
 ```
 L  = clip(H · CT_d · β, 0, 1)

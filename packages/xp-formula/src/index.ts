@@ -16,7 +16,7 @@
  *   L     = clip(H · CT_d · β, 0, 1)
  *   EP    = XP × L   born and burned in that sale. Not a bag.
  *
- * CT is this-door standing. It does not transfer. It does not cash out.
+ * CT is community standing on web W. Same readout at every compatible till.
  * CAT and IT stay off this package.
  */
 
@@ -51,8 +51,10 @@ export interface XPFormulaResult {
 export interface LocalStandingInputs {
   /** House slider on this till. 0 parks the overlay. */
   H: number;
-  /** This-door standing. Not XP. Not Sam's Club at the laundromat. */
+  /** Community standing on web W. Not XP. Same at every compatible door. */
   CT: number;
+  /** Compatibility with web W. 1 base. 0 if they left the language. Default 1. */
+  kappa?: number;
   /** Optional door-local band (ZKP / mapper). Default 1. */
   beta?: number;
 }
@@ -124,10 +126,11 @@ export function clip01(n: number): number {
   return Math.min(1, Math.max(0, n));
 }
 
-/** L on this ticket. House owns H. CT is this door only. */
+/** L on this ticket. House owns H. CT is the web. κ is compatibility. */
 export function computeL(inputs: LocalStandingInputs): number {
   const beta = inputs.beta ?? 1;
-  return clip01(inputs.H * inputs.CT * beta);
+  const kappa = inputs.kappa ?? 1;
+  return clip01(inputs.H * kappa * inputs.CT * beta);
 }
 
 /** Till spark. Does not persist. Caller must burn it in the sale. */
