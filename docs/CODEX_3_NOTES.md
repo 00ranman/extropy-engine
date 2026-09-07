@@ -172,12 +172,26 @@ If the letter DT survives, it is only as a unique **lane-claim record**: minted 
 
 ### Six was never physics
 
-The load-bearing split is jobs: standing (XP) ≠ this door (CT → L → EP) ≠ voice (IT) ≠ skill record (CAT). The number six was accretion. GT/RT vs CAT/DT already drifted in the same README. Do not grow a seventh bag because seven is prime.
+The load-bearing split is jobs. The count is **five meters**, not six tokens:
+
+- XP — world standing  
+- CT — community standing  
+- IT — governance weight  
+- EP — till spark (dies on the ticket)  
+- CAT — skill record  
+
+L, H_cap, S, κ, β, R, F, ΔS, w · E, Tₛ, λ are **math**. They are not a sixth or seventh token. Honorary mentions live on `/math`.
+
+GT / RT / DT as bags are dead letters. Six was accretion. Do not grow a sixth bag because someone counted L.
+
+**3.0 must say five + math, never “the six-token model.”**
+
 
 ### Kernel / docs follow-ups
 
 - `packages/token-economy`: CAT as certification row only; stop minting CAT amounts; drop DT balance; mark CAT non-transferable.
-- Docs still saying “exactly six tokens”: README, `docs/ONE_PAGER.md`, `docs/CONTRIBUTION_GRAPH.md`, `docs/THREE_LAYER_SEPARATION.md`, `DEPENDENCY_GRAPH.md`.
+- Docs still saying “exactly six tokens”: burn those phrases. Public count is five meters + math letters. `/tokenomics` and `/math`.
+
 - Site nav: Tokens → Ledger. Glossary heading: Records and meters.
 
 ---

@@ -60,7 +60,7 @@ EP = XP · L + λ · L
 λ is small so leaked XP cannot erase a real local L. Clip EP to the list. Burns in that sale. Official skins show cash collected and the remainder, not raw XP.
 
 
-### Ledger objects (not a six-token bag)
+### Ledger objects (five meters, not a six-token bag)
 
 Public copy uses **record / meter / till spark**. The crowd hears “token” and reaches for Ethereum. Drop it.
 
@@ -77,7 +77,8 @@ Public copy uses **record / meter / till spark**. The crowd hears “token” an
 
 **DT is not a bag.** Old copy said Domain Token or Decay Token. Expertise is CAT-per-lane. The leak is already on XP. If the letter survives it is a unique lane-claim record, contestable, non-transferable. `TokenType.DT` in the wallet is leftover — remove it.
 
-Six was accretion, not physics. Same README used to list GT/RT in the package tree. Do not grow a seventh pile.
+Five meters. Math letters are on https://extropyengine.com/math. Six was accretion. Do not grow a sixth bag.
+
 
 The split exists so standing cannot buy votes and a skill stamp cannot print XP. See [`docs/CODEX_3_NOTES.md`](docs/CODEX_3_NOTES.md).
 
