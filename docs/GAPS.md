@@ -1,19 +1,7 @@
-# Open Engineering Gaps — 65 across 13 Categories
 
-**Source:** Section 19 of v3.1 spec
-**Total:** 65 (63 original + 2 added 2026-05-06)
-**Updated:** 2026-08-23
-**Note:** Categories and counts are verified. Per-gap descriptions are the v3.1 enumeration draft — reconciliation against the full PDF is welcomed via PR.
+## P1 — Critical Path (legacy list)
 
-**2026-08-21:** Gap 15 reframed. “Who validates the first validators?” is the wrong shape. Validation is a paid task (quest market / LocalFlow). Remaining cold-start is subscriber density. Codex v2.1 stays frozen; do not spin a new edition for this.
-
-**2026-08-23:** Mechanics that kept falling out of the public story — XP decay vs IT decay, settle window as a knob, late burn, SignalFlow vs LocalFlow — are captured in [`docs/CODEX_3_NOTES.md`](./CODEX_3_NOTES.md) for Codex 3.0. Still do not spin a new Codex for this. Gap 32 (30-day window) is a knob, not a law. Gap 41 (IT 5%/mo) is not XP; XP default is ρ = 0.01 per 30 loop cycles.
-
----
-
-## P1 — Critical Path (26 gaps)
-
-### Consensus Mechanism Details (7, P1)
+### Consensus (7)
 1. Quorum size formula for variable-domain rings
 2. Validator collusion detection thresholds
 3. Tie-break rules for split-quorum outcomes
@@ -22,100 +10,46 @@
 6. Cross-domain consensus weighting
 7. Consensus failure recovery / re-validation protocol
 
-### Economic Attack Resistance (6, P1)
-8. Cartel threshold formal analysis (>50% domain rep)
+### Economic attack (6)
+8. Cartel threshold formal analysis
 9. Wash-loop detection across colluding identities
 10. Bribery resistance under IT decay
 11. Validator bid-rigging mitigation
 12. Funded-validator (corporate-capture) defenses
-13. CT lockup parameter optimization
+13. CT lockup parameter optimization — **scratched 2026-09-07. CT is not a lockup bag.**
 
-### Validator Selection Optimization (5, P1)
-14. 4-factor weighting tuning (domain, rep, load, accuracy)
-15. Cold-start validator bootstrapping — **reframed 2026-08.** Not a trust-priesthood problem. You publish a task that pays XP; people do it (see `QUEST_MARKET.md`, LocalFlow). Remaining issue is adoption density: enough subscribers in-range to pick the work up. Provisional N≈1000 per DFAO is still untested. Geographic thin-coverage is the real bootstrap, not “who validates the first validators.”
+### Validator selection (5)
+14. 4-factor weighting tuning
+15. Cold-start — **density, not priesthood**
 16. Geographic / language balancing in SignalFlow
 17. Adversarial-load shedding policy
-18. Sybil-resistant load distribution under burst traffic
+18. Sybil-resistant load distribution
 
-### Cross-Domain Measurement Calibration (6, P1)
-19. ΔS unit harmonization across 8 domains
-20. Falsification-condition spec for Cognitive domain
-21. Falsification-condition spec for Social domain
-22. Falsification-condition spec for Governance domain
-23. Calibration drift detection + auto-replace policy
+### Cross-domain measurement (6)
+19. ΔS unit harmonization — **per-door mapper, not a universal ESF**
+20–22. Falsification specs for cognitive / social / governance
+23. Calibration drift detection
 24. Inter-domain ΔS comparison weighting
 
-### Verdict Vocabulary Standardization (2, P1) — *added 2026-05-06*
-25. Canonical affirmative verdict values: `'confirmed'` and `'supported'` are both in use across validators and test scripts. A single canonical enum needs to be defined in `contracts/types.ts` and enforced at every validation boundary. The Epistemology Engine currently accepts both; that permissiveness should become explicit policy or collapse to one value.
-26. API field naming consistency: `statement` vs `content` for claim text, `subclaims/by-claim/:id` vs nested route — these live in individual service codebases with no enforced contract. A shared OpenAPI validation middleware or contract test suite is needed.
+### Verdict vocabulary (2)
+25. Canonical affirmative verdict values
+26. API field naming consistency
 
-## P2 — Important (23 gaps)
+## P2 — Important (legacy list)
 
-### DAG Distributed Consensus (5, P2)
-27. Causal-edge gossip protocol spec
-28. Partition tolerance + merge rules
-29. DAG GC and pruning policy
-30. Replay attack protection
-31. PSLL-anchor receipt cadence
+27–31 DAG gossip, partition, GC, replay, PSLL cadence  
+32 Settle-window (knob)  
+33 Burn-cascade limits  
+34 Settlement under partition  
+35 Retro-validation incentives  
+36–40 DFAO migrating state, quorum loss, nested proposals, IT decay, escalation  
+41 IT 5%/mo validation  
+42–44 Token mash — **narrowed 2026-09-07 to published defaults, untested live**  
+45–49 ZKP scheme, selective reveal, nullifier, PSLL disclosure, isolation  
 
-### Retroactive Validation Specifics (4, P2)
-32. Settle-window edge cases (validator churn). Window itself is a knob (~30 days was a starting number).
-33. Burn-cascade limits when one loop's burn invalidates dependents
-34. Settlement reliability under network partition
-35. Retro-validation incentive structure
+## P3 — Future (legacy list)
 
-### DFAO Governance Edge Cases (5, P2)
-36. MIGRATING-state hand-off protocol
-37. Quorum loss recovery for MICRO tier
-38. Conflicting proposals across nested DFAOs
-39. Influence-decay edge cases on dormant members
-40. Cross-tier proposal escalation rules
-
-### Token Economy Equilibrium (4, P2)
-41. IT 5%/mo decay rate validation (this is IT, not XP)
-42. CT/EP/GT/RT decay rate finalization. **XP decay ρ = 0.01 / 30 cycles is specified; keep it off this mash.**
-43. Multi-token attack-surface analysis
-44. Token-velocity equilibrium modeling
-
-### Privacy and Access Control (5, P2)
-45. ZKP scheme final selection (BBS+ vs zk-SNARK)
-46. Selective-reveal threshold mechanics
-47. Nullifier collision resistance proof
-48. PSLL selective-disclosure protocol
-49. Cross-DFAO data isolation
-
-## P3 — Future (16 gaps)
-
-### Skill DAG Design (3, P3)
-50. Skill node progression criteria
-51. Skill verification source-of-truth
-52. Skill graph traversal for SignalFlow routing
-
-### Oracle Integration Protocol (4, P3)
-53. External-data ingestion trust model
-54. Oracle-source diversity requirements
-55. Oracle-failure fallback policy
-56. XP minting from oracle-validated claims
-
-### Performance and Scalability (5, P3)
-57. Target throughput per Validation Neighborhood
-58. PSLL local-storage growth bounds
-59. DAG indexing strategy at planetary scale
-60. SignalFlow routing latency targets
-61. Cold-cache warm-up policy
-
-### Migration and Upgrade Paths (4, P3)
-62. v3.0 → v3.1 state migration spec
-63. Breaking-change governance protocol
-64. Rule Module hot-swap procedure
-65. Deprecation lifecycle for retired services
-
----
-
-## Legend
-
-- **P1:** blockers for Phase 2 (26)
-- **P2:** robustness + security (23)
-- **P3:** ecosystem maturity (16)
-
-Gaps are not failures. They are the engineering backlog. Acknowledging incompleteness is a prerequisite for systematic completion.
+50–52 Skill DAG  
+53–56 Oracle ingestion  
+57–61 Throughput, PSLL growth, DAG index, routing latency, cold cache  
+62–65 Migration and deprecation
