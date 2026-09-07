@@ -38,7 +38,7 @@ Must land in 3.0, already specified in code/defaults, not in the signed 2.1 PDF:
 - β is CAT / on-duty / signed case. Not a CT wrap.
 - Smart contracts: named cases after both edges signed. No bag in the “then.”
 - Official skins: cash collected + remainder. No raw XP on a forehead.
-- CT leaks 0.97ⁿ (~3%). Transfer-burn is gone; the leak is that burn.
+- CT idle leak 0.99ⁿ (~1%), same keep as XP. Active on that web resets n. CT does not travel.
 - IT leaks 0.95ⁿ (~5% idle). Vote uses weight; does not spend IT. Half-life ~13.5 months idle.
 
 

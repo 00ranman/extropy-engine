@@ -70,8 +70,8 @@ export interface TillSparkResult {
 
 export const DEFAULT_DELTA_T_CAP_SECONDS = 5 * 60;
 export const XP_MONTHLY_KEEP = 0.99;
-/** CT used to burn on transfer. Transfer is gone. Leak is the burn now. Between XP 1% and IT 5%. */
-export const CT_MONTHLY_KEEP = 0.97;
+/** CT idle leak. Same keep as XP. n = idle months on web W. A close / till spark / posted task on W resets n. */
+export const CT_MONTHLY_KEEP = 0.99;
 /** IT idle leak. Gavel rots faster than standing. */
 export const IT_MONTHLY_KEEP = 0.95;
 /** Small XP-equivalent. EP = XP·L + λ·L. Web W may republish with 30 days notice. */

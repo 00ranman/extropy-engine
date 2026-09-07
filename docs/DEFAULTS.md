@@ -10,7 +10,7 @@ Public copy: https://extropyengine.com/docs/DEFAULTS.md
 |---|---|---|
 | XP mint shape | R × F × ΔS × (w·E) × log(1/Tₛ) | Planetary. Fork. |
 | XP leak | 0.99 per ~30 days (~1% of remaining) | Planetary. Fork. |
-| CT leak | 0.97 per ~30 days (~3% of remaining) | Web W. 30 days notice. Replaces transfer-burn. |
+| CT leak | 0.99 per idle ~30 days (~1% of remaining) | Same keep as XP. Idle on web W. A close / till spark / posted task on W resets the clock. Does not travel to the next town. |
 | IT leak | 0.95 per ~30 days (~5% of remaining, idle) | Planetary default. A room may not slow it below 0.96 without a fork. |
 | Cash-out of standing | Forbidden | Lose-condition. |
 

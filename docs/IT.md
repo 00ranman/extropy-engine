@@ -8,7 +8,7 @@ IT is governance weight. Not Insight Token. Not a bag. Off the XP mint. You cann
 
 XP leaks 1% of remaining per ~30 days. World standing should last if you keep closing loops.
 
-CT leaks 3%. Town standing used to burn when it moved. It does not move anymore. The leak is that burn. A strip should not fossilize last year’s regulars.
+CT idle-leaks at 1%, same keep as XP. A close, a till spark, or a posted task on that web resets the clock. Vanish and it thins. Move and you leave it. Transfer-burn is gone; this is that burn, slower, and only while idle.
 
 IT leaks 5% while idle. A seat that does not show up should empty before a year and a half. Half-life ~13.5 months at 0.95ⁿ. That is the anti-capture clock. Hire a roomful of quiet holders and watch the gavel turn to dust.
 
