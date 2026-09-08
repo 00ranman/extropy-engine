@@ -115,6 +115,9 @@ packages/
 
 Archived standalones were folded here. `packages/levelup-academy` is held, not a school product. CAT + issuer is the overlay. See [`docs/ARCHIVED.md`](docs/ARCHIVED.md) and [`docs/CAT-LANES.md`](docs/CAT-LANES.md).
 
+**Web3 as promised** lives in [`packages/mesh`](packages/mesh). Two boxes, signed loops, no bag. `node packages/mesh/demo.mjs`. Writeup: [`docs/WEB3.md`](docs/WEB3.md).
+
+
 The ledger exists specifically to prevent the failure mode that killed most Web3 governance: **conflation**. XP (standing) is non-transferable. IT is this-proposal standing, clipped to 1, burned in the tally. You cannot buy a gavel. CAT is a skill **record**, not a pile.
 
 ---

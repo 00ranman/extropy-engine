@@ -1,0 +1,11 @@
+{
+  "name": "@extropy/mesh",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web3 as promised: two boxes, signed loops, no bag. Zero-build: node mesh.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node mesh.mjs serve",
+    "demo": "node demo.mjs"
+  }
+}

@@ -42,6 +42,8 @@
     "node-handshake:vps": "NODE_ROLE=vps PORT=4200 pnpm --filter @extropy/node-handshake start",
     "node-handshake:hello": "NODE_ROLE=local pnpm --filter @extropy/node-handshake run client:hello",
     "node-handshake:replay": "NODE_ROLE=local pnpm --filter @extropy/node-handshake run client:replay",
+    "mesh:demo": "node packages/mesh/demo.mjs",
+    "mesh:serve": "node packages/mesh/mesh.mjs serve",
     "test": "pnpm -r --if-present run test",
     "lint": "eslint packages/*/src/**/*.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
