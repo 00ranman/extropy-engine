@@ -113,7 +113,7 @@ packages/
 
 **v3.1 packages are skeletons.** Interface contracts are the source of truth; implementation is incremental. See each package's README for status.
 
-Archived standalones (homeflow, signalflow, levelup-academy, xp-net, xp-dag-mesh, extropy-master-control-hub) were folded into this repo. See [`docs/ARCHIVED.md`](docs/ARCHIVED.md). The public site talks about this git, not those.
+Archived standalones were folded here. `packages/levelup-academy` is held, not a school product. CAT + issuer is the overlay. See [`docs/ARCHIVED.md`](docs/ARCHIVED.md) and [`docs/CAT-LANES.md`](docs/CAT-LANES.md).
 
 The ledger exists specifically to prevent the failure mode that killed most Web3 governance: **conflation**. XP (standing) is non-transferable. IT is this-proposal standing, clipped to 1, burned in the tally. You cannot buy a gavel. CAT is a skill **record**, not a pile.
 

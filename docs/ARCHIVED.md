@@ -6,7 +6,7 @@ These were folded into `packages/` and archived. They are not live products. The
 |---|---|
 | 00ranman/homeflow | packages/homeflow |
 | 00ranman/signalflow | packages/signalflow |
-| 00ranman/levelup-academy | packages/levelup-academy |
+| 00ranman/levelup-academy | packages/levelup-academy — **held**. Not a product. CAT + issuer. See docs/CAT-LANES.md |
 | 00ranman/xp-net | Early wire experiment. Not the production handshake. See packages/node-handshake. |
 | 00ranman/xp-dag-mesh | Early DAG experiment. packages/dag-substrate is the book. |
 | 00ranman/extropy-master-control-hub | Retired. |
