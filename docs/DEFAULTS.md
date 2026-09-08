@@ -13,7 +13,7 @@ Public copy: https://extropyengine.com/docs/DEFAULTS.md
 | CT leak | 0.99 per idle ~30 days (~1% of remaining) | Same keep as XP. Idle on web W. A close / till spark / posted task on W resets the clock. Does not travel to the next town. |
 | IT leak | — | No pile. IT is recomputed each proposal. |
 | Cash-out of standing | Forbidden | Lose-condition. |
-| Ordinary close | Target XP on the order of **0.01–1** for a MICRO loop (lawn, ride, ticket line) | Planetary starting band. Rarity can lift it. A 100-XP lawn is a mapper bug. Same band is the *starting* ask for a specialist loop; R and ΔS may lift it. F taxes the 400th identical surgery. CAT gates the door. It does not multiply XP. |
+| Ordinary close | Target XP on the order of **0.01–1** for a MICRO loop (lawn, ride, ticket line) | Planetary starting band. Rarity can lift it. A 100-XP lawn is a mapper bug. |
 | EP this sale | `min(XP · L + λ · L, line × H_cap)` | Spark cannot exceed the house cap on **this ticket**. XP is not dollars. |
 
 ## Web W (MESO / city parent publishes)
