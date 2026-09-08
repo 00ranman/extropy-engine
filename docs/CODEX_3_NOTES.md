@@ -7,6 +7,22 @@
 
 The source rant is at the bottom. Do not “clean” it into something else.
 
+## How to write this (do not invent a letter)
+
+Think like the architect. The letters already do the jobs.
+
+- R already prices the class of action. Do not flatten rarity to “fix” specialists.
+- F already taxes repeats. Do not add a second farm tax.
+- L / H_cap / ticket cap already stop a pile from clearing a store. Do not invent a caste page.
+- CT already stays on the web. Do not write “grocery does not pay laundry” unless they forked.
+- IT already ignores XP. Do not weight votes by world standing.
+- CAT already gates a door. It does not multiply the mint.
+- ΔS is a proxy SignalFlow proposes from prior closes. Humans talk. They do not type the mint.
+- DAG appends. It does not edit.
+
+Do not explain the machine to Randall. Do not add a knob because a thought experiment sounded like a hole. If a letter already covers it, stop.
+
+
 ---
 
 ## Acknowledge, do not dodge: MICRO overselling → MACRO drift
