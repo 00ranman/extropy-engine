@@ -206,7 +206,3 @@ export function computeIT(inputs: GovStandingInputs): number {
 export function sparkVote(inputs: GovStandingInputs): VoteSparkResult {
   return { IT: computeIT(inputs), burned: true };
 }
-
-export function sparkVote(inputs: GovStandingInputs): VoteSparkResult {
-  return { IT: computeIT(inputs), burned: true };
-}
