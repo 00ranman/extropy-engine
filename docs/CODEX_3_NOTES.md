@@ -107,7 +107,7 @@ Do not mash these together. IT is not a 5%/month pile. That line is dead.
 | Thing | What it does | Code default (knob) |
 | --- | --- | --- |
 | **Settle window** | Time from provisional XP → standing XP | Eight weeks. Per-DFAO votable. Till window, not the leak tick. This is only the promotion window, not the end of burn. |
-| **Late burn** | Standing XP can still be destroyed | No expiry on burnability. Five days later or thirty years later. Nothing says settled means immortal. |
+| **Late burn** | Standing XP can still be destroyed | No expiry on burnability. Five days later or a decade later. Ordinary remaining pile is already dust by then. The mark is the chain plus children, not a 1996-shaped hole. |
 | **XP decay** | Standing XP erodes on a schedule even with no dispute | `POCKET_KEEP` = **0.99 every two weeks** (~1% of remaining). You keep working or the pile shrinks. Access economy: you do not spend XP; it gets eaten. |
 | **IT** | This-proposal standing | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). Burns in the tally. Not XP · G. |
 
