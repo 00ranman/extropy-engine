@@ -3,7 +3,7 @@
 **Status:** Codex v2.1 stays frozen. Companion to `docs/CODEX_3_NOTES.md`.
 **Date:** 2026-08-23
 
-XP decays (~1% every two weeks, 0.99). The math does not care if the pile is called XP or “level.” People do. So do merchants and DFAO gates. This note is how to translate without building a game hierarchy.
+XP decays (~1% every 10 days, 0.99). The math does not care if the pile is called XP or “level.” People do. So do merchants and DFAO gates. This note is how to translate without building a game hierarchy.
 
 ---
 

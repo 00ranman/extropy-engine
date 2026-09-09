@@ -4,24 +4,24 @@ Publish these before the first live till. Humans will ask. “The MACRO publishe
 
 Public copy: https://extropyengine.com/docs/DEFAULTS.md
 
-**Two clocks.** Leak ticks every **two 5-day weeks** (10 days). Auto H and training read **eight weeks** of this till’s signed cash. Do not name a third civil unit. Weeks are the calendar. \(0.99^n\) is unchanged. \(n\) is idle two-week counts.
+**Two clocks.** Leak ticks every **10 days**. Auto H and training read **40 days** of this till’s signed cash. \(0.99^n\) is unchanged. \(n\) is idle 10-day counts.
 
 ## Planetary (fork to change)
 
 | Knob | Default | Change |
 |---|---|---|
 | XP mint shape | R × F × ΔS × (w·E) × log(1/Tₛ) | Planetary. Fork. |
-| Leak tick | 10 days (two weeks) | Planetary. Fork. |
-| XP leak | 0.99 per two weeks (~1% of remaining) | Planetary. Fork. n = idle two-week counts. |
-| CT leak | 0.99 per idle two weeks (~1% of remaining) | Same keep as XP. Idle on web W. A close / till spark / posted task on W resets the clock. Does not travel to the next town. |
-| H window | 40 days (eight weeks) | Planetary starting window for Auto and training. |
+| Leak tick | 10 days | Planetary. Fork. |
+| XP leak | 0.99 per 10 days (~1% of remaining) | Planetary. Fork. n = idle 10-day counts. |
+| CT leak | 0.99 per idle 10 days (~1% of remaining) | Same keep as XP. Idle on web W. A close / till spark / posted task on W resets the clock. Does not travel to the next town. |
+| H window | 40 days | Planetary starting window for Auto and training. |
 | IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1) | No pile. Recomputed each proposal. Burns in the tally. |
 | Cash-out of standing | Forbidden | Lose-condition. |
 | Ordinary close | Target XP on the order of **0.01–1** for a MICRO loop (lawn, ride, ticket line) | Planetary starting band. Rarity can lift it. A 100-XP lawn is a mapper bug. |
 | Lookers | Provisional mint. Looking is a vertex. Parts of a claim, more than once, later. No validator class. One neighbor is evidence, not a gavel. | Planetary. Fork. |
 | EP this sale | `min(XP · L + λ · L, line × H_cap)` | Spark cannot exceed the house cap on **this ticket**. XP is not dollars. |
 
-Half-life of a mint ≈ 69 two-week ticks ≈ 1.9 years. ~1 year ≈ 69%. ~5 years ≈ 16%. ~8 years ≈ 5%. A decade is dust. Never zero in the reals. Late mint is the decades-later machine.
+Half-life of a mint ≈ 69 10-day ticks ≈ 1.9 years. ~1 year ≈ 69%. ~5 years ≈ 16%. ~8 years ≈ 5%. A decade is dust. Never zero in the reals. Late mint is the decades-later machine.
 
 ## Web W (MESO / city parent publishes)
 
@@ -39,7 +39,7 @@ No till slider. No Off on the register. The real Off is: don’t run the node.
 | Knob | Default | Change |
 |---|---|---|
 | H_cap | Auto | From this door’s signed cash. Not a control. |
-| Training | Remainder 0 until this till has eight weeks of signed tickets | Feature. Empty window does not puff discounts. |
+| Training | Remainder 0 until this till has 40 days of signed tickets | Feature. Empty window does not puff discounts. |
 | H_cap auto (after training) | clip(0.5 × cash_in / cash_out, 0, 1) | cash_in = drawer + overlay-touch. cash_out = inbound invoices + rent + payroll due in the window. Healthy books sit at 0.5. |
 | S | 1.0 until this door has history | Auto from this door. Fake-proof / spite cut on a short clock (default 14 days). |
 | β this ticket | 1 if no proof asked; else the live proof | If-then. Off the clock, drop. |

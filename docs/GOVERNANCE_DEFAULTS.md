@@ -14,7 +14,7 @@ See `docs/CODEX_3_NOTES.md` for the Codex 3.0 capture of mechanics that kept fal
 | Reward escalation curve (late) | log to cap 10.0× | Domain DFAO | Hard cap governance-tunable |
 | Retroactive **settle** window | Eight weeks | Per-DFAO; PLANETARY to hit everyone | Time from provisional XP → standing XP. Till window, not the leak tick. Not scripture. |
 | Late burn | no expiry | Ecosystem / dispute path | Standing XP can still burn years later. Settled ≠ immortal. |
-| **XP decay** keep | **0.99 every two weeks (~1% of remaining)** | Planetary | Access economy: you do not spend XP; it gets eaten. You keep working or the pile shrinks. n is idle two-week counts. |
+| **XP decay** keep | **0.99 every 10 days (~1% of remaining)** | Planetary | Access economy: you do not spend XP; it gets eaten. You keep working or the pile shrinks. n is idle 10-day counts. |
 | IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1) | This room | No pile. Burns in the tally. H_gov = 0 is one DID one nullifier. |
 | CT lockup | 14 days | Ecosystem | Limited transferability |
 | EP decay | TBD | Ecosystem | Pending Phase 2 modeling |

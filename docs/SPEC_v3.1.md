@@ -469,7 +469,7 @@ Real peer review was never a service. Real peer review is what happens when hone
 | ZKP scheme | BBS+ | Ecosystem DFAO supermajority |
 | Reward escalation curve | linear→3× over 7d, log to cap 10× | Per-DFAO override allowed |
 | Reveal threshold | 7-of-12 ecosystem validators + cause-shown proposal | Ecosystem DFAO |
-| XP decay rate | 0.99 every two weeks (~1% of remaining) | Planetary |
+| XP decay rate | 0.99 every 10 days (~1% of remaining) | Planetary |
 | Transfer friction | δ = 0.02 (2% loss per transfer) | Ecosystem DFAO |
 | Domain weights w | 1.0 default per domain | Per-DFAO override |
 | Essentiality factor E | 0.8 default | Per-DFAO override |
