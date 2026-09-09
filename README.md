@@ -47,7 +47,7 @@ Defaults and who may change them: [`docs/DEFAULTS.md`](docs/DEFAULTS.md).
 
 CT_W is community standing. Same readout at grocery and laundry if they still speak base CT. The door does not own CT.
 
-H_cap — this till this pocket. Auto from signed cash. Training remainder 0 for 40 days. No slider.
+H_cap — this till this window. Auto from signed cash. Training remainder 0 for eight weeks. No slider.
 S — this person at this house.
 β — CAT / on-duty proof this ticket. Not a wrap.
 κ — 1 on the language. 0 if they left it.
@@ -132,7 +132,7 @@ OPEN → VALIDATING → CONSENSUS → CLOSED → SETTLED
                               ↘ ISOLATED (integrity quarantine)
 ```
 
-XP minted at CLOSED is provisional. After one pocket (40 days), retroactive validation either confirms or burns it. Validators whose consensus is contradicted by later evidence take reputation penalties. This is the primary defense against collusion: you have to hold your position while exposed.
+XP minted at CLOSED is provisional. After eight weeks, retroactive validation either confirms or burns it. Validators whose consensus is contradicted by later evidence take reputation penalties. This is the primary defense against collusion: you have to hold your position while exposed.
 
 > **There is no validator class.** "Validator" throughout this repo means *a contributor while they are performing a validating task*, not a separate tier of people. Validation is itself an entropy-reducing task, so it is a contribution done by ordinary contributors. Most validation is blind or implicit: under 1/10th slicing a contributor scores a slice without knowing whose work it is, and many tasks confirm or contradict earlier tasks as a side effect of their own dependency on them, so the performer never knows they validated anything. The `epistemology-engine` reads validation out of the task graph as an emergent property; it does not appoint validators. This is what removes the review chokepoint and ends the "who watches the watchers" regress. See [`docs/VALIDATION_IS_EMERGENT.md`](docs/VALIDATION_IS_EMERGENT.md).
 

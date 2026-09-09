@@ -18,7 +18,7 @@ Client posts task → LOOPOPEN vertex written
 Driver accepts
 Driver completes task
 Client confirms → LOOPCLOSE + XPMINT_PROVISIONAL vertices written (convergence point)
-40 days no dispute → XPMINT_CONFIRMED
+eight weeks no dispute → XPMINT_CONFIRMED
 ```
 
 The convergence vertex appears in both the client's and driver's person-DAG. Minting requires multi-party convergence — solo actions cannot mint XP. This is the structural fraud resistance built into the protocol.

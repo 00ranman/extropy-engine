@@ -87,31 +87,36 @@ export interface GovStandingInputs {
 }
 
 export const DEFAULT_DELTA_T_CAP_SECONDS = 5 * 60;
-/** One pocket. Leak tick, H trailing window, new-till training. Matches the 40-day calendar. */
-export const POCKET_DAYS = 40;
-/** Keep per idle pocket. n in 0.99ⁿ is idle pockets, not Earth-months. */
+/** Two 5-day weeks. Leak tick. n in 0.99ⁿ is idle two-week counts. No third named unit. */
+export const LEAK_DAYS = 10;
+/** Till books. Eight weeks. Auto H and training. Not the leak tick. */
+export const H_WINDOW_DAYS = 40;
+/** @deprecated Use LEAK_DAYS for leak, H_WINDOW_DAYS for the till. */
+export const SPAN_DAYS = LEAK_DAYS;
+export const POCKET_DAYS = H_WINDOW_DAYS;
+/** Keep per idle two weeks. 0.99ⁿ. Half-life ≈ 1.9 years. */
 export const POCKET_KEEP = 0.99;
 export const XP_MONTHLY_KEEP = POCKET_KEEP;
-/** CT idle leak. Same keep as XP. n = idle pockets on web W. A close / till spark / posted task on W resets n. */
+/** CT idle leak. Same keep as XP. n = idle two-week counts on web W. */
 export const CT_MONTHLY_KEEP = POCKET_KEEP;
 export const DEFAULT_H_GOV = 1;
-/** Small XP-equivalent. EP = XP·L + λ·L. Web W may republish with one pocket notice. */
+/** Small XP-equivalent. EP = XP·L + λ·L. Web W may republish with eight-week notice. */
 export const DEFAULT_EP_FLOOR = 0.15;
 /** Healthy-books remainder scale. After training, Auto sits here when in ≈ out. Not a till control. */
 export const DEFAULT_H_CAP = 0.5;
 export const DEFAULT_S = 1;
 export const S_TEETH_DAYS = 14;
-export const LAMBDA_NOTICE_DAYS = POCKET_DAYS;
+export const LAMBDA_NOTICE_DAYS = H_WINDOW_DAYS;
 export const BETA_ALLOWLIST_NOTICE_DAYS = 14;
 
 /**
- * Trailing-pocket cash → H_cap. No till slider. No Off button.
- * trainedDays < POCKET_DAYS → 0. Training pocket. Remainder sleeps. Feature.
+ * Trailing eight-week cash → H_cap. No till slider. No Off button.
+ * trainedDays < H_WINDOW_DAYS → 0. Training. Remainder sleeps. Feature.
  * After that: clip(0.5 × cash_in / cash_out, 0, 1). Healthy books sit at 0.5.
  * Real Off is: don't run the node.
  */
-export function hCapFromCash(cashIn: number, cashOut: number, trainedDays = POCKET_DAYS): number {
-  if (trainedDays < POCKET_DAYS) return 0;
+export function hCapFromCash(cashIn: number, cashOut: number, trainedDays = H_WINDOW_DAYS): number {
+  if (trainedDays < H_WINDOW_DAYS) return 0;
   const out = Math.max(cashOut, 1e-9);
   const ratio = Math.max(0, cashIn) / out;
   return clip01(DEFAULT_H_CAP * ratio);

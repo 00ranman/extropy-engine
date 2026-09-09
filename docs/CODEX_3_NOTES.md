@@ -50,11 +50,11 @@ Must land in 3.0, already specified in code/defaults, not in the signed 2.1 PDF:
 
 - CT_W is community-web standing. Same readout at compatible tills. Door does not own CT. H_cap is Auto from this till.
 - L = clip(H_cap · S · κ · CT_W · β, 0, 1). EP = XP · L + λ · L.
-- H_cap Auto from trailing 40-day signed cash. Training remainder 0 until the pocket fills. λ default 0.15; web publishes; one-pocket notice.
+- H_cap Auto from trailing eight-week signed cash. Training remainder 0 until that window fills. λ default 0.15; web publishes; eight-week notice.
 - β is CAT / on-duty / signed case. Not a CT wrap.
 - Smart contracts: named cases after both edges signed. No bag in the “then.”
 - Official skins: cash collected + remainder. No raw XP on a forehead.
-- CT idle leak 0.99ⁿ (~1%/pocket), same keep as XP. Active on that web resets n. CT does not travel.
+- CT idle leak 0.99ⁿ (~1% every two weeks), same keep as XP. Active on that web resets n. CT does not travel.
 - IT is not a pile. IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). Burns in the tally. Not XP · G.
 
 
@@ -106,9 +106,9 @@ Do not mash these together. IT is not a 5%/month pile. That line is dead.
 
 | Thing | What it does | Code default (knob) |
 | --- | --- | --- |
-| **Settle window** | Time from provisional XP → standing XP | One pocket (40 days). Per-DFAO votable. Same clock as leak and H. This is only the promotion window, not the end of burn. |
+| **Settle window** | Time from provisional XP → standing XP | Eight weeks. Per-DFAO votable. Till window, not the leak tick. This is only the promotion window, not the end of burn. |
 | **Late burn** | Standing XP can still be destroyed | No expiry on burnability. Five days later or thirty years later. Nothing says settled means immortal. |
-| **XP decay** | Standing XP erodes on a schedule even with no dispute | `POCKET_KEEP` = **0.99 per 40-day pocket** (~1% of remaining). You keep working or the pile shrinks. Access economy: you do not spend XP; it gets eaten. |
+| **XP decay** | Standing XP erodes on a schedule even with no dispute | `POCKET_KEEP` = **0.99 every two weeks** (~1% of remaining). You keep working or the pile shrinks. Access economy: you do not spend XP; it gets eaten. |
 | **IT** | This-proposal standing | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). Burns in the tally. Not XP · G. |
 
 Possible axiom (not written yet): some XP and some IT always burn. Floor, not a vibe. Capture for 3.0 if we mean it.
@@ -247,7 +247,7 @@ Three clocks. Do not mash:
 | --- | --- |
 | Tₛ | This loop’s elapsed time. Slam-shut at 0. Capped. |
 | F | Repeating the action class. |
-| 0.99ⁿ | Standing after settlement. ~1%/pocket of remaining. n = idle 40-day pockets. |
+| 0.99ⁿ | Standing after settlement. ~1% every two weeks of remaining. n = idle two-week counts. |
 
 Settle window is provisional → standing. IT is this-proposal standing, not a leak clock. Neither is Tₛ.
 
