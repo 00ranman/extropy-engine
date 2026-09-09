@@ -9,7 +9,7 @@
  * EP = XP · L + λ · L     clipped to the list price
  *
  * CT_W is the community meter. Same readout at every compatible till.
- * H_cap is this till this week (inbound dollars). Same for the line.
+ * H_cap is this till this pocket. Auto from signed cash. Training pocket remainder is 0.
  * S is this person at this house.
  * β is proofs shown this ticket (CAT / on-duty). Not a CT wrap.
  * IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1)
@@ -46,7 +46,7 @@ export interface XPFormulaResult {
 }
 
 export interface LocalStandingInputs {
-  /** This till this week. 0 parks the overlay. Inbound cash lives here. */
+  /** This till this pocket. Auto from signed cash. 0 during training. */
   H_cap?: number;
   /** Alias for H_cap when S is omitted. */
   H?: number;
@@ -87,27 +87,33 @@ export interface GovStandingInputs {
 }
 
 export const DEFAULT_DELTA_T_CAP_SECONDS = 5 * 60;
-export const XP_MONTHLY_KEEP = 0.99;
-/** CT idle leak. Same keep as XP. n = idle months on web W. A close / till spark / posted task on W resets n. */
-export const CT_MONTHLY_KEEP = 0.99;
+/** One pocket. Leak tick, H trailing window, new-till training. Matches the 40-day calendar. */
+export const POCKET_DAYS = 40;
+/** Keep per idle pocket. n in 0.99ⁿ is idle pockets, not Earth-months. */
+export const POCKET_KEEP = 0.99;
+export const XP_MONTHLY_KEEP = POCKET_KEEP;
+/** CT idle leak. Same keep as XP. n = idle pockets on web W. A close / till spark / posted task on W resets n. */
+export const CT_MONTHLY_KEEP = POCKET_KEEP;
 export const DEFAULT_H_GOV = 1;
-/** Small XP-equivalent. EP = XP·L + λ·L. Web W may republish with 30 days notice. */
+/** Small XP-equivalent. EP = XP·L + λ·L. Web W may republish with one pocket notice. */
 export const DEFAULT_EP_FLOOR = 0.15;
-/** This till this week. Auto may move it. */
+/** Healthy-books remainder scale. After training, Auto sits here when in ≈ out. Not a till control. */
 export const DEFAULT_H_CAP = 0.5;
 export const DEFAULT_S = 1;
 export const S_TEETH_DAYS = 14;
-export const LAMBDA_NOTICE_DAYS = 30;
+export const LAMBDA_NOTICE_DAYS = POCKET_DAYS;
 export const BETA_ALLOWLIST_NOTICE_DAYS = 14;
 
 /**
- * Trailing 4-week cash position → H_cap.
- * cash_in: drawer + overlay-touch. cash_out: inbound + rent + payroll due.
- * Healthy books (ratio ≈ 1) sit at 0.5.
+ * Trailing-pocket cash → H_cap. No till slider. No Off button.
+ * trainedDays < POCKET_DAYS → 0. Training pocket. Remainder sleeps. Feature.
+ * After that: clip(0.5 × cash_in / cash_out, 0, 1). Healthy books sit at 0.5.
+ * Real Off is: don't run the node.
  */
-export function hCapFromCash(cashIn4w: number, cashOut4w: number): number {
-  const out = Math.max(cashOut4w, 1e-9);
-  const ratio = Math.max(0, cashIn4w) / out;
+export function hCapFromCash(cashIn: number, cashOut: number, trainedDays = POCKET_DAYS): number {
+  if (trainedDays < POCKET_DAYS) return 0;
+  const out = Math.max(cashOut, 1e-9);
+  const ratio = Math.max(0, cashIn) / out;
   return clip01(DEFAULT_H_CAP * ratio);
 }
 
@@ -186,12 +192,12 @@ export function sparkTill(xp: number, standing: LocalStandingInputs): TillSparkR
 
 export function leakXP(xpSettled: number, n: number): number {
   if (xpSettled <= 0 || n <= 0) return Math.max(0, xpSettled);
-  return xpSettled * Math.pow(XP_MONTHLY_KEEP, n);
+  return xpSettled * Math.pow(POCKET_KEEP, n);
 }
 
 export function leakCT(ctSettled: number, n: number): number {
   if (ctSettled <= 0 || n <= 0) return Math.max(0, ctSettled);
-  return ctSettled * Math.pow(CT_MONTHLY_KEEP, n);
+  return ctSettled * Math.pow(POCKET_KEEP, n);
 }
 
 /** IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). This proposal. Not XP. */

@@ -3,7 +3,7 @@
 **Status:** Codex v2.1 stays frozen. Companion to `docs/CODEX_3_NOTES.md`.
 **Date:** 2026-08-23
 
-XP decays (~1%/month, ρ = 0.01 / 30 cycles). The math does not care if the pile is called XP or “level.” People do. So do merchants and DFAO gates. This note is how to translate without building a game hierarchy.
+XP decays (~1%/pocket, 0.99 per 40 days). The math does not care if the pile is called XP or “level.” People do. So do merchants and DFAO gates. This note is how to translate without building a game hierarchy.
 
 ---
 

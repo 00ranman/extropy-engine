@@ -48,13 +48,13 @@ Do not reprint “63 gaps” or “65 gaps.” Public count is 16 live.
 
 Must land in 3.0, already specified in code/defaults, not in the signed 2.1 PDF:
 
-- CT_W is community-web standing. Same readout at compatible tills. Door owns H_cap and S, not CT.
+- CT_W is community-web standing. Same readout at compatible tills. Door does not own CT. H_cap is Auto from this till.
 - L = clip(H_cap · S · κ · CT_W · β, 0, 1). EP = XP · L + λ · L.
-- H_cap default 0.5; auto from trailing 4-week cash. λ default 0.15; web publishes; 30-day notice.
+- H_cap Auto from trailing 40-day signed cash. Training remainder 0 until the pocket fills. λ default 0.15; web publishes; one-pocket notice.
 - β is CAT / on-duty / signed case. Not a CT wrap.
 - Smart contracts: named cases after both edges signed. No bag in the “then.”
 - Official skins: cash collected + remainder. No raw XP on a forehead.
-- CT idle leak 0.99ⁿ (~1%), same keep as XP. Active on that web resets n. CT does not travel.
+- CT idle leak 0.99ⁿ (~1%/pocket), same keep as XP. Active on that web resets n. CT does not travel.
 - IT is not a pile. IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). Burns in the tally. Not XP · G.
 
 
@@ -106,9 +106,9 @@ Do not mash these together. IT is not a 5%/month pile. That line is dead.
 
 | Thing | What it does | Code default (knob) |
 | --- | --- | --- |
-| **Settle window** | Time from provisional XP → standing XP | Thrown out as ~30 days. Could be 5, 10, 15, 40. Per-DFAO votable. Not scripture. This is only the promotion window, not the end of burn. |
+| **Settle window** | Time from provisional XP → standing XP | One pocket (40 days). Per-DFAO votable. Same clock as leak and H. This is only the promotion window, not the end of burn. |
 | **Late burn** | Standing XP can still be destroyed | No expiry on burnability. Five days later or thirty years later. Nothing says settled means immortal. |
-| **XP decay** | Standing XP erodes on a schedule even with no dispute | `xpDecayRate` ρ = **0.01 per 30 loop cycles** (~1%/month). You keep working or the pile shrinks. Access economy: you do not spend XP; it gets eaten. |
+| **XP decay** | Standing XP erodes on a schedule even with no dispute | `POCKET_KEEP` = **0.99 per 40-day pocket** (~1% of remaining). You keep working or the pile shrinks. Access economy: you do not spend XP; it gets eaten. |
 | **IT** | This-proposal standing | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). Burns in the tally. Not XP · G. |
 
 Possible axiom (not written yet): some XP and some IT always burn. Floor, not a vibe. Capture for 3.0 if we mean it.
@@ -220,7 +220,7 @@ The extractive picture: clock in, clock out, rest is a hole, only what you sold 
 Kill that in 3.0.
 
 - **Own lawn.** The ΔS is the grass. HomeFlow can close it. Neighbor-mows-yours is two households. You-mow-yours is one house taking care of itself. Same physical reduction. You do not type a score. F still applies if it is every Saturday.
-- **No PTO token.** Standing already minted is what you live on while you rest. XP leak is ~1%/month of remaining, not a pink slip. Sick is not a clawback. Care is a loop for the person who shows up. Recovery can be biological ΔS if the loop closes.
+- **No PTO token.** Standing already minted is what you live on while you rest. XP leak is ~1%/pocket of remaining, not a pink slip. Sick is not a clawback. Care is a loop for the person who shows up. Recovery can be biological ΔS if the loop closes.
 - **Buying is coupling, not a mint.** Patronage can move CT_W on the web. Cash cannot mint XP. The till only chooses H.
 - **Anything verifiable.** Self-report, sensor, claim, assistant — then the other side agrees. Work-for-a-boss is one input. Living was never inside that box.
 
@@ -247,7 +247,7 @@ Three clocks. Do not mash:
 | --- | --- |
 | Tₛ | This loop’s elapsed time. Slam-shut at 0. Capped. |
 | F | Repeating the action class. |
-| 0.99ⁿ | Standing after settlement. ~1%/month of remaining. |
+| 0.99ⁿ | Standing after settlement. ~1%/pocket of remaining. n = idle 40-day pockets. |
 
 Settle window is provisional → standing. IT is this-proposal standing, not a leak clock. Neither is Tₛ.
 

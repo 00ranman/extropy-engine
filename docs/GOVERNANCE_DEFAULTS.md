@@ -12,9 +12,9 @@ See `docs/CODEX_3_NOTES.md` for the Codex 3.0 capture of mechanics that kept fal
 | Identity reveal threshold | 7-of-12 + cause-shown | Ecosystem | See `IDENTITY.md` |
 | Reward escalation curve (early) | linear 1.0× → 3.0× over 7d | Domain DFAO | Per-domain customization allowed |
 | Reward escalation curve (late) | log to cap 10.0× | Domain DFAO | Hard cap governance-tunable |
-| Retroactive **settle** window | ~30 days (starting number) | Per-DFAO; PLANETARY to hit everyone | Time from provisional XP → standing XP. Could be 5, 10, 15, 40. Not scripture. |
+| Retroactive **settle** window | One pocket (40 days) | Per-DFAO; PLANETARY to hit everyone | Time from provisional XP → standing XP. Same clock as leak and H. Not scripture. |
 | Late burn | no expiry | Ecosystem / dispute path | Standing XP can still burn years later. Settled ≠ immortal. |
-| **XP decay** ρ | **0.01 per 30 loop cycles (~1%/month)** | Per-DFAO | Not 5%. That is IT. Access economy: you do not spend XP; it gets eaten. You keep working or the pile shrinks. |
+| **XP decay** keep | **0.99 per 40-day pocket (~1% of remaining)** | Planetary | Not a 5% pile. Access economy: you do not spend XP; it gets eaten. You keep working or the pile shrinks. n is idle pockets. |
 | IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1) | This room | No pile. Burns in the tally. H_gov = 0 is one DID one nullifier. |
 | CT lockup | 14 days | Ecosystem | Limited transferability |
 | EP decay | TBD | Ecosystem | Pending Phase 2 modeling |

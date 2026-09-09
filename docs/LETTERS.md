@@ -11,7 +11,7 @@ Do not remap. Public key: https://extropyengine.com/key
 | Tₛ | Slam window. Instant close mints 0. |
 | XP | Global standing. Leaks 0.99ⁿ. No cash-out. |
 | CT_W | Community meter. Same at every compatible till. Idle leak 0.99ⁿ. |
-| H_cap | This till this week. Inbound dollars. |
+| H_cap | This till this pocket. Auto from signed cash. Training remainder 0. |
 | S | This person at this house. |
 | κ | 1 on the language. 0 if they left it. |
 | β | CAT / on-duty this ticket. Not a wrap. |
