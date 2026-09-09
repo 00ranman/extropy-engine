@@ -18,6 +18,7 @@ Public copy: https://extropyengine.com/docs/DEFAULTS.md
 | IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1) | No pile. Recomputed each proposal. Burns in the tally. |
 | Cash-out of standing | Forbidden | Lose-condition. |
 | Ordinary close | Target XP on the order of **0.01–1** for a MICRO loop (lawn, ride, ticket line) | Planetary starting band. Rarity can lift it. A 100-XP lawn is a mapper bug. |
+| Lookers | Provisional mint. Looking is a vertex. Parts of a claim, more than once, later. No validator class. One neighbor is evidence, not a gavel. | Planetary. Fork. |
 | EP this sale | `min(XP · L + λ · L, line × H_cap)` | Spark cannot exceed the house cap on **this ticket**. XP is not dollars. |
 
 Half-life of a mint ≈ 69 two-week ticks ≈ 1.9 years. ~1 year ≈ 69%. ~5 years ≈ 16%. ~8 years ≈ 5%. A decade is dust. Never zero in the reals. Late mint is the decades-later machine.
