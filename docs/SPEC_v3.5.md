@@ -27,8 +27,6 @@ If two documents disagree, this is the order:
 5. Codex v2.1 — signed civilizational document. Frozen. Do not silently rewrite it from this file.
 6. [`docs/CODEX_3_NOTES.md`](./CODEX_3_NOTES.md) — capture for a later edition. Not a newer Codex.
 
-FAQ, meter-math pages, and chatbots that still say Reliability, Falsifiability, six tokens, a till slider, 30-day XP leak, or IT as a 5%/month pile are reading **v3.1**. They are wrong for 3.5.
-
 ---
 
 ## Abstract
@@ -37,35 +35,34 @@ Extropy Engine v3.5 is a contribution ledger for measuring verified entropy redu
 
 Value is minted only when measurable disorder decreases under a declared boundary, with both edges agreeing, a versioned mapper, mint at close, late burn, and leak. Standing does not transfer. Standing does not cash out. A spark can die in a sale. Votes are not a wallet.
 
-v3.1 shipped the architecture (edge intelligence, hybrid identity, PSLL, native substrate, epistemology-engine as witness). v3.1.2 fixed the mint labels (R = rarity, F = Frequency of Decay). **v3.5 writes the meters the public site, the letter key, and `xp-formula` have been running on** so critiques stop attacking a six-token cartoon with a till slider.
-
-The `epistemology-engine` package remains what v3.1 said it was: the mesh's emergent peer-review witness layer. Decomposition stays at the edge. There is no validator class. Looking is a vertex.
+The `epistemology-engine` package is the mesh's emergent peer-review witness layer. Decomposition stays at the edge. There is no validator class. Looking is a vertex.
 
 ---
 
-## 0. What's new in v3.5
+## 0. This edition
 
-Catch-up. Not a new physics. Not Codex 3.
+The machine as coded. Not Codex 3.
 
-- **Five ledger objects, not six bags.** XP, CT, EP, CAT, IT. L is this-ticket math, not a sixth bag. GT / RT / DT as bags are dead letters. Transfer friction δ = 0.02 is dead — there is nothing to transfer.
-- **R = rarity of the action class.** Not reputation. (Shipped in code as v3.1.2.)
-- **F = Frequency of Decay.** Repeats pay less. Not falsifiability. Falsifiability is script-ℱ.
+- **Five ledger objects.** XP, CT, EP, CAT, IT. L is this-ticket math, not a sixth bag.
+- **R = rarity of the action class.** Not reputation.
+- **F = Frequency of Decay.** Repeats pay less. Falsifiability is script-ℱ.
 - **ΔS is a bits-equivalent proxy.** Not XP. Unknown leakage stays unknown. You do not type a score.
-- **Tₛ is a slam window.** Instant close mints 0. Not recency. Not the standing leak.
-- **CT_W is community-web standing.** Same readout at every compatible till. The door does not own CT. It does not travel to the next town unless they still speak the language.
+- **Tₛ is a slam window.** Instant close mints 0.
+- **CT_W is community-web standing.** Same readout at every compatible till. The door does not own CT.
 - **H_cap is Auto from this till's signed cash.** No slider. No Off on the register. Training remainder 0 until 10 days of signed tickets (two 5-day weeks). Real Off = unplug.
 - **L = clip(H_cap · S · κ · CT_W · β, 0, 1).** This ticket.
 - **EP = XP · L + λ · L.** Spark. Born and burned in the sale. λ default 0.15. Clip to the list.
 - **IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1).** This proposal. Burns in the tally. Not a pile. Not `XP · G`.
-- **Two clocks.** Leak ticks every **10 days** (`POCKET_KEEP = 0.99`, n = idle 10-day counts). Auto H and training read **10 days** of this till's signed cash. Same number because 5 and 10 are the units. Different job. No months. No 30. No 40. Half-life of a mint ≈ 1.9 years.
-- **No settle window.** Close mints. Leak starts. Burn has no expiry. A silence timer is not a looker.
-- **Lookers.** Looking is a vertex. No validator class. Self-close is valid. Late mint / late burn = NOW delta on a cited vertex.
-- **SignalFlow is the protocol mouth. LocalFlow is the errand face.** Stop attributing SignalFlow's job to LocalFlow.
-- **Public language:** record / meter / till spark. Not token. Domain (eight instruments) vs lane (skill). CAT is a record, off the mint.
-- **Public gaps: 16 live** (12 open, 4 narrowed) as of 2026-09-07. Do not quote 63 or 65.
-- **Scratched:** CT lockup, first-validator priesthood, universal ESF, IT as a decaying pile, settle window, 40-day months.
+- **Two clocks.** Leak ticks every **10 days** (`POCKET_KEEP = 0.99`, n = idle 10-day counts). Auto H and training read **10 days** of this till's signed cash. Same number, different job. Half-life of a mint ≈ 1.9 years.
+- **Close mints.** Leak starts. Looking is a vertex. Late burn has no expiry.
+- **Lookers.** No validator class. Self-close is valid. Late mint / late burn = NOW delta on a cited vertex.
+- **SignalFlow is the protocol mouth. LocalFlow is the errand face.**
+- **Public language:** record / meter / till spark. Domain (eight instruments) vs lane (skill). CAT is a record, off the mint.
+- **Public gaps: 16 live** (12 open, 4 narrowed) as of 2026-09-07.
 
-What did **not** change: Digital Autarky, eight domains, personal-AI handshake, PSLL, native substrate, epistemology-engine as witness, hybrid identity, micro-quest grain, the mint product itself.
+Digital Autarky, eight domains, personal-AI handshake, PSLL, native substrate, hybrid identity, micro-quest grain, and the mint product itself are unchanged.
+
+History of prior editions lives in [`docs/CHANGELOG.md`](./CHANGELOG.md), not in this body.
 
 ---
 
@@ -81,7 +78,7 @@ Five commitments:
 4. Verification must be adversarially robust, privacy-preserving, and incentive-aligned. Looking leaves a vertex.
 5. Governance stays fractal, composable, and bounded against permanent concentration. World standing does not buy extra gavels.
 
-v3.5 is also the point where the **engineering spec stops teaching the cartoon**. The companion novel makes the civilizational case. Codex 2.1 is the signed edition. This document specifies the machine as it is actually coded.
+The companion novel makes the civilizational case. Codex 2.1 is the signed edition. This document specifies the machine as coded.
 
 ### 1.1 What v3.5 is not
 
@@ -232,7 +229,7 @@ Rarity-splitting 400 fake classes is a **DAG** job. The formula will not catch i
 | **F** | Repeating the action class. |
 | **0.99ⁿ** | Standing after close. ~1% of remaining every 10 idle days. |
 
-IT is this-proposal standing, not a leak clock. H_cap's 10-day window is the till's cash books (two 5-day weeks). None of those is Tₛ. There is no settle window.
+IT is this-proposal standing, not a leak clock. H_cap's 10-day window is the till's cash books (two 5-day weeks). None of those is Tₛ.
 
 ### 6.3 ΔS — proxy, mapper, unknown stays unknown
 
@@ -435,7 +432,7 @@ Possible axiom, **not written:** some XP and some IT always burn. Floor, not a v
 | Leak tick | **10 days** | n in `0.99ⁿ`. Idle 10-day counts. XP and CT_W. Two 5-day weeks. |
 | H window | **10 days** | Auto H_cap and training. This till's signed cash. Two 5-day weeks of books. Not the leak tick. |
 
-Same *number* because 5 and 10 are the units. Different job. Do not invent a 30 or a 40 so they look different. No months.
+Same *number* because 5 and 10 are the units. Different job.
 
 ```
 XP(n)  = XP · 0.99ⁿ
@@ -446,17 +443,9 @@ CT(n)  = CT · 0.99ⁿ
 
 Half-life ≈ 69 ten-day ticks ≈ **1.9 years**. ~1 year ≈ 69%. ~5 years ≈ 16%. ~8 years ≈ 5%. A decade is dust. Never zero in the reals.
 
-Calendar: a week is **5 days**. 73 weeks. No months. No leap day. 100 000 ticks fill the solar day and eat the SI leftover past 24 h. Seasons are orbit marks. Pages that still say “~1%/month, half-life ≈ 69 months” are reading the old 30-day tick. That is not 3.5.
+A week is **5 days**. 73 weeks. Seasons are orbit marks. Close mints. Leak starts. Looking is a vertex. Late burn has no expiry. If a room wants fresh XP out of EP, that is a haircut on XP→EP (too new, or no LOOK yet). One filter. Not a second XP.
 
-### 11.2 No settle window
-
-Close mints. Leak starts. Burn has no expiry. Looking is a vertex. The other edge already agreed.
-
-Provisional XP that auto-promotes after N days of silence was leftover from when settle meant final. Late burn replaced that. A clock is not a looker. Do not vote a settle window back in as “verification.”
-
-If a room wants fresh XP out of EP, that is a **haircut on XP→EP** (too new, or no LOOK yet). One filter. Not a second XP.
-
-### 11.3 Late mint
+### 11.2 Late mint
 
 Citation-gated. A new vertex has to exist that names causal parents and hangs evidence. No citation, no edge, no XP.
 
@@ -466,15 +455,15 @@ Hop-weight is not frozen in Codex v2.1. Do not invent a fraction.
 
 Decades later still has weight when a later huge, cited ΔS writes a delta into the original vertex. That is the long-horizon machine.
 
-### 11.4 Late burn
+### 11.3 Late burn
 
-Settled-as-immortal is dead. Close mints. XP can still be destroyed. No expiry. Five days later or a decade later.
+XP can still be destroyed. No expiry. Five days later or a decade later.
 
 You do not collect what decay already ate. You mark the vertex BURNED and slash remaining dust plus any new cited delta. Ordinary XP a decade on is already dust. Clawing a lawn from 1996 is bookkeeping. The DAG does not forget. The wallet does not get a 1996-shaped hole.
 
 Late mint and late burn are the same machine, both directions.
 
-### 11.5 Access economy
+### 11.4 Access economy
 
 You do not spend XP. It gets eaten. You keep working (including your own lawn, rest, care) or the pile shrinks. There is no PTO token. Sick is not a clawback. Care is a loop for the person who shows up. Recovery can be biological ΔS if the loop closes.
 
@@ -850,7 +839,7 @@ This is the section you should actually read before forming an opinion.
 
 **Sybil.** Cost of attack scales with number of loops that must be honestly completed per fake identity. Trivial loops produce near-zero XP (the slam window). Residual risk: domains with subjective measurement (social, governance) have lower Sybil cost than domains with objective measurement (thermodynamic, code). Empirical Sybil cost curve is unverified.
 
-**Collusion.** Close mints. Late burn makes sustained collusion risky but does not prevent it. There is no validator class to buy and no silence timer pretending to be verification. Residual: a well-funded adversary can employ real members whose live CT and S_gov are directed. That is expensive labor, not a token sale.
+**Collusion.** Close mints. Late burn makes sustained collusion risky but does not prevent it. There is no validator class to buy. Residual: a well-funded adversary can employ real members whose live CT and S_gov are directed. That is expensive labor, not a token sale.
 
 **Economic capture.** XP is non-transferable. IT is not a pile. External capital cannot buy a gavel. L-extraction (a captured house juicing H_cap) is the remaining economic attack. H_cap is Auto from signed cash, which removes the slider. Unsolved experimentally: whether a captured house can still extract. That's a test, not a vibe.
 
@@ -858,7 +847,7 @@ This is the section you should actually read before forming an opinion.
 
 **MICRO → MACRO drift.** Acknowledged. Mechanism: no self-score, evidence on the DAG, if-then, late burn, leak, votes stay in the room. Nesting as a solvent is unsolved.
 
-**Public gaps (2026-09-07):** **16 live** on https://extropyengine.com/open-problems — 12 open, 4 specified but untested. Three old questions scratched (CT lockup, validator priesthood, universal ESF). The v3.1 “63/65” list is a legacy engineering inventory in [`docs/GAPS.md`](./GAPS.md). **Do not quote 63 or 65 as the current number.**
+**Public gaps (2026-09-07):** **16 live** on https://extropyengine.com/open-problems — 12 open, 4 specified but untested.
 
 Most significant still-open engineering questions:
 
