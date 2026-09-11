@@ -4,7 +4,7 @@ Publish these before the first live till. Humans will ask. “The MACRO publishe
 
 Public copy: https://extropyengine.com/docs/DEFAULTS.md
 
-**Two clocks.** Leak ticks every **10 days**. Auto H and training read **40 days** of this till’s signed cash. \(0.99^n\) is unchanged. \(n\) is idle 10-day counts.
+**Two clocks.** Leak ticks every **10 days** (two 5-day weeks idle). Auto H and training read **10 days** of this till’s signed cash (two 5-day weeks of books). Same number because 5 and 10 are the units. Different job. No months. No 30. No 40. \(0.99^n\) is unchanged. \(n\) is idle 10-day counts.
 
 ## Planetary (fork to change)
 
@@ -14,11 +14,11 @@ Public copy: https://extropyengine.com/docs/DEFAULTS.md
 | Leak tick | 10 days | Planetary. Fork. |
 | XP leak | 0.99 per 10 days (~1% of remaining) | Planetary. Fork. n = idle 10-day counts. |
 | CT leak | 0.99 per idle 10 days (~1% of remaining) | Same keep as XP. Idle on web W. A close / till spark / posted task on W resets the clock. Does not travel to the next town. |
-| H window | 40 days | Planetary starting window for Auto and training. |
+| H window | 10 days (two 5-day weeks of signed cash) | Planetary starting window for Auto and training. Not a settle clock. |
 | IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1) | No pile. Recomputed each proposal. Burns in the tally. |
 | Cash-out of standing | Forbidden | Lose-condition. |
 | Ordinary close | Target XP on the order of **0.01–1** for a MICRO loop (lawn, ride, ticket line) | Planetary starting band. Rarity can lift it. A 100-XP lawn is a mapper bug. |
-| Lookers | Provisional mint. Looking is a vertex. Parts of a claim, more than once, later. No validator class. One neighbor is evidence, not a gavel. | Planetary. Fork. |
+| Lookers | Mint at close. Looking is a vertex. Parts of a claim, more than once, later. No validator class. One neighbor is evidence, not a gavel. | Planetary. Fork. |
 | EP this sale | `min(XP · L + λ · L, line × H_cap)` | Spark cannot exceed the house cap on **this ticket**. XP is not dollars. |
 
 Half-life of a mint ≈ 69 10-day ticks ≈ 1.9 years. ~1 year ≈ 69%. ~5 years ≈ 16%. ~8 years ≈ 5%. A decade is dust. Never zero in the reals. Late mint is the decades-later machine.
@@ -27,8 +27,8 @@ Half-life of a mint ≈ 69 10-day ticks ≈ 1.9 years. ~1 year ≈ 69%. ~5 years
 
 | Knob | Default | Change |
 |---|---|---|
-| λ | 0.15 | Vertex. 40-day notice. One number for the web. |
-| β allow-list (max) | CAT on-duty, asked domain band, signed if-then between two rooms on this language | Vertex. 14 days notice. House may only narrow. |
+| λ | 0.15 | Vertex. 10-day notice. One number for the web. |
+| β allow-list (max) | CAT on-duty, asked domain band, signed if-then between two rooms on this language | Vertex. 10-day notice. House may only narrow. |
 | H_gov | 1 | This room. 0 = one DID one nullifier. |
 | S_gov | 1 if in the room, else 0 | Party to the dispute: 0. |
 
@@ -39,9 +39,9 @@ No till slider. No Off on the register. The real Off is: don’t run the node.
 | Knob | Default | Change |
 |---|---|---|
 | H_cap | Auto | From this door’s signed cash. Not a control. |
-| Training | Remainder 0 until this till has 40 days of signed tickets | Feature. Empty window does not puff discounts. |
+| Training | Remainder 0 until this till has 10 days of signed tickets | Feature. Empty window does not puff discounts. |
 | H_cap auto (after training) | clip(0.5 × cash_in / cash_out, 0, 1) | cash_in = drawer + overlay-touch. cash_out = inbound invoices + rent + payroll due in the window. Healthy books sit at 0.5. |
-| S | 1.0 until this door has history | Auto from this door. Fake-proof / spite cut on a short clock (default 14 days). |
+| S | 1.0 until this door has history | Auto from this door. Fake-proof / spite cut on a short clock (default 5 days, one week). |
 | β this ticket | 1 if no proof asked; else the live proof | If-then. Off the clock, drop. |
 
 ## β — what counts, who attests

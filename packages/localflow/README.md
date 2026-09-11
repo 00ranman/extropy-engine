@@ -17,8 +17,8 @@ Each completed task is a **loop** in the Extropy Engine sense:
 Client posts task → LOOPOPEN vertex written
 Driver accepts
 Driver completes task
-Client confirms → LOOPCLOSE + XPMINT_PROVISIONAL vertices written (convergence point)
-40 days no dispute → XPMINT_CONFIRMED
+Client confirms → LOOPCLOSE + XP mint (leak starts)
+Lookers attach later. Burn anytime. No settle window.
 ```
 
 The convergence vertex appears in both the client's and driver's person-DAG. Minting requires multi-party convergence — solo actions cannot mint XP. This is the structural fraud resistance built into the protocol.

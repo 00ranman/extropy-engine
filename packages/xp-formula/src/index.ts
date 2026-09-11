@@ -3,7 +3,7 @@
  * Canonical meter math for the Extropy Engine.
  *
  * XP = R × F × ΔS × (w · E) × log(1/Tₛ)
- * XP(n) = XP_settled · 0.99ⁿ
+ * XP(n) = XP · 0.99ⁿ
  *
  * L  = clip(H_cap · S · κ · CT_W · β, 0, 1)
  * EP = XP · L + λ · L     clipped to the list price
@@ -87,10 +87,10 @@ export interface GovStandingInputs {
 }
 
 export const DEFAULT_DELTA_T_CAP_SECONDS = 5 * 60;
-/** 10 days. Leak tick. n in 0.99ⁿ is idle 10-day counts. No third named unit. */
+/** 10 days. Leak tick. n in 0.99ⁿ is idle 10-day counts. Two 5-day weeks. */
 export const LEAK_DAYS = 10;
-/** Till books. 40 days. Auto H and training. Not the leak tick. */
-export const H_WINDOW_DAYS = 40;
+/** Till books. 10 days (two 5-day weeks of signed cash). Auto H and training. Not the leak tick. Same number because 10 is the unit. Different job. */
+export const H_WINDOW_DAYS = 10;
 /** @deprecated Use LEAK_DAYS for leak, H_WINDOW_DAYS for the till. */
 export const SPAN_DAYS = LEAK_DAYS;
 export const POCKET_DAYS = H_WINDOW_DAYS;
@@ -100,17 +100,18 @@ export const XP_MONTHLY_KEEP = POCKET_KEEP;
 /** CT idle leak. Same keep as XP. n = idle 10-day counts on web W. */
 export const CT_MONTHLY_KEEP = POCKET_KEEP;
 export const DEFAULT_H_GOV = 1;
-/** Small XP-equivalent. EP = XP·L + λ·L. Web W may republish with 40-day notice. */
+/** Small XP-equivalent. EP = XP·L + λ·L. Web W may republish with 10-day notice. */
 export const DEFAULT_EP_FLOOR = 0.15;
 /** Healthy-books remainder scale. After training, Auto sits here when in ≈ out. Not a till control. */
 export const DEFAULT_H_CAP = 0.5;
 export const DEFAULT_S = 1;
-export const S_TEETH_DAYS = 14;
-export const LAMBDA_NOTICE_DAYS = H_WINDOW_DAYS;
-export const BETA_ALLOWLIST_NOTICE_DAYS = 14;
+/** Spite / fake-proof cut. One 5-day week. */
+export const S_TEETH_DAYS = 5;
+export const LAMBDA_NOTICE_DAYS = 10;
+export const BETA_ALLOWLIST_NOTICE_DAYS = 10;
 
 /**
- * Trailing 40-day cash → H_cap. No till slider. No Off button.
+ * Trailing 10-day cash → H_cap. No till slider. No Off button.
  * trainedDays < H_WINDOW_DAYS → 0. Training. Remainder sleeps. Feature.
  * After that: clip(0.5 × cash_in / cash_out, 0, 1). Healthy books sit at 0.5.
  * Real Off is: don't run the node.

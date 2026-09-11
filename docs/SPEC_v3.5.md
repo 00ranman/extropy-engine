@@ -35,7 +35,7 @@ FAQ, meter-math pages, and chatbots that still say Reliability, Falsifiability, 
 
 Extropy Engine v3.5 is a contribution ledger for measuring verified entropy reduction across eight domains. It is a protocol for **Digital Autarky**: intelligence, identity, and local context stay at the edge. The network is a handshake, a claim schema, and a DAG — not a supermind.
 
-Value is minted only when measurable disorder decreases under a declared boundary, with both edges agreeing, a versioned mapper, provisional mint, late burn, and leak. Standing does not transfer. Standing does not cash out. A spark can die in a sale. Votes are not a wallet.
+Value is minted only when measurable disorder decreases under a declared boundary, with both edges agreeing, a versioned mapper, mint at close, late burn, and leak. Standing does not transfer. Standing does not cash out. A spark can die in a sale. Votes are not a wallet.
 
 v3.1 shipped the architecture (edge intelligence, hybrid identity, PSLL, native substrate, epistemology-engine as witness). v3.1.2 fixed the mint labels (R = rarity, F = Frequency of Decay). **v3.5 writes the meters the public site, the letter key, and `xp-formula` have been running on** so critiques stop attacking a six-token cartoon with a till slider.
 
@@ -53,16 +53,17 @@ Catch-up. Not a new physics. Not Codex 3.
 - **ΔS is a bits-equivalent proxy.** Not XP. Unknown leakage stays unknown. You do not type a score.
 - **Tₛ is a slam window.** Instant close mints 0. Not recency. Not the standing leak.
 - **CT_W is community-web standing.** Same readout at every compatible till. The door does not own CT. It does not travel to the next town unless they still speak the language.
-- **H_cap is Auto from this till's signed cash.** No slider. No Off on the register. Training remainder 0 until 40 days of signed tickets. Real Off = unplug.
+- **H_cap is Auto from this till's signed cash.** No slider. No Off on the register. Training remainder 0 until 10 days of signed tickets (two 5-day weeks). Real Off = unplug.
 - **L = clip(H_cap · S · κ · CT_W · β, 0, 1).** This ticket.
 - **EP = XP · L + λ · L.** Spark. Born and burned in the sale. λ default 0.15. Clip to the list.
 - **IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1).** This proposal. Burns in the tally. Not a pile. Not `XP · G`.
-- **Two clocks.** Leak ticks every **10 days** (`POCKET_KEEP = 0.99`, n = idle 10-day counts). Auto H and training read **40 days** of this till's signed cash. Do not mash them. Half-life of a mint ≈ 1.9 years.
+- **Two clocks.** Leak ticks every **10 days** (`POCKET_KEEP = 0.99`, n = idle 10-day counts). Auto H and training read **10 days** of this till's signed cash. Same number because 5 and 10 are the units. Different job. No months. No 30. No 40. Half-life of a mint ≈ 1.9 years.
+- **No settle window.** Close mints. Leak starts. Burn has no expiry. A silence timer is not a looker.
 - **Lookers.** Looking is a vertex. No validator class. Self-close is valid. Late mint / late burn = NOW delta on a cited vertex.
 - **SignalFlow is the protocol mouth. LocalFlow is the errand face.** Stop attributing SignalFlow's job to LocalFlow.
 - **Public language:** record / meter / till spark. Not token. Domain (eight instruments) vs lane (skill). CAT is a record, off the mint.
 - **Public gaps: 16 live** (12 open, 4 narrowed) as of 2026-09-07. Do not quote 63 or 65.
-- **Scratched:** CT lockup, first-validator priesthood, universal ESF, IT as a decaying pile.
+- **Scratched:** CT lockup, first-validator priesthood, universal ESF, IT as a decaying pile, settle window, 40-day months.
 
 What did **not** change: Digital Autarky, eight domains, personal-AI handshake, PSLL, native substrate, epistemology-engine as witness, hybrid identity, micro-quest grain, the mint product itself.
 
@@ -229,9 +230,9 @@ Rarity-splitting 400 fake classes is a **DAG** job. The formula will not catch i
 |---|---|
 | **Tₛ** | This loop's elapsed time. Slam-shut at 0. Capped. |
 | **F** | Repeating the action class. |
-| **0.99ⁿ** | Standing after settlement. ~1% of remaining every 10 idle days. |
+| **0.99ⁿ** | Standing after close. ~1% of remaining every 10 idle days. |
 
-Settle window is provisional → standing. IT is this-proposal standing, not a leak clock. H_cap's 40-day window is the till's cash books. None of those is Tₛ.
+IT is this-proposal standing, not a leak clock. H_cap's 10-day window is the till's cash books (two 5-day weeks). None of those is Tₛ. There is no settle window.
 
 ### 6.3 ΔS — proxy, mapper, unknown stays unknown
 
@@ -268,7 +269,7 @@ XP ≥ ΔS / cₗ²
 - ΔS > 0 after the mapper and the leakage check.
 - Both edges agreed.
 - Rights / consent fail ⇒ ineligible. Not “big ΔS minus an ethics haircut.”
-- Unsettled vertices do not move IT.
+- IT ignores XP. A mint does not buy a gavel.
 
 ---
 
@@ -308,18 +309,18 @@ Then clip EP to the list price. Burns in that sale. Official skins show **cash c
 | Letter | Job |
 |---|---|
 | **H_cap** | This till, this pocket. Auto from signed cash. Training remainder 0. |
-| **S** | This person at this house. 1.0 until this door has history. Spite/fake-proof cut on a short clock (default 14 days). |
+| **S** | This person at this house. 1.0 until this door has history. Spite/fake-proof cut on a short clock (default 5 days, one week). |
 | **κ** | 1 on the language. 0 if they left it. |
 | **CT_W** | Community meter. Same at every compatible till. |
 | **β** | CAT / on-duty / signed if-then this ticket. Not a CT wrap. Default 1 if the door asked for nothing. Off the clock, drop. |
-| **λ** | Small floor. Thin XP cannot erase a real L. Default 0.15. One number for the web. 40-day notice. |
+| **λ** | Small floor. Thin XP cannot erase a real L. Default 0.15. One number for the web. 10-day notice. |
 
 Code: `computeL`, `computeEP`, `sparkTill`, `hCapFromCash`.
 
 ### 8.1 H_cap Auto (no slider)
 
 ```
-trainedDays < 40  →  H_cap = 0     (training. Remainder sleeps. Feature.)
+trainedDays < 10  →  H_cap = 0     (training. Remainder sleeps. Feature.)
 after that        →  H_cap = clip(0.5 × cash_in / cash_out, 0, 1)
 ```
 
@@ -342,7 +343,7 @@ Does not count: a selfie, a punch card, a listed coin, “trust me I'm the manag
 
 Attest: issuer DID signs the interval. Subject DID holds the record. Issuer can revoke; spite revoke is a vertex on the issuer. Other rooms may ignore that issuer.
 
-House may only **narrow** the β allow-list. Web W publishes the max. 14 days notice.
+House may only **narrow** the β allow-list. Web W publishes the max. 10 days notice.
 
 ### 8.3 EP this sale
 
@@ -425,31 +426,35 @@ Possible axiom, **not written:** some XP and some IT always burn. Floor, not a v
 
 ---
 
-## 11. Leak, settle, late mint, late burn
+## 11. Leak, late mint, late burn
 
 ### 11.1 Two clocks (published)
 
 | Clock | Default | Job |
 |---|---|---|
-| Leak tick | **10 days** | n in `0.99ⁿ`. Idle 10-day counts. XP and CT_W. |
-| H window | **40 days** | Auto H_cap and training. This till's signed cash. Not the leak tick. |
+| Leak tick | **10 days** | n in `0.99ⁿ`. Idle 10-day counts. XP and CT_W. Two 5-day weeks. |
+| H window | **10 days** | Auto H_cap and training. This till's signed cash. Two 5-day weeks of books. Not the leak tick. |
+
+Same *number* because 5 and 10 are the units. Different job. Do not invent a 30 or a 40 so they look different. No months.
 
 ```
-XP(n)  = XP_settled · 0.99ⁿ
-CT(n)  = CT_settled · 0.99ⁿ
+XP(n)  = XP · 0.99ⁿ
+CT(n)  = CT · 0.99ⁿ
 ```
 
-`POCKET_KEEP = 0.99`. `LEAK_DAYS = 10`. `H_WINDOW_DAYS = 40`.
+`POCKET_KEEP = 0.99`. `LEAK_DAYS = 10`. `H_WINDOW_DAYS = 10`.
 
 Half-life ≈ 69 ten-day ticks ≈ **1.9 years**. ~1 year ≈ 69%. ~5 years ≈ 16%. ~8 years ≈ 5%. A decade is dust. Never zero in the reals.
 
-Pages that still say “~1%/month, half-life ≈ 69 months” are reading the old 30-day tick. That is not 3.5.
+Calendar: a week is **5 days**. 73 weeks = 365 days. Leap is week **74**, one day. There is no week 75. Pages that still say “~1%/month, half-life ≈ 69 months” are reading the old 30-day tick. That is not 3.5.
 
-### 11.2 Settle window
+### 11.2 No settle window
 
-Time from provisional XP → standing XP. **Default: 40 days.** Per-DFAO votable. Till window, not the leak tick. Same number of days as the H window; different job. Do not mash them. Say days, not weeks. This is only the promotion window, not the end of burn.
+Close mints. Leak starts. Burn has no expiry. Looking is a vertex. The other edge already agreed.
 
-30 days was a starting number that leaked into FAQ copy. It is not a law. 5–40 are in the same family. The knob is the DFAO's.
+Provisional XP that auto-promotes after N days of silence was leftover from when settle meant final. Late burn replaced that. A clock is not a looker. Do not vote a settle window back in as “verification.”
+
+If a room wants fresh XP out of EP, that is a **haircut on XP→EP** (too new, or no LOOK yet). One filter. Not a second XP.
 
 ### 11.3 Late mint
 
@@ -463,7 +468,7 @@ Decades later still has weight when a later huge, cited ΔS writes a delta into 
 
 ### 11.4 Late burn
 
-Settled ≠ immortal. Standing XP can still be destroyed. No expiry. Five days later or a decade later.
+Settled-as-immortal is dead. Close mints. XP can still be destroyed. No expiry. Five days later or a decade later.
 
 You do not collect what decay already ate. You mark the vertex BURNED and slash remaining dust plus any new cited delta. Ordinary XP a decade on is already dust. Clawing a lawn from 1996 is bookkeeping. The DAG does not forget. The wallet does not get a 1996-shaped hole.
 
@@ -483,7 +488,7 @@ Full note: [`docs/VALIDATION_IS_EMERGENT.md`](./VALIDATION_IS_EMERGENT.md). Look
 
 When you see “validator” in this repo, read it as **a contributor while they are performing a validating task**, not a person who holds a validator role.
 
-Provisional mint. Looking is a vertex. Parts of a claim, more than once, later. One neighbor is evidence, not a gavel. Self-close is valid.
+Mint at close. Looking is a vertex. Parts of a claim, more than once, later. One neighbor is evidence, not a gavel. Self-close is valid.
 
 Most validation is blind or implicit:
 
@@ -522,9 +527,9 @@ The assistant you trust *is* the UI. Character-sheet-ish is a sketch, not a spec
 1. You mow the lawn. Your own counts. You do not put yourself in for “this much XP.”
 2. SignalFlow talks to your LLM and the network: what is this task, how long did it take.
 3. Supporting documentation attaches — before/after photos, etc. DAG stores them so they can be referenced later.
-4. SignalFlow + LLM propose an approximate ΔS and put it in provisionally (if-then / smart-contract shaped).
-5. Other side agrees → provisional mint.
-6. If nobody contests through the settle window → standing XP, which then counts toward the pile you have (still not spent). Late burn has no expiry either way.
+4. SignalFlow + LLM propose an approximate ΔS (if-then / smart-contract shaped).
+5. Other side agrees → XP mints. Leak starts.
+6. Lookers attach later, in parts. Late burn has no expiry. There is no promotion clock.
 
 Work-for-a-boss is one input. Living was never inside that box. Anything verifiable: self-report, sensor, claim, assistant — then the other side agrees.
 
@@ -532,7 +537,7 @@ Work-for-a-boss is one input. Living was never inside that box. Anything verifia
 
 The honest critique is: MACROs have to coordinate off MICROs; MICROs are subjective; people oversell; the numbers drift upward.
 
-Do not deny that. Do not call it low-hanging fruit and walk away. The answer on the table is not “people are honest.” It is the claim path above: you do not type a score; evidence lives on the DAG; the other side agrees; settle is a knob; late burn has no expiry; decay eats idle XP; a MICRO vote cannot rewrite a MACRO; only PLANETARY hits the mesh.
+Do not deny that. Do not call it low-hanging fruit and walk away. The answer on the table is not “people are honest.” It is the claim path above: you do not type a score; evidence lives on the DAG; the other side agrees; looking is a vertex; late burn has no expiry; decay eats idle XP; a MICRO vote cannot rewrite a MACRO; only PLANETARY hits the mesh.
 
 Unsolved (keep it unsolved): whether nesting actually stops a popular MICRO from laundering a story upward.
 
@@ -621,7 +626,7 @@ Real-world requests become structured micro-claims through personal AI / SignalF
 
 Quests are published into a marketplace where SignalFlow routes them based on skill profile, location, current demand, availability, DFAO policy. (Older copy said “reputation.” Reputation is not a mint input. It may still inform routing weight for looker slices.)
 
-**Dynamic reward escalation (provisional):** neglected work automatically gets higher potential XP until someone accepts. Linear 1.0× → 3.0× over 7 days, then logarithmic to a cap of 10.0×. Governance-tunable. Per-DFAO override allowed.
+**Dynamic reward escalation:** neglected work automatically gets higher potential XP until someone accepts. Linear 1.0× → 3.0× over 5 days (one week), then logarithmic to a cap of 10.0×. Governance-tunable. Per-DFAO override allowed.
 
 Volunteer lookers can score **1/10th blind slices** of a claim without seeing the full context. Aggregation produces the signal. This dilutes single-looker influence and supports privacy. It does not create a validator class.
 
@@ -650,14 +655,13 @@ Full spec: [`architecture/SUBSTRATE.md`](../architecture/SUBSTRATE.md).
 ## 19. Loop lifecycle
 
 ```
-OPEN → VALIDATING → CONSENSUS → CLOSED → SETTLED
+OPEN → VALIDATING → CONSENSUS → CLOSED
                                        ↘ FAILED
                               ↘ ISOLATED (integrity quarantine)
 ```
 
 - **OPEN** — Task posted. Vertex on the DAG with causal parents. Evidence can hang off it.
-- **CLOSED** — Agreement. Provisional XP mints.
-- **SETTLED** — Provisional → standing. Still burnable later. Decay is already eating it.
+- **CLOSED** — Agreement. XP mints. Leak starts. Burnable immediately.
 - **BURNED** — A later verdict on that vertex. Same machine as late mint, the other way.
 - **FAILED / ISOLATED** — Did not close, or integrity quarantine.
 
@@ -679,7 +683,7 @@ Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is 
 | `xp-formula/` | Active | Canonical meter math. Pure functions. |
 | `loop-ledger/` | Active | Loop lifecycle state machine |
 | `signalflow/` | Active | Claim routing and dispatch. The protocol mouth. |
-| `xp-mint/` | Active | Two-phase minting (provisional + settle/burn). Stamp `canonical-v3.1.2`. |
+| `xp-mint/` | Active | Mint at close. Burn anytime. Stamp `canonical-v3.1.2`. |
 | `reputation/` | Active | Per-domain accuracy history. Does not enter XP. |
 | `dag-substrate/` | Active | Causal DAG ledger, vertex/edge primitives |
 | `dfao-registry/` | Active | Fractal organization registry |
@@ -711,7 +715,7 @@ GrantFlow (discovery + proposer), neighborhood-app, character-sheet sketch. Coll
 
 v3.0 misread it as a central decomposition service. v3.1 corrected the reading. v3.5 does not reopen it.
 
-**What it is:** a peer-review mesh observability layer. The real epistemology engine is the network itself — every personal AI submitting claims, every looker scoring a slice, every retroactive burn or settle. Truth-finding is what *emerges* from those primitives running on incentives at scale. The package is the formal witness, aggregator, and queryable surface.
+**What it is:** a peer-review mesh observability layer. The real epistemology engine is the network itself — every personal AI submitting claims, every looker scoring a slice, every retroactive burn. Truth-finding is what *emerges* from those primitives running on incentives at scale. The package is the formal witness, aggregator, and queryable surface.
 
 **What it does:**
 
@@ -730,7 +734,7 @@ Architectural posture: read-mostly; indexes the DAG; stateless under restart; mu
 
 DFAO = Decentralized Fractal Autonomous Organization. NANO → MICRO → MESO → MACRO → PLANETARY are **labels for suggested rule-sets**, not headcount fences. Seven is not a law.
 
-A vote rewrites the DFAO it is cast in (settle window, decay rates, quorum). It does not rewrite the mesh. **PLANETARY** is the only room that hits everyone, and getting a vote through there is supposed to be hard — you are voting against everybody.
+A vote rewrites the DFAO it is cast in (decay rates, quorum, notice). It does not rewrite the mesh. **PLANETARY** is the only room that hits everyone, and getting a vote through there is supposed to be hard — you are voting against everybody.
 
 A neighborhood can run this as a MESO wrapper, not a deed eraser. HOA jobs become LocalFlow loops. Liens and architectural control stay on the recorded paper until that paper changes.
 
@@ -783,11 +787,11 @@ Published before the first live till. Humans will ask. “The MACRO publishes it
 | Leak tick | 10 days |
 | XP leak | 0.99 per 10 days (~1% of remaining). n = idle 10-day counts. |
 | CT leak | Same keep. Idle on web W. A close / till spark / posted task on W resets n. |
-| H window | 40 days |
+| H window | 10 days (two 5-day weeks of signed cash) |
 | IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). No pile. |
 | Cash-out of standing | Forbidden. Lose-condition. |
 | Ordinary close | 0.01–1 XP for a MICRO loop |
-| Lookers | Provisional mint. Looking is a vertex. No validator class. |
+| Lookers | Mint at close. Looking is a vertex. No validator class. |
 | EP this sale | min(XP · L + λ · L, line × H_cap) |
 | ZKP scheme | BBS+ (when circuits exist; signatures today) |
 | Reveal threshold | 7-of-12 + cause-shown |
@@ -795,27 +799,26 @@ Published before the first live till. Humans will ask. “The MACRO publishes it
 | Domain weights w | 1.0 default per domain (per-DFAO override) |
 | Default task grain | 2–5 minutes |
 | Validation slice | 1/10th blind |
-| Reward escalation | linear 1.0× → 3.0× over 7d, log to cap 10.0× |
+| Reward escalation | linear 1.0× → 3.0× over 5d, log to cap 10.0× |
 | Δt_cap | 300 seconds unless the class says otherwise |
 
 ### Web W
 
 | Knob | Default |
 |---|---|
-| λ | 0.15. 40-day notice. One number for the web. |
-| β allow-list (max) | CAT on-duty, asked domain band, signed if-then. 14 days notice. House may only narrow. |
+| λ | 0.15. 10-day notice. One number for the web. |
+| β allow-list (max) | CAT on-duty, asked domain band, signed if-then. 10 days notice. House may only narrow. |
 | H_gov | 1. 0 = one DID one nullifier. |
 | S_gov | 1 if in the room, else 0. Party to the dispute: 0. |
-| Settle window | 40 days. Per-DFAO; PLANETARY to hit everyone. Same duration as H window, different job. |
 
 ### This house (MICRO)
 
 | Knob | Default |
 |---|---|
 | H_cap | Auto from this door's signed cash. Not a control. |
-| Training | Remainder 0 until 40 days of signed tickets. |
+| Training | Remainder 0 until 10 days of signed tickets. |
 | H_cap auto (after training) | clip(0.5 × cash_in / cash_out, 0, 1) |
-| S | 1.0 until this door has history. Fake-proof / spite cut default 14 days. |
+| S | 1.0 until this door has history. Fake-proof / spite cut default 5 days. |
 | β this ticket | 1 if no proof asked; else the live proof. Off the clock, drop. |
 
 Process: proposed number + reason on a vertex → delay (above) → effective time on the vertex. Old tickets keep the old knobs. Unplug is how overlay stops. That is not a cashier button.
@@ -847,7 +850,7 @@ This is the section you should actually read before forming an opinion.
 
 **Sybil.** Cost of attack scales with number of loops that must be honestly completed per fake identity. Trivial loops produce near-zero XP (the slam window). Residual risk: domains with subjective measurement (social, governance) have lower Sybil cost than domains with objective measurement (thermodynamic, code). Empirical Sybil cost curve is unverified.
 
-**Collusion.** Two-phase minting creates an exposure window (settle knob). Retroactive burn makes sustained collusion risky but does not prevent it. There is no validator class to buy. Residual: a well-funded adversary can employ real members whose live CT and S_gov are directed. That is expensive labor, not a token sale.
+**Collusion.** Close mints. Late burn makes sustained collusion risky but does not prevent it. There is no validator class to buy and no silence timer pretending to be verification. Residual: a well-funded adversary can employ real members whose live CT and S_gov are directed. That is expensive labor, not a token sale.
 
 **Economic capture.** XP is non-transferable. IT is not a pile. External capital cannot buy a gavel. L-extraction (a captured house juicing H_cap) is the remaining economic attack. H_cap is Auto from signed cash, which removes the slider. Unsolved experimentally: whether a captured house can still extract. That's a test, not a vibe.
 

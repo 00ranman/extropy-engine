@@ -200,7 +200,7 @@ async function mintForLoop(loopId: LoopId): Promise<XPMintEvent> {
   const insertResult = await pool.query(
     `INSERT INTO mint.mint_events (id, loop_id, status, rarity_multiplier, frequency_of_decay, delta_s,
      domain_essentiality_product, settlement_time_factor, xp_value, distribution, total_minted, formula_version)
-     VALUES ($1, $2, 'provisional', $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     VALUES ($1, $2, 'confirmed', $3, $4, $5, $6, $7, $8, $9, $10, $11)
      ON CONFLICT (loop_id) DO NOTHING
      RETURNING id`,
     [mintEventId, loopId, R, F, deltaS, w * E, settlementFactor, xpValue, JSON.stringify(distribution), xpValue, FORMULA_VERSION],
@@ -388,8 +388,8 @@ app.post('/mint/:mintEventId/burn', async (req, res) => {
       res.status(404).json({ error: 'Mint event not found', code: 'NOT_FOUND', timestamp: new Date().toISOString() });
       return;
     }
-    if (existing.rows[0].status !== 'provisional') {
-      res.status(400).json({ error: 'Mint is not provisional', code: 'INVALID_STATE', timestamp: new Date().toISOString() });
+    if (existing.rows[0].status === 'burned') {
+      res.status(400).json({ error: 'Mint is already burned', code: 'INVALID_STATE', timestamp: new Date().toISOString() });
       return;
     }
 

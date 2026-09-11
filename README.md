@@ -47,7 +47,7 @@ Defaults and who may change them: [`docs/DEFAULTS.md`](docs/DEFAULTS.md).
 
 CT_W is community standing. Same readout at grocery and laundry if they still speak base CT. The door does not own CT.
 
-H_cap — this till this window. Auto from signed cash. Training remainder 0 for 40 days. No slider.
+H_cap — this till this window. Auto from signed cash. Training remainder 0 for 10 days (two 5-day weeks). No slider.
 S — this person at this house.
 β — CAT / on-duty proof this ticket. Not a wrap.
 κ — 1 on the language. 0 if they left it.
@@ -92,7 +92,7 @@ Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is 
 packages/
 ├── contracts/          # Shared types, interfaces, enums (~72KB). Single source of truth.
 ├── xp-formula/         # Canonical formula implementation. Pure function, no side effects.
-├── loop-ledger/        # Loop lifecycle: OPEN → CONSENSUS → CLOSED → SETTLED
+├── loop-ledger/        # Loop lifecycle: OPEN → CONSENSUS → CLOSED
 ├── epistemology-engine # MESH OBSERVABILITY: aggregates emergent peer review,
 │                       # surfaces consensus drift, falsifiability stats, Sybil clusters.
 │                       # Redefined in v3.1 — NOT a central decomposition service.
@@ -127,12 +127,12 @@ The ledger exists specifically to prevent the failure mode that killed most Web3
 Every contribution passes through the same lifecycle:
 
 ```
-OPEN → VALIDATING → CONSENSUS → CLOSED → SETTLED
+OPEN → VALIDATING → CONSENSUS → CLOSED
                                        ↘ FAILED
                               ↘ ISOLATED (integrity quarantine)
 ```
 
-XP minted at CLOSED is provisional. After the settle window (default 40 days, per-DFAO), lookers either confirm or burn it. Lookers whose consensus is contradicted by later evidence take accuracy penalties. This is the primary defense against collusion: you have to hold your position while exposed. Late burn has no expiry.
+XP mints at CLOSED. Leak starts. Lookers attach later, in parts. Late burn has no expiry. Lookers whose consensus is contradicted by later evidence take accuracy penalties. There is no settle window. A clock is not a looker.
 
 > **There is no validator class.** "Validator" throughout this repo means *a contributor while they are performing a validating task*, not a separate tier of people. Validation is itself an entropy-reducing task, so it is a contribution done by ordinary contributors. Most validation is blind or implicit: under 1/10th slicing a contributor scores a slice without knowing whose work it is, and many tasks confirm or contradict earlier tasks as a side effect of their own dependency on them, so the performer never knows they validated anything. The `epistemology-engine` reads validation out of the task graph as an emergent property; it does not appoint validators. This is what removes the review chokepoint and ends the "who watches the watchers" regress. See [`docs/VALIDATION_IS_EMERGENT.md`](docs/VALIDATION_IS_EMERGENT.md).
 
@@ -144,7 +144,7 @@ This is the section you should actually read before forming an opinion.
 
 **Sybil resistance:** Cost of attack scales with number of loops that must be honestly completed per fake identity. Trivial loops produce near-zero XP (the `log` curve). Residual risk: domains with subjective measurement (social, governance) have lower Sybil cost than domains with objective measurement (thermodynamic, code). The empirical Sybil cost curve is unverified — that requires simulation against real claim distributions.
 
-**Collusion:** Two-phase minting creates an exposure window (settle knob, default 40 days). Retroactive slashing makes sustained collusion risky but does not prevent it. A cartel controlling >50% of domain looker weight can self-confirm indefinitely. Partial mitigation: there is no validator class to buy; looking is a vertex. The oracle layer is currently specified, not built.
+**Collusion:** Close mints. Retroactive slashing makes sustained collusion risky but does not prevent it. A cartel controlling >50% of domain looker weight can self-confirm indefinitely. Partial mitigation: there is no validator class to buy; looking is a vertex. The oracle layer is currently specified, not built. There is no 40-day silence timer.
 
 **Economic capture:** XP is non-transferable. IT is not a pile. External capital cannot buy a gavel. Residual risk: "corporate capture" — a well-funded adversary can employ real members whose live CT and S_gov are directed. That is expensive labor, not a token sale.
 
@@ -196,7 +196,7 @@ npx lerna run test --stream
 
 ## Full Specification
 
-Canonical engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (2026-09-11). Covers the mint, five ledger objects, Auto H_cap, CT_W, L / EP / IT, two clocks (10-day leak, 40-day H window), lookers, SignalFlow vs LocalFlow, identity, PSLL, substrate, packages, defaults, ℱ, and the 16 live public gaps.
+Canonical engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (2026-09-11). Covers the mint, five ledger objects, Auto H_cap, CT_W, L / EP / IT, two clocks (10-day leak, 10-day H books), lookers, SignalFlow vs LocalFlow, identity, PSLL, substrate, packages, defaults, ℱ, and the 16 live public gaps. No settle window. No 40-day anything.
 
 v3.1 is historical: [`docs/SPEC_v3.1.md`](docs/SPEC_v3.1.md). Do not implement against it.
 

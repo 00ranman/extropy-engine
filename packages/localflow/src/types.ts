@@ -93,9 +93,9 @@ export interface DagVertex {
   lamportTimestamp: number;
   wallTimestamp: string;
   parentVertexIds: VertexId[];
-  /** provisional XP value, computed at LOOPCLOSE */
+  /** XP value, computed at LOOPCLOSE. Leak starts. Burnable immediately. */
   xpProvisional?: number;
-  /** confirmed after 30-day window */
+  /** @deprecated Close mints. Kept as alias for standing XP. */
   xpConfirmed?: number;
 }
 

@@ -12,15 +12,14 @@ See `docs/CODEX_3_NOTES.md` for the Codex 3.0 capture of mechanics that kept fal
 |---|---|---|---|
 | ZKP scheme | BBS+ (signatures today) | Ecosystem | zk-SNARKs allowed for advanced use. Circuits are not in Codex 2.1. |
 | Identity reveal threshold | 7-of-12 + cause-shown | Ecosystem | See `IDENTITY.md`. Looking is a vertex. |
-| Reward escalation curve (early) | linear 1.0× → 3.0× over 7d | Domain DFAO | Per-domain customization allowed |
+| Reward escalation curve (early) | linear 1.0× → 3.0× over 5d | Domain DFAO | One 5-day week. Per-domain customization allowed |
 | Reward escalation curve (late) | log to cap 10.0× | Domain DFAO | Hard cap governance-tunable |
-| Retroactive **settle** window | 40 days | Per-DFAO; PLANETARY to hit everyone | Time from provisional XP → standing XP. Till window, not the leak tick. Same duration as H window, different job. Say days, not weeks. Not scripture. |
-| Late burn | no expiry | Ecosystem / dispute path | Standing XP can still burn years later. Settled ≠ immortal. |
+| Late burn | no expiry | Ecosystem / dispute path | Close mints. Burn anytime. No settle window. Settled-as-final is dead. |
 | **XP decay** keep | **0.99 every 10 days (~1% of remaining)** | Planetary | Access economy: you do not spend XP; it gets eaten. n is idle 10-day counts. |
 | **CT idle leak** | Same keep as XP | Planetary | Idle on web W. A close / till spark / posted task on W resets n. CT does not travel. |
-| **H window** | 40 days | Planetary | Auto H_cap and training. Not the leak tick. |
+| **H window** | 10 days | Planetary | Auto H_cap and training. Two 5-day weeks of signed cash. Not the leak tick. Not a verification of the lawn. |
 | H_cap | Auto from signed cash | This house | No slider. No Off on the register. Training remainder 0 until the window fills. |
-| λ | 0.15 | Web W | 40-day notice. EP = XP · L + λ · L. |
+| λ | 0.15 | Web W | 10-day notice. EP = XP · L + λ · L. |
 | IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1) | This room | No pile. Burns in the tally. H_gov = 0 is one DID one nullifier. Not a 5%/month bag. |
 | Conviction voting half-life | TBD per tier | Per-DFAO | Tunable by tier |
 | Looker weight factors | 4 (domain, accuracy, load, history) | Ecosystem | Weights themselves tunable. No validator class. |
@@ -30,7 +29,7 @@ See `docs/CODEX_3_NOTES.md` for the Codex 3.0 capture of mechanics that kept fal
 | Skill DAG progression criteria | TBD | Domain DFAO | Phase 3 |
 | Burn-floor axiom | **not written** | PLANETARY if we mean it | Possible: some XP and some IT always burn. Capture for Codex 3.0. Do not implement here. |
 
-**Dead knobs (do not restore):** CT lockup, GT decay, EP as a decaying bag, transfer friction δ, six-token counts. CT is not transferable. EP dies in the sale. GT is a dead letter.
+**Dead knobs (do not restore):** CT lockup, GT decay, EP as a decaying bag, transfer friction δ, six-token counts, settle window / two-phase mint as epistemology, 30-day anything, 40-day anything, months. CT is not transferable. EP dies in the sale. GT is a dead letter. Close mints. Burn anytime. Calendar is 5-day weeks.
 
 ## How to change a default
 

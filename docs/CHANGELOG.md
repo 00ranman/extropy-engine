@@ -1,5 +1,24 @@
 # Changelog
 
+## v3.5 — 2026-09-11 (same-day: no 40, no settle bag)
+
+Close mints. Burn anytime. Looking is a vertex. Provisional XP as a second species that auto-promotes after N days of silence is dead. `xp-mint` burns standing, not only `provisional`.
+
+**Clocks are 5 and 10.** No months. No 30. No 40. A week is 5 days. 73 weeks = 365 days. Leap is week 74, one day. There is no week 75.
+
+| Clock | Now | Job |
+|---|---|---|
+| Leak tick | **10 days** | Two 5-day weeks idle. `0.99ⁿ`. |
+| H window | **10 days** | Two 5-day weeks of this till's signed cash. Training remainder 0 until then. Same *number* as leak because 10 is the unit. Different job. |
+| λ / β notice | **10 days** | Web W vertex. |
+| S spite cut | **5 days** | One week. |
+| Reward escalation | **5 days** to 3.0× | One week. Then log to 10.0×. |
+| Settle window | **gone** | Leftover from settle-as-final. |
+
+If a room wants fresh XP out of EP, that is a haircut on XP→EP, not a two-phase mint.
+
+---
+
 ## v3.5 — 2026-09-11 (Engineering catch-up)
 
 Canonical engineering spec is now [`docs/SPEC_v3.5.md`](./SPEC_v3.5.md). Codex v2.1 stays signed. This is **not** Codex 3.0 and **not** spec 4.0.
@@ -11,14 +30,15 @@ The mint product did not change. `FORMULA_VERSION` in `packages/xp-mint` remains
 - **Five ledger objects, not six bags.** XP, CT, EP, CAT, IT. L is this-ticket math. GT / RT / DT as bags are dead. Transfer friction δ = 0.02 is dead — nothing transfers. Cash-out is a lose-condition.
 - **R = rarity. F = Frequency of Decay.** Already shipped as v3.1.2. 3.1 parent spec still said Reliability / Falsifiability. 3.5 matches the code.
 - **CT_W** is community-web standing. Same readout at compatible tills. Door does not own CT. Idle leak `0.99ⁿ`.
-- **H_cap Auto** from this till's signed cash. No slider. No Off on the register. Training remainder 0 until 40 days of signed tickets. `hCapFromCash`.
+- **H_cap Auto** from this till's signed cash. No slider. No Off on the register. Training remainder 0 until 10 days of signed tickets. `hCapFromCash`.
 - **L = clip(H_cap · S · κ · CT_W · β, 0, 1).** **EP = XP · L + λ · L** (λ default 0.15), clipped to the list, burned in the sale.
 - **IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1).** This proposal. Burns in the tally. Not a pile. Not `XP · G`. The 5%/month IT leak is dead.
-- **Two clocks.** Leak tick = 10 days. H window = 40 days. Half-life of a mint ≈ 1.9 years. Do not mash with Tₛ, F, or the settle window (40 days, per-DFAO; different job from H).
-- **Lookers.** Looking is a vertex. No validator class. Self-close valid. Late mint / late burn = citation-gated NOW delta.
+- **Two clocks.** Leak tick = 10 days. H window = 10 days of signed cash. Half-life of a mint ≈ 1.9 years. Do not mash the jobs. Do not invent a 30 or a 40 to make them look different. No settle window.
+- **Lookers.** Looking is a vertex. No validator class. Self-close valid. Late mint / late burn = citation-gated NOW delta. Mint at close.
 - **SignalFlow is the protocol mouth. LocalFlow is the errand face.** Own lawn mints. Overlay, not a new civilization. CAT import is opening evidence, not a throne.
 - **Public language:** record / meter / till spark. Domain vs lane. Public gaps **16 live** (12 open, 4 narrowed). Do not quote 63 or 65.
-- **Scratched:** CT lockup, first-validator priesthood, universal ESF.
+- **Scratched:** CT lockup, first-validator priesthood, universal ESF, settle window, 40-day months.
+
 
 ### Docs
 

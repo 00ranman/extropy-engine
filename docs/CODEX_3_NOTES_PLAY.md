@@ -62,7 +62,7 @@ That is **role occupancy from dependence**, not a poll.
 
 3.0 should not silently delete conviction voting. Split:
 
-- **Parameter changes** (settle window, decay, `b` for access bands) still vote, in the DFAO they affect. PLANETARY stays hard.
+- **Parameter changes** (decay, `b` for access bands, notice) still vote, in the DFAO they affect. PLANETARY stays hard. There is no settle window to vote.
 - **Who holds a working role** (steward of this MICRO, curator of this slice of DAG, the person the till already knows) defaults to *sustained presence + domain CAT + no serious burn*. Challenge is possible; it is expensive; it is not a season election.
 
 IT is this-proposal standing. Clip to 1. Burns in the tally. You do not get a diplomatic reset to take a pile, because there is no pile.

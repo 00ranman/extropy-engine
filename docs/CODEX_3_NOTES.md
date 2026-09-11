@@ -50,7 +50,7 @@ Must land in 3.0, already specified in code/defaults, not in the signed 2.1 PDF:
 
 - CT_W is community-web standing. Same readout at compatible tills. Door does not own CT. H_cap is Auto from this till.
 - L = clip(H_cap · S · κ · CT_W · β, 0, 1). EP = XP · L + λ · L.
-- H_cap Auto from trailing eight-week signed cash. Training remainder 0 until that window fills. λ default 0.15; web publishes; eight-week notice.
+- H_cap Auto from trailing 10-day signed cash (two 5-day weeks). Training remainder 0 until that window fills. λ default 0.15; web publishes; 10-day notice.
 - β is CAT / on-duty / signed case. Not a CT wrap.
 - Smart contracts: named cases after both edges signed. No bag in the “then.”
 - Official skins: cash collected + remainder. No raw XP on a forehead.
@@ -88,8 +88,8 @@ The assistant you trust *is* the UI. Character-sheet-ish is a sketch, not a spec
 2. SignalFlow talks to your LLM and the network: what is this task, how long did it take.
 3. Supporting documentation attaches — before/after photos, etc. DAG stores them so they can be referenced later.
 4. SignalFlow + LLM propose an approximate ΔS and put it in provisionally (if-then / smart-contract shaped).
-5. Other side agrees → provisional mint.
-6. If nobody contests through the settle window → standing XP, which then counts toward the pile you have (still not spent).
+5. Other side agrees → XP mints. Leak starts.
+6. Lookers attach later, in parts. Late burn has no expiry. No settle window.
 
 ---
 
@@ -106,9 +106,9 @@ Do not mash these together. IT is not a 5%/month pile. That line is dead.
 
 | Thing | What it does | Code default (knob) |
 | --- | --- | --- |
-| **Settle window** | Time from provisional XP → standing XP | Eight weeks. Per-DFAO votable. Till window, not the leak tick. This is only the promotion window, not the end of burn. |
-| **Late burn** | Standing XP can still be destroyed | No expiry on burnability. Five days later or a decade later. Ordinary remaining pile is already dust by then. The mark is the chain plus children, not a 1996-shaped hole. |
-| **XP decay** | Standing XP erodes on a schedule even with no dispute | `POCKET_KEEP` = **0.99 every 10 days** (~1% of remaining). You keep working or the pile shrinks. Access economy: you do not spend XP; it gets eaten. |
+| **Late burn** | XP can still be destroyed | No expiry on burnability. Five days later or a decade later. Ordinary remaining pile is already dust by then. The mark is the chain plus children, not a 1996-shaped hole. Close mints. There is no settle window. |
+| **XP decay** | XP erodes on a schedule even with no dispute | `POCKET_KEEP` = **0.99 every 10 days** (~1% of remaining). You keep working or the pile shrinks. Access economy: you do not spend XP; it gets eaten. |
+| **H window** | Auto H_cap / training | **10 days** of this till's signed cash. Two 5-day weeks of books. Not the leak tick. |
 | **IT** | This-proposal standing | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). Burns in the tally. Not XP · G. |
 
 Possible axiom (not written yet): some XP and some IT always burn. Floor, not a vibe. Capture for 3.0 if we mean it.
@@ -119,7 +119,7 @@ Source in code: `packages/contracts/src/types.ts` — `TemporalDecayConfig`, `XP
 
 ## Votes stay in the room
 
-A vote rewrites the DFAO it is cast in (settle window, decay rates, quorum). It does not rewrite the mesh. **PLANETARY** is the only room that hits everyone, and getting a vote through there is supposed to be hard — you are voting against everybody.
+A vote rewrites the DFAO it is cast in (decay rates, quorum, notice). It does not rewrite the mesh. **PLANETARY** is the only room that hits everyone, and getting a vote through there is supposed to be hard — you are voting against everybody.
 
 DFAO = Decentralized Fractal Autonomous Organization. NANO → MICRO → MESO → MACRO → PLANETARY are **labels for suggested rule-sets**, not headcount fences. Seven is not a law.
 
@@ -247,9 +247,9 @@ Three clocks. Do not mash:
 | --- | --- |
 | Tₛ | This loop’s elapsed time. Slam-shut at 0. Capped. |
 | F | Repeating the action class. |
-| 0.99ⁿ | Standing after settlement. ~1% every 10 days of remaining. n = idle 10-day counts. |
+| 0.99ⁿ | Standing after close. ~1% every 10 days of remaining. n = idle 10-day counts. |
 
-Settle window is provisional → standing. IT is this-proposal standing, not a leak clock. Neither is Tₛ.
+IT is this-proposal standing, not a leak clock. H window is 10 days of signed cash. Neither is Tₛ. There is no settle window.
 
 Rarity-splitting 400 fake classes is a **DAG** job. The formula will not catch it.
 
@@ -285,11 +285,11 @@ FAQ: https://extropyengine.com/faq#overlay
 
 ## What 3.0 should actually decide
 
-1. Name the settle-window default and say it is a knob. Say it is only provisional → standing.
-2. Put XP decay next to CT idle leak. IT is not a third leak clock.
-3. State late-burn explicitly: settled ≠ immortal.
+1. Settle window is dead. Close mints. Burn anytime. Do not put a silence timer back in Codex 3 as “verification.”
+2. Put XP decay next to CT idle leak. IT is not a third leak clock. H window is 10 days of signed cash, not a month.
+3. State late-burn explicitly: close ≠ immortal.
 4. Keep LocalFlow / SignalFlow / PSLL / Digital Autarky as separate nouns. Highlight SignalFlow as a first-class engine piece.
-5. Write the claim path: no self-score; evidence on the DAG; if-then provisional mint.
+5. Write the claim path: no self-score; evidence on the DAG; if-then; mint at close.
 6. Acknowledge MICRO overselling / MACRO coordination as a real pressure, with the mechanism above as the current answer, not a solved vibe.
 7. Decide whether a burn-floor axiom exists.
 8. Say the box is a for-profit product intent, not a 501(c), surplus into R&D/nodes.
