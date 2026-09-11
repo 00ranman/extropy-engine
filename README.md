@@ -1,4 +1,4 @@
-> **Canonical mint labels.** R is rarity of the action class. F is Frequency of Decay. ΔS is a bits-equivalent proxy, not XP. Tₛ is the slam window, not the 0.99ⁿ leak. L is this ticket. EP is the till spark (`EP = XP · L + λ · L`) and burns in the sale. Engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (v3.5, 2026-09-11). Codex v2.1 stays signed. Public letter key: https://extropyengine.com/key — meter math: https://extropyengine.com/docs/METER-MATH.md — gaps: https://extropyengine.com/open-problems
+> **Canonical mint labels.** R is rarity of the action class. F is Frequency of Decay. ΔS is a bits-equivalent proxy, not XP. Tₛ is the slam window, not the 0.99ⁿ leak. L is this ticket. EP is the till spark (`EP = XP · L + λ · L`) and burns in the sale. Engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (v3.5, 2026-09-11). Public PDF: https://extropyengine.com/docs/extropy-engine-technical-docs-v3.5.pdf. Codex v2.1 stays signed. Public letter key: https://extropyengine.com/key — meter math: https://extropyengine.com/docs/METER-MATH.md — gaps: https://extropyengine.com/open-problems
 >
 > Codex v2.1 stays signed. Code mint lives here in `packages/xp-formula` (`FORMULA_VERSION` still `canonical-v3.1.2`). If this README and the letter key disagree on names, the key wins. If this README and SPEC 3.5 disagree on meters, 3.5 wins.
 
@@ -196,7 +196,7 @@ npx lerna run test --stream
 
 ## Full Specification
 
-Canonical engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (2026-09-11). Covers the mint, five ledger objects, Auto H_cap, CT_W, L / EP / IT, two clocks (10-day leak, 10-day H books), lookers, SignalFlow vs LocalFlow, identity, PSLL, substrate, packages, defaults, ℱ, and the 16 live public gaps. Mint at close. Late burn has no expiry.
+Canonical engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (2026-09-11). Public PDF: https://extropyengine.com/docs/extropy-engine-technical-docs-v3.5.pdf. Covers the mint, five ledger objects, Auto H_cap, CT_W, L / EP / IT, two clocks (10-day leak, 10-day H books), lookers, SignalFlow vs LocalFlow, identity, PSLL, substrate, packages, defaults, ℱ, and the 16 live public gaps. Mint at close. Late burn has no expiry.
 
 v3.1 is historical: [`docs/SPEC_v3.1.md`](docs/SPEC_v3.1.md). Do not implement against it.
 
