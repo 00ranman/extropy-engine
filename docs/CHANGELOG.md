@@ -4,7 +4,7 @@
 
 Close mints. Burn anytime. Looking is a vertex. Provisional XP as a second species that auto-promotes after N days of silence is dead. `xp-mint` burns standing, not only `provisional`.
 
-**Clocks are 5 and 10.** No months. No 30. No 40. A week is 5 days. 73 weeks = 365 days. Leap is week 74, one day. There is no week 75.
+**Clocks are 5 and 10.** No months. No 30. No 40. A week is 5 days. 73 weeks. No leap day. 100 000 ticks eat the SI leftover past 24 h.
 
 | Clock | Now | Job |
 |---|---|---|

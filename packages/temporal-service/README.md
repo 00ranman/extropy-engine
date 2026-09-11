@@ -59,7 +59,7 @@ for the current instant.
     "tide": 0, "wave": 33, "gq": 81, "orbit": 12
   },
   "solarUnits": { "loop": 0, "arc": 0, "tick": 0 },
-  "calendar": { "year": 2026, "month": 4, "day": 6, "dayOfYear": 126, "daysInYear": 365, "leap": false },
+  "calendar": { "year": 2026, "week": 26, "day": 1, "dayOfYear": 126, "daysInYear": 365 },
   "fractions": { "dayFrac": 0, "loopFrac": 0, "arcFrac": 0, "tickFrac": 0, "waveFrac": 0.43, "tideFrac": 0.18, "currentFrac": 0.18, "seasonFrac": 0.55, "epochFrac": 0.07 },
   "bbQuants": "6.180000e+26 quants",
   "ceEpoch": 282
@@ -118,7 +118,7 @@ counter advances:
   "timestamp": "2026-05-06T00:00:00.000Z",
   "utUnits": { "eon": 1, "age": 23, "era": 45, "epoch": 7, "cycle": 12, "season": 101, "current": 9, "spin": 4, "tide": 0, "wave": 33, "gq": 81, "orbit": 12 },
   "solarUnits": { "loop": 0, "arc": 0, "tick": 0 },
-  "calendar": { "year": 2026, "month": 4, "day": 6, "dayOfYear": 126, "daysInYear": 365, "leap": false }
+  "calendar": { "year": 2026, "week": 26, "day": 1, "dayOfYear": 126, "daysInYear": 365 }
 }
 ```
 
@@ -139,13 +139,16 @@ After five attempts the delivery is logged and dropped.
 | `YEAR0_UNIX` | `-62167219200` | Year 0 in Unix seconds |
 | `TROPICAL_SEC` | `31556925.216` s | Tropical year |
 | `durExp` | `[9, 11, 13, 14, 15, 16, 17, 18, 20, 22, 24]` | GQ to Eon |
-| `CAL` | `dpm=40, m10n=5, m10l=6, cyc=5` | Calendar |
+| `CAL` | `week=5, weeks=73` | 5-day weeks. No months. No leap. |
 
 `durSec[i] = 10^durExp[i] / HF` so each duration unit has a known
-period. Solar Tick is `0.864` s, Arc is `86.4` s, Loop is `8640` s, Day
-is `86400` s.
+period. A Tick is 1/100 000 of this planet’s solar day. `EDS = 86400` is
+Earth-now SI translation for machines that still count SI, not the
+definition. No leap second. No leap day. 73 five-day weeks. 2026 is a
+pointer.
 
-Leap rule: `(y%4===0 && y%100!==0) || y%400===0`.
+The 40-day-month HTML in `docs/universaltimes-reference.html` is a draft.
+Live canon is https://extropyengine.com/universaltimes
 
 ## Tests
 

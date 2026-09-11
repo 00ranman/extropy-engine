@@ -87,7 +87,8 @@ describe('temporal API', () => {
     const res = await request(app).get('/now?at=2026-05-06T00:00:00.000Z');
     expect(res.status).toBe(200);
     expect(res.body.calendar.year).toBe(2026);
-    expect(res.body.calendar.month).toBe(4);
+    expect(res.body.calendar.week).toBe(26);
+    expect(res.body.calendar.day).toBe(1);
     expect(res.body.utUnits).toHaveProperty('eon');
     expect(res.body.solarUnits).toEqual({ loop: 0, arc: 0, tick: 0 });
   });

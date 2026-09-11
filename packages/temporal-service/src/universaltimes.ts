@@ -11,6 +11,8 @@ export const TPD = 100000;
 export const LOOPS = 10;
 export const ARCS = 100;
 export const TPA = 100;
+/** Earth-now SI translation for machines that still count SI. Not the definition
+ * of a day. A tick is 1/TPD of this planet's solar day. No leap second. */
 export const EDS = 86400;
 export const HF = 1420405751.768;
 export const BB_SEC = 4.350639312e17;
@@ -22,7 +24,8 @@ export const DUR_NAMES = ['GQ', 'Wave', 'Tide', 'Spin', 'Current', 'Season', 'Or
 export const DUR_EXP = [9, 11, 13, 14, 15, 16, 17, 18, 20, 22, 24];
 export const DUR_SEC: number[] = DUR_EXP.map((e) => Math.pow(10, e) / HF);
 
-export const CAL = { dpm: 40, m10l: 6, m10n: 5, cyc: 5 } as const;
+/** 5-day weeks. 73 weeks. No months. No leap day. Site canon: extropyengine.com/universaltimes */
+export const CAL = { week: 5, weeks: 73 } as const;
 
 export type DurUnitName = (typeof DUR_NAMES)[number];
 export type SolarUnitName = 'Loop' | 'Arc' | 'Tick';
@@ -60,11 +63,10 @@ export interface SolarUnits {
 
 export interface CalendarUnits {
   year: number;
-  month: number;
+  week: number;
   day: number;
   dayOfYear: number;
   daysInYear: number;
-  leap: boolean;
 }
 
 export interface Fractions {
@@ -90,12 +92,8 @@ export interface NowSnapshot {
   ceEpoch: number;
 }
 
-export function isLeap(y: number): boolean {
-  return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-}
-
-export function daysInYear(y: number): number {
-  return CAL.dpm * 9 + (isLeap(y) ? CAL.m10l : CAL.m10n);
+export function daysInYear(_y?: number): number {
+  return CAL.weeks * CAL.week;
 }
 
 export function dayOfYear(d: Date): number {
@@ -103,14 +101,13 @@ export function dayOfYear(d: Date): number {
   return Math.floor((d.getTime() - jan1) / 86400000) + 1;
 }
 
-export function utDate(doy: number, y: number): { month: number; day: number } {
-  let r = doy;
-  for (let m = 1; m <= 10; m++) {
-    const md = m <= 9 ? CAL.dpm : isLeap(y) ? CAL.m10l : CAL.m10n;
-    if (r <= md) return { month: m, day: r };
-    r -= md;
-  }
-  return { month: 10, day: 1 };
+export function utDate(doy: number, _y?: number): { week: number; day: number } {
+  const span = CAL.weeks * CAL.week;
+  const clamped = Math.min(Math.max(doy, 1), span);
+  return {
+    week: Math.ceil(clamped / CAL.week),
+    day: ((clamped - 1) % CAL.week) + 1,
+  };
 }
 
 /*
@@ -196,11 +193,10 @@ export function nowSnapshot(at: Date = new Date()): NowSnapshot {
     solarUnits: { loop, arc, tick },
     calendar: {
       year: yr,
-      month: ud.month,
+      week: ud.week,
       day: ud.day,
       dayOfYear: doy,
       daysInYear: daysInYear(yr),
-      leap: isLeap(yr),
     },
     fractions: {
       dayFrac,

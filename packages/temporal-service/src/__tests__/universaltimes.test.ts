@@ -23,7 +23,6 @@ import {
   HF,
   TROPICAL_SEC,
   YEAR0_UNIX,
-  isLeap,
   daysInYear,
   nowSnapshot,
   unitCounter,
@@ -36,7 +35,7 @@ describe('constants', () => {
     expect(YEAR0_UNIX).toBe(-62167219200);
     expect(TROPICAL_SEC).toBe(31556925.216);
     expect(DUR_EXP).toEqual([9, 11, 13, 14, 15, 16, 17, 18, 20, 22, 24]);
-    expect(CAL).toEqual({ dpm: 40, m10l: 6, m10n: 5, cyc: 5 });
+    expect(CAL).toEqual({ week: 5, weeks: 73 });
   });
 
   it('DUR_SEC equals 10^exp / HF for each entry', () => {
@@ -46,14 +45,11 @@ describe('constants', () => {
   });
 });
 
-describe('leap rule', () => {
-  it('matches the Gregorian rule from the spec', () => {
-    expect(isLeap(2000)).toBe(true);
-    expect(isLeap(2024)).toBe(true);
-    expect(isLeap(2100)).toBe(false);
-    expect(isLeap(2026)).toBe(false);
-    expect(daysInYear(2024)).toBe(CAL.dpm * 9 + CAL.m10l);
-    expect(daysInYear(2026)).toBe(CAL.dpm * 9 + CAL.m10n);
+describe('calendar', () => {
+  it('is 73 five-day weeks. No leap day. No 40-day month.', () => {
+    expect(daysInYear(2024)).toBe(365);
+    expect(daysInYear(2026)).toBe(365);
+    expect(daysInYear(2000)).toBe(365);
   });
 });
 
@@ -117,16 +113,16 @@ describe('nowSnapshot', () => {
     });
   }
 
-  it('reports calendar date for 2026-05-06', () => {
+  it('reports calendar date for 2026-05-06 as week.day', () => {
     const snap = nowSnapshot(new Date('2026-05-06T00:00:00.000Z'));
     expect(snap.calendar.year).toBe(2026);
-    expect(snap.calendar.leap).toBe(false);
-    expect(snap.calendar.daysInYear).toBe(CAL.dpm * 9 + CAL.m10n);
-    // 2026 is non leap. May 6 is day 126 of the Gregorian year.
+    expect(snap.calendar.daysInYear).toBe(365);
     expect(snap.calendar.dayOfYear).toBe(126);
-    // 126 / 40 = 3 full months of 40 + 6 days, so M4D6.
-    expect(snap.calendar.month).toBe(4);
-    expect(snap.calendar.day).toBe(6);
+    // 126 / 5 → week 26 day 1. 26.1
+    expect(snap.calendar.week).toBe(26);
+    expect(snap.calendar.day).toBe(1);
+    expect(snap.calendar).not.toHaveProperty('leap');
+    expect(snap.calendar).not.toHaveProperty('month');
   });
 
   it('CE epoch is monotonic and positive after Year 0', () => {

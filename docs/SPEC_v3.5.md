@@ -446,7 +446,7 @@ CT(n)  = CT · 0.99ⁿ
 
 Half-life ≈ 69 ten-day ticks ≈ **1.9 years**. ~1 year ≈ 69%. ~5 years ≈ 16%. ~8 years ≈ 5%. A decade is dust. Never zero in the reals.
 
-Calendar: a week is **5 days**. 73 weeks = 365 days. Leap is week **74**, one day. There is no week 75. Pages that still say “~1%/month, half-life ≈ 69 months” are reading the old 30-day tick. That is not 3.5.
+Calendar: a week is **5 days**. 73 weeks. No months. No leap day. 100 000 ticks fill the solar day and eat the SI leftover past 24 h. Seasons are orbit marks. Pages that still say “~1%/month, half-life ≈ 69 months” are reading the old 30-day tick. That is not 3.5.
 
 ### 11.2 No settle window
 
