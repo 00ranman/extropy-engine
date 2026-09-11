@@ -1,5 +1,7 @@
 # Changelog
 
+This file is the diary. `SPEC_v3.5.md` is not. The spec states the machine. Deletions live here.
+
 ## v3.5 — 2026-09-11 (same-day: no 40, no settle bag)
 
 Close mints. Burn anytime. Looking is a vertex. Provisional XP as a second species that auto-promotes after N days of silence is dead. `xp-mint` burns standing, not only `provisional`.

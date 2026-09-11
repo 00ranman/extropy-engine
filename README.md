@@ -196,7 +196,7 @@ npx lerna run test --stream
 
 ## Full Specification
 
-Canonical engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (2026-09-11). Covers the mint, five ledger objects, Auto H_cap, CT_W, L / EP / IT, two clocks (10-day leak, 10-day H books), lookers, SignalFlow vs LocalFlow, identity, PSLL, substrate, packages, defaults, ℱ, and the 16 live public gaps. No settle window. No 40-day anything.
+Canonical engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (2026-09-11). Covers the mint, five ledger objects, Auto H_cap, CT_W, L / EP / IT, two clocks (10-day leak, 10-day H books), lookers, SignalFlow vs LocalFlow, identity, PSLL, substrate, packages, defaults, ℱ, and the 16 live public gaps. Mint at close. Late burn has no expiry.
 
 v3.1 is historical: [`docs/SPEC_v3.1.md`](docs/SPEC_v3.1.md). Do not implement against it.
 

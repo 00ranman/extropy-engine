@@ -204,7 +204,7 @@ Lives in one place: [`packages/xp-formula/src/index.ts`](../packages/xp-formula/
 
 `log(1/Tₛ)` zeros a slam-shut script. F eats repeats. Standing leak is a different clock: `0.99ⁿ`.
 
-**Why R is rarity, not reputation.** Every mint multiplier describes the loop. Actor history in R is reputation laundering: past actions inflate new mints and compound forever. Reputation governs vote weight on *whether* a loop closes, and ρ in older CT sketches. It does **not** enter XP.
+**Why R is rarity, not reputation.** Every mint multiplier describes the loop. Actor history in R is reputation laundering: past actions inflate new mints and compound forever. Reputation governs vote weight on *whether* a loop closes. It does **not** enter XP.
 
 ### 6.1 Tₛ — slam window, not recency
 
@@ -282,11 +282,9 @@ Public copy uses **record / meter / till spark**. The crowd hears “token” an
 
 **L, H_cap, S, κ, β, R, F, ΔS, w · E, Tₛ, λ** are **math**. They are not a sixth or seventh bag. Counting L as a sixth token is the accretion bug. L is first-class this-ticket standing; it is still not a transferable object.
 
-**Dead letters:** GT, RT, DT as bags. Old copy said Domain Token or Decay Token. Expertise is CAT-per-lane. The leak is already on XP. `TokenType.DT` in the wallet is leftover — remove the balance; do not salvage the letter with a new pile. Mentorship `+0.1 CAT` is bag-shape. Kill it. Credentials do not steer XP mint.
+**Dead letters:** GT, RT, DT as bags. Expertise is CAT-per-lane. The leak is already on XP. `TokenType.DT` in the wallet is leftover — remove the balance. Mentorship does not mint CAT. Credentials do not steer XP mint.
 
-**Six was never physics.** Six was accretion from an earlier wallet sketch (XP, CT, EP, IT, GT, RT). Do not grow a sixth bag because someone counted L.
-
-The split exists so standing cannot buy votes and a skill stamp cannot print XP.
+Five objects. L is this-ticket math, not a transferable object. The split exists so standing cannot buy votes and a skill stamp cannot print XP.
 
 ---
 
@@ -375,9 +373,7 @@ CT_W is community standing on web W. **Same readout at grocery and laundry if th
 
 Do not write “grocery does not pay laundry” unless they forked.
 
-Older sketches had a door-local `CT_d = clip(C_d · P_d · (1 − F_d^local), 0, 1)`. Coupling density and predictability still matter as **inputs this house may use for S** and for its own books. They do not mint a second community meter the door owns. The public letter is CT_W.
-
-**Scratched:** CT lockup. CT is not a lockup bag. Limited-transferability language in older `GOVERNANCE_DEFAULTS.md` is dead.
+Coupling density and predictability still matter as **inputs this house may use for S** and for its own books. They do not mint a second community meter the door owns. The public letter is CT_W.
 
 ---
 
@@ -392,8 +388,6 @@ IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1)
 Not `XP · G`. That is an XP oligarchy. World standing does not buy extra gavels.
 
 IT is not a pile. Born when a case is open. Burned in the tally. The receipt is the vertex.
-
-A 5%/month leak on a balance still leaves a year-one holder at half voice after twelve quiet months. That is a gavel you sit on. **That line is dead.**
 
 Clip to 1 means two years here and twenty years here can both sit at full voice. Extra years do not mint extra votes. New people climb by coupling (CT), not by buying IT.
 
@@ -516,7 +510,7 @@ The assistant you trust *is* the UI. Character-sheet-ish is a sketch, not a spec
 3. Supporting documentation attaches — before/after photos, etc. DAG stores them so they can be referenced later.
 4. SignalFlow + LLM propose an approximate ΔS (if-then / smart-contract shaped).
 5. Other side agrees → XP mints. Leak starts.
-6. Lookers attach later, in parts. Late burn has no expiry. There is no promotion clock.
+6. Lookers attach later, in parts. Late burn has no expiry.
 
 Work-for-a-boss is one input. Living was never inside that box. Anything verifiable: self-report, sensor, claim, assistant — then the other side agrees.
 
@@ -611,7 +605,7 @@ Full spec: [`docs/QUEST_MARKET.md`](./QUEST_MARKET.md).
 
 Real-world requests become structured micro-claims through personal AI / SignalFlow mediation. Default grain: **2–5 minutes**. Larger work composes from micro-quests.
 
-Quests are published into a marketplace where SignalFlow routes them based on skill profile, location, current demand, availability, DFAO policy. (Older copy said “reputation.” Reputation is not a mint input. It may still inform routing weight for looker slices.)
+Quests are published into a marketplace where SignalFlow routes them based on skill profile, location, current demand, availability, DFAO policy. Reputation is not a mint input. Accuracy history may still inform routing weight for looker slices.
 
 **Dynamic reward escalation:** neglected work automatically gets higher potential XP until someone accepts. Linear 1.0× → 3.0× over 5 days (one week), then logarithmic to a cap of 10.0×. Governance-tunable. Per-DFAO override allowed.
 
