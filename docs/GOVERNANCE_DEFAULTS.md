@@ -14,13 +14,13 @@ See `docs/CODEX_3_NOTES.md` for the Codex 3.0 capture of mechanics that kept fal
 | Identity reveal threshold | 7-of-12 + cause-shown | Ecosystem | See `IDENTITY.md`. Looking is a vertex. |
 | Reward escalation curve (early) | linear 1.0× → 3.0× over 7d | Domain DFAO | Per-domain customization allowed |
 | Reward escalation curve (late) | log to cap 10.0× | Domain DFAO | Hard cap governance-tunable |
-| Retroactive **settle** window | Eight weeks | Per-DFAO; PLANETARY to hit everyone | Time from provisional XP → standing XP. Till window, not the leak tick. Not scripture. |
+| Retroactive **settle** window | 40 days | Per-DFAO; PLANETARY to hit everyone | Time from provisional XP → standing XP. Till window, not the leak tick. Same duration as H window, different job. Say days, not weeks. Not scripture. |
 | Late burn | no expiry | Ecosystem / dispute path | Standing XP can still burn years later. Settled ≠ immortal. |
 | **XP decay** keep | **0.99 every 10 days (~1% of remaining)** | Planetary | Access economy: you do not spend XP; it gets eaten. n is idle 10-day counts. |
 | **CT idle leak** | Same keep as XP | Planetary | Idle on web W. A close / till spark / posted task on W resets n. CT does not travel. |
 | **H window** | 40 days | Planetary | Auto H_cap and training. Not the leak tick. |
 | H_cap | Auto from signed cash | This house | No slider. No Off on the register. Training remainder 0 until the window fills. |
-| λ | 0.15 | Web W | Eight-week notice. EP = XP · L + λ · L. |
+| λ | 0.15 | Web W | 40-day notice. EP = XP · L + λ · L. |
 | IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1) | This room | No pile. Burns in the tally. H_gov = 0 is one DID one nullifier. Not a 5%/month bag. |
 | Conviction voting half-life | TBD per tier | Per-DFAO | Tunable by tier |
 | Looker weight factors | 4 (domain, accuracy, load, history) | Ecosystem | Weights themselves tunable. No validator class. |

@@ -14,7 +14,7 @@ The mint product did not change. `FORMULA_VERSION` in `packages/xp-mint` remains
 - **H_cap Auto** from this till's signed cash. No slider. No Off on the register. Training remainder 0 until 40 days of signed tickets. `hCapFromCash`.
 - **L = clip(H_cap · S · κ · CT_W · β, 0, 1).** **EP = XP · L + λ · L** (λ default 0.15), clipped to the list, burned in the sale.
 - **IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1).** This proposal. Burns in the tally. Not a pile. Not `XP · G`. The 5%/month IT leak is dead.
-- **Two clocks.** Leak tick = 10 days. H window = 40 days. Half-life of a mint ≈ 1.9 years. Do not mash with Tₛ, F, or the settle window (eight weeks, per-DFAO).
+- **Two clocks.** Leak tick = 10 days. H window = 40 days. Half-life of a mint ≈ 1.9 years. Do not mash with Tₛ, F, or the settle window (40 days, per-DFAO; different job from H).
 - **Lookers.** Looking is a vertex. No validator class. Self-close valid. Late mint / late burn = citation-gated NOW delta.
 - **SignalFlow is the protocol mouth. LocalFlow is the errand face.** Own lawn mints. Overlay, not a new civilization. CAT import is opening evidence, not a throne.
 - **Public language:** record / meter / till spark. Domain vs lane. Public gaps **16 live** (12 open, 4 narrowed). Do not quote 63 or 65.

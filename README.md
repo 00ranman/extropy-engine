@@ -132,7 +132,7 @@ OPEN → VALIDATING → CONSENSUS → CLOSED → SETTLED
                               ↘ ISOLATED (integrity quarantine)
 ```
 
-XP minted at CLOSED is provisional. After the settle window (default eight weeks, per-DFAO), lookers either confirm or burn it. Lookers whose consensus is contradicted by later evidence take accuracy penalties. This is the primary defense against collusion: you have to hold your position while exposed. Late burn has no expiry.
+XP minted at CLOSED is provisional. After the settle window (default 40 days, per-DFAO), lookers either confirm or burn it. Lookers whose consensus is contradicted by later evidence take accuracy penalties. This is the primary defense against collusion: you have to hold your position while exposed. Late burn has no expiry.
 
 > **There is no validator class.** "Validator" throughout this repo means *a contributor while they are performing a validating task*, not a separate tier of people. Validation is itself an entropy-reducing task, so it is a contribution done by ordinary contributors. Most validation is blind or implicit: under 1/10th slicing a contributor scores a slice without knowing whose work it is, and many tasks confirm or contradict earlier tasks as a side effect of their own dependency on them, so the performer never knows they validated anything. The `epistemology-engine` reads validation out of the task graph as an emergent property; it does not appoint validators. This is what removes the review chokepoint and ends the "who watches the watchers" regress. See [`docs/VALIDATION_IS_EMERGENT.md`](docs/VALIDATION_IS_EMERGENT.md).
 
@@ -144,7 +144,7 @@ This is the section you should actually read before forming an opinion.
 
 **Sybil resistance:** Cost of attack scales with number of loops that must be honestly completed per fake identity. Trivial loops produce near-zero XP (the `log` curve). Residual risk: domains with subjective measurement (social, governance) have lower Sybil cost than domains with objective measurement (thermodynamic, code). The empirical Sybil cost curve is unverified — that requires simulation against real claim distributions.
 
-**Collusion:** Two-phase minting creates an exposure window (settle knob, default eight weeks). Retroactive slashing makes sustained collusion risky but does not prevent it. A cartel controlling >50% of domain looker weight can self-confirm indefinitely. Partial mitigation: there is no validator class to buy; looking is a vertex. The oracle layer is currently specified, not built.
+**Collusion:** Two-phase minting creates an exposure window (settle knob, default 40 days). Retroactive slashing makes sustained collusion risky but does not prevent it. A cartel controlling >50% of domain looker weight can self-confirm indefinitely. Partial mitigation: there is no validator class to buy; looking is a vertex. The oracle layer is currently specified, not built.
 
 **Economic capture:** XP is non-transferable. IT is not a pile. External capital cannot buy a gavel. Residual risk: "corporate capture" — a well-funded adversary can employ real members whose live CT and S_gov are directed. That is expensive labor, not a token sale.
 

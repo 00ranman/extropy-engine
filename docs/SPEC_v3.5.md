@@ -312,7 +312,7 @@ Then clip EP to the list price. Burns in that sale. Official skins show **cash c
 | **κ** | 1 on the language. 0 if they left it. |
 | **CT_W** | Community meter. Same at every compatible till. |
 | **β** | CAT / on-duty / signed if-then this ticket. Not a CT wrap. Default 1 if the door asked for nothing. Off the clock, drop. |
-| **λ** | Small floor. Thin XP cannot erase a real L. Default 0.15. One number for the web. Eight-week notice. |
+| **λ** | Small floor. Thin XP cannot erase a real L. Default 0.15. One number for the web. 40-day notice. |
 
 Code: `computeL`, `computeEP`, `sparkTill`, `hCapFromCash`.
 
@@ -447,9 +447,9 @@ Pages that still say “~1%/month, half-life ≈ 69 months” are reading the ol
 
 ### 11.2 Settle window
 
-Time from provisional XP → standing XP. **Default: eight weeks.** Per-DFAO votable. Till window, not the leak tick. This is only the promotion window, not the end of burn.
+Time from provisional XP → standing XP. **Default: 40 days.** Per-DFAO votable. Till window, not the leak tick. Same number of days as the H window; different job. Do not mash them. Say days, not weeks. This is only the promotion window, not the end of burn.
 
-30 days was a starting number that leaked into FAQ copy. It is not a law. 5–56 are in the same family. The knob is the DFAO's.
+30 days was a starting number that leaked into FAQ copy. It is not a law. 5–40 are in the same family. The knob is the DFAO's.
 
 ### 11.3 Late mint
 
@@ -802,11 +802,11 @@ Published before the first live till. Humans will ask. “The MACRO publishes it
 
 | Knob | Default |
 |---|---|
-| λ | 0.15. Eight-week notice. One number for the web. |
+| λ | 0.15. 40-day notice. One number for the web. |
 | β allow-list (max) | CAT on-duty, asked domain band, signed if-then. 14 days notice. House may only narrow. |
 | H_gov | 1. 0 = one DID one nullifier. |
 | S_gov | 1 if in the room, else 0. Party to the dispute: 0. |
-| Settle window | Eight weeks. Per-DFAO; PLANETARY to hit everyone. |
+| Settle window | 40 days. Per-DFAO; PLANETARY to hit everyone. Same duration as H window, different job. |
 
 ### This house (MICRO)
 

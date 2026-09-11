@@ -27,7 +27,7 @@ Half-life of a mint ≈ 69 10-day ticks ≈ 1.9 years. ~1 year ≈ 69%. ~5 years
 
 | Knob | Default | Change |
 |---|---|---|
-| λ | 0.15 | Vertex. Eight-week notice. One number for the web. |
+| λ | 0.15 | Vertex. 40-day notice. One number for the web. |
 | β allow-list (max) | CAT on-duty, asked domain band, signed if-then between two rooms on this language | Vertex. 14 days notice. House may only narrow. |
 | H_gov | 1 | This room. 0 = one DID one nullifier. |
 | S_gov | 1 if in the room, else 0 | Party to the dispute: 0. |
