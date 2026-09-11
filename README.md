@@ -1,6 +1,6 @@
-> **Canonical mint labels.** R is rarity of the action class. F is Frequency of Decay. ΔS is a bits-equivalent proxy, not XP. Tₛ is the slam window, not the 0.99ⁿ leak. L is this ticket. EP is the till spark (`EP = XP · L + λ · L`) and burns in the sale. Public letter key: https://extropyengine.com/key — meter math: https://extropyengine.com/docs/METER-MATH.md — gaps: https://extropyengine.com/open-problems
+> **Canonical mint labels.** R is rarity of the action class. F is Frequency of Decay. ΔS is a bits-equivalent proxy, not XP. Tₛ is the slam window, not the 0.99ⁿ leak. L is this ticket. EP is the till spark (`EP = XP · L + λ · L`) and burns in the sale. Engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (v3.5, 2026-09-11). Codex v2.1 stays signed. Public letter key: https://extropyengine.com/key — meter math: https://extropyengine.com/docs/METER-MATH.md — gaps: https://extropyengine.com/open-problems
 >
-> Codex v2.1 stays signed. Code mint lives here in `packages/xp-formula`. If this README and the letter key disagree on names, the key wins.
+> Codex v2.1 stays signed. Code mint lives here in `packages/xp-formula` (`FORMULA_VERSION` still `canonical-v3.1.2`). If this README and the letter key disagree on names, the key wins. If this README and SPEC 3.5 disagree on meters, 3.5 wins.
 
 # Extropy Engine
 
@@ -111,7 +111,7 @@ packages/
 └── node-handshake/     # v3.1 sandbox: VPS↔local-laptop proof-of-concept handshake
 ```
 
-**v3.1 packages are skeletons.** Interface contracts are the source of truth; implementation is incremental. See each package's README for status.
+**v3.5 packages.** Interface contracts are the source of truth; implementation is incremental. Identity / PSLL / quest-market / validation-neighborhoods remain skeletons until a door ships. See each package's README for status. Engineering parent: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md).
 
 Archived standalones were folded here. `packages/levelup-academy` is held, not a school product. CAT + issuer is the overlay. See [`docs/ARCHIVED.md`](docs/ARCHIVED.md) and [`docs/CAT-LANES.md`](docs/CAT-LANES.md).
 
@@ -132,7 +132,7 @@ OPEN → VALIDATING → CONSENSUS → CLOSED → SETTLED
                               ↘ ISOLATED (integrity quarantine)
 ```
 
-XP minted at CLOSED is provisional. After 40 days, retroactive lookers either confirm or burn it. Lookers whose consensus is contradicted by later evidence take reputation penalties. This is the primary defense against collusion: you have to hold your position while exposed.
+XP minted at CLOSED is provisional. After the settle window (default eight weeks, per-DFAO), lookers either confirm or burn it. Lookers whose consensus is contradicted by later evidence take accuracy penalties. This is the primary defense against collusion: you have to hold your position while exposed. Late burn has no expiry.
 
 > **There is no validator class.** "Validator" throughout this repo means *a contributor while they are performing a validating task*, not a separate tier of people. Validation is itself an entropy-reducing task, so it is a contribution done by ordinary contributors. Most validation is blind or implicit: under 1/10th slicing a contributor scores a slice without knowing whose work it is, and many tasks confirm or contradict earlier tasks as a side effect of their own dependency on them, so the performer never knows they validated anything. The `epistemology-engine` reads validation out of the task graph as an emergent property; it does not appoint validators. This is what removes the review chokepoint and ends the "who watches the watchers" regress. See [`docs/VALIDATION_IS_EMERGENT.md`](docs/VALIDATION_IS_EMERGENT.md).
 
@@ -144,7 +144,7 @@ This is the section you should actually read before forming an opinion.
 
 **Sybil resistance:** Cost of attack scales with number of loops that must be honestly completed per fake identity. Trivial loops produce near-zero XP (the `log` curve). Residual risk: domains with subjective measurement (social, governance) have lower Sybil cost than domains with objective measurement (thermodynamic, code). The empirical Sybil cost curve is unverified — that requires simulation against real claim distributions.
 
-**Collusion:** Two-phase minting creates a 30-day exposure window. Retroactive slashing makes sustained collusion risky but does not prevent it. A cartel controlling >50% of domain reputation can self-validate indefinitely. Partial mitigation: the XP oracle layer ingests external platform data as independent verification. The oracle is currently specified, not built.
+**Collusion:** Two-phase minting creates an exposure window (settle knob, default eight weeks). Retroactive slashing makes sustained collusion risky but does not prevent it. A cartel controlling >50% of domain looker weight can self-confirm indefinitely. Partial mitigation: there is no validator class to buy; looking is a vertex. The oracle layer is currently specified, not built.
 
 **Economic capture:** XP is non-transferable. IT is not a pile. External capital cannot buy a gavel. Residual risk: "corporate capture" — a well-funded adversary can employ real members whose live CT and S_gov are directed. That is expensive labor, not a token sale.
 
@@ -196,9 +196,11 @@ npx lerna run test --stream
 
 ## Full Specification
 
-The complete technical documentation (19 sections, ~36 pages) covers: XP formula derivation, causal closure speeds, all 8 domain measurement protocols with falsification conditions, type system reference, database schema, event catalog, DAG deep dive, DFAO architecture, multi-token economy, adversarial modeling, governance system, mathematical foundations (Gödel, Tarski, Landauer, Lawvere).
+Canonical engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (2026-09-11). Covers the mint, five ledger objects, Auto H_cap, CT_W, L / EP / IT, two clocks (10-day leak, 40-day H window), lookers, SignalFlow vs LocalFlow, identity, PSLL, substrate, packages, defaults, ℱ, and the 16 live public gaps.
 
-Available on request / linked in repo wiki.
+v3.1 is historical: [`docs/SPEC_v3.1.md`](docs/SPEC_v3.1.md). Do not implement against it.
+
+Codex v2.1 remains the signed Codex. This is not Codex 3.0. Spec 4.0 is reserved until Codex 3 ships.
 
 The accessible version of the theory — written for people who want to understand the argument without the type system — is the companion book: *Unfuck the World for a Dollar* by Randall Gossett.
 

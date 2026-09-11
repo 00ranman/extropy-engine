@@ -1,6 +1,9 @@
 # Extropy Engine
 ### A two-sided market disguised as a loyalty program disguised as a discount engine.
 
+> **2026-09-11.** This one-pager is a pitch sheet. Engineering spec is [`SPEC_v3.5.md`](./SPEC_v3.5.md). Do not implement meters from this file. Five ledger objects (XP, CT, EP, CAT, IT), not six tokens. EP = XP · L + λ · L. H_cap is Auto. Leak is 0.99ⁿ every 10 days. Letter key wins on names.
+
+
 ---
 
 ## The pitch in one paragraph

@@ -1,4 +1,13 @@
+> ⚠️ **DEPRECATED — 2026-09-11.** Canonical engineering spec is [`SPEC_v3.5.md`](./SPEC_v3.5.md).
+>
+> v3.1 is preserved here as a historical record. Do not implement against this document.
+>
+> **Why 3.5 exists:** v3.1 still teaches Reliability, Falsifiability, a six-token economy (XP, CT, EP, IT, GT, RT), transfer friction δ = 0.02, and a 63-gap inventory. Live canon (letter key, `packages/xp-formula`, `docs/DEFAULTS.md`, `docs/LETTERS.md`) already runs rarity, Frequency of Decay, five ledger objects, Auto H_cap, 10-day leak, CT_W, and IT-as-this-proposal. 3.5 is the catch-up. Codex v2.1 stays signed. This is not Codex 3.0 and not spec 4.0.
+>
+> If this file and [`LETTERS.md`](./LETTERS.md) disagree on names, the letter key wins. If this file and `xp-formula` disagree on math, the code wins.
+
 # Extropy Engine v3.1 — Technical Specification
+
 
 **Version:** 3.1
 **Status:** Canonical specification, sandbox implementation in progress

@@ -1,8 +1,8 @@
 # Identity Layer — IDENTITY.md
 
 **Package:** [`packages/identity`](../packages/identity)
-**Spec parent:** [`docs/SPEC_v3.1.md`](./SPEC_v3.1.md) §8
-**Status:** Skeleton; specification frozen for v3.1
+**Spec parent:** [`docs/SPEC_v3.5.md`](./SPEC_v3.5.md) §15
+**Status:** Skeleton; specification current for v3.5. Identity flow unchanged from v3.1; lookers and “signatures today / ZKP later” are the 3.5 clarifications.
 
 ## Purpose
 

@@ -55,7 +55,7 @@ The current source code in `src/` still contains v3.0-era decomposition logic (`
 2. **Phase 2 (v3.1.x):** New observability endpoints added (`/mesh/consensus`, `/mesh/falsifiability`, `/mesh/sybil-clusters`, `/mesh/ontology-drift`, `/mesh/goodhart-signals`).
 3. **Phase 3 (v3.2):** v3.0 decomposition endpoints removed. Engine becomes pure observability + aggregation.
 
-See [`docs/SPEC_v3.1.md`](../../docs/SPEC_v3.1.md) §13.4 for the full redefinition.
+See [`docs/SPEC_v3.5.md`](../../docs/SPEC_v3.5.md) §20.4 for the current redefinition (unchanged in substance from v3.1 §13.4).
 
 ## Why this name
 

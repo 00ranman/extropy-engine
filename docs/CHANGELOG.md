@@ -1,6 +1,42 @@
 # Changelog
 
+## v3.5 — 2026-09-11 (Engineering catch-up)
+
+Canonical engineering spec is now [`docs/SPEC_v3.5.md`](./SPEC_v3.5.md). Codex v2.1 stays signed. This is **not** Codex 3.0 and **not** spec 4.0.
+
+The mint product did not change. `FORMULA_VERSION` in `packages/xp-mint` remains `canonical-v3.1.2`. 3.5 writes the meters, clocks, lookers, and language the letter key, FAQ arguments, `docs/DEFAULTS.md`, `docs/LETTERS.md`, `docs/IT.md`, and `packages/xp-formula` have been running on, so the parent spec stops teaching the cartoon.
+
+### What 3.5 documents that 3.1 did not
+
+- **Five ledger objects, not six bags.** XP, CT, EP, CAT, IT. L is this-ticket math. GT / RT / DT as bags are dead. Transfer friction δ = 0.02 is dead — nothing transfers. Cash-out is a lose-condition.
+- **R = rarity. F = Frequency of Decay.** Already shipped as v3.1.2. 3.1 parent spec still said Reliability / Falsifiability. 3.5 matches the code.
+- **CT_W** is community-web standing. Same readout at compatible tills. Door does not own CT. Idle leak `0.99ⁿ`.
+- **H_cap Auto** from this till's signed cash. No slider. No Off on the register. Training remainder 0 until 40 days of signed tickets. `hCapFromCash`.
+- **L = clip(H_cap · S · κ · CT_W · β, 0, 1).** **EP = XP · L + λ · L** (λ default 0.15), clipped to the list, burned in the sale.
+- **IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1).** This proposal. Burns in the tally. Not a pile. Not `XP · G`. The 5%/month IT leak is dead.
+- **Two clocks.** Leak tick = 10 days. H window = 40 days. Half-life of a mint ≈ 1.9 years. Do not mash with Tₛ, F, or the settle window (eight weeks, per-DFAO).
+- **Lookers.** Looking is a vertex. No validator class. Self-close valid. Late mint / late burn = citation-gated NOW delta.
+- **SignalFlow is the protocol mouth. LocalFlow is the errand face.** Own lawn mints. Overlay, not a new civilization. CAT import is opening evidence, not a throne.
+- **Public language:** record / meter / till spark. Domain vs lane. Public gaps **16 live** (12 open, 4 narrowed). Do not quote 63 or 65.
+- **Scratched:** CT lockup, first-validator priesthood, universal ESF.
+
+### Docs
+
+- New: `docs/SPEC_v3.5.md`.
+- `docs/SPEC_v3.1.md` — deprecation banner. Body kept as history.
+- `docs/GOVERNANCE_DEFAULTS.md` — CT lockup / GT / EP-decay-as-bag lines removed.
+- Parent-spec pointers on IDENTITY / PSLL / QUEST_MARKET / AUTARKY retargeted to 3.5.
+- Public site: Tech Spec 3.5 PDF + markdown; 3.1.2 moved to earlier editions.
+
+### Not in this bump
+
+- Codex 3.0 (capture notes remain unsigned).
+- Spec 4.0.
+- Kernel cleanup of `TokenType.DT` and CAT amount-mints in `token-economy` (specified dead; code follow-on).
+- Burn-floor axiom, late-mint hop-weight, character-sheet skin, the node box as a product.
+
 ## 2026-09-07 — Public gap count
+
 
 Public list is **16 live** (12 open, 4 narrowed). Three questions scratched as the wrong shape (CT lockup, validator priesthood, universal ESF). Do not quote 63 or 65. See `docs/GAPS.md` and https://extropyengine.com/open-problems.
 

@@ -1,8 +1,8 @@
 # Personal Signed Local Log — PSLL.md
 
 **Package:** [`packages/psll-sync`](../packages/psll-sync)
-**Spec parent:** [`docs/SPEC_v3.1.md`](./SPEC_v3.1.md) §9
-**Status:** Skeleton; specification frozen for v3.1
+**Spec parent:** [`docs/SPEC_v3.5.md`](./SPEC_v3.5.md) §16
+**Status:** Skeleton; specification current for v3.5. PSLL properties unchanged from v3.1.
 
 ## What it is
 

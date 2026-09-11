@@ -1,8 +1,8 @@
 # Extropy Engine — Technical Specification v3.0 (DEPRECATED)
 
-> ⚠️ **DEPRECATED** — superseded by [`SPEC_v3.1.md`](./SPEC_v3.1.md) on 2026-05-01.
+> ⚠️ **DEPRECATED** — superseded by [`SPEC_v3.1.md`](./SPEC_v3.1.md) on 2026-05-01, then by [`SPEC_v3.5.md`](./SPEC_v3.5.md) on 2026-09-11.
 >
-> v3.0 is preserved here as a historical record. Do not implement against this document.
+> v3.0 is preserved here as a historical record. Do not implement against this document. Canonical engineering spec is **v3.5**. Codex v2.1 remains the signed Codex.
 
 ## Why v3.0 was deprecated
 
@@ -35,7 +35,8 @@ The redefinition is not a removal. It is the correction of a reading. Real peer 
 
 ## Cross-references
 
-- Canonical spec: [`SPEC_v3.1.md`](./SPEC_v3.1.md)
+- Canonical spec: [`SPEC_v3.5.md`](./SPEC_v3.5.md)
+- Historical v3.1: [`SPEC_v3.1.md`](./SPEC_v3.1.md)
 - Migration notes: [`CHANGELOG.md`](./CHANGELOG.md)
 - Open gaps inherited and added: [`GAPS.md`](./GAPS.md)
 

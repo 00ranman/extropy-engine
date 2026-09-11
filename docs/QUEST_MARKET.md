@@ -1,8 +1,8 @@
 # Quest Marketplace — QUEST_MARKET.md
 
 **Packages:** [`packages/quest-market`](../packages/quest-market), [`packages/validation-neighborhoods`](../packages/validation-neighborhoods)
-**Spec parent:** [`docs/SPEC_v3.1.md`](./SPEC_v3.1.md) §10
-**Status:** Skeleton; specification frozen for v3.1
+**Spec parent:** [`docs/SPEC_v3.5.md`](./SPEC_v3.5.md) §17
+**Status:** Skeleton; specification current for v3.5. Grain and escalation unchanged. “Validator” in this file means a contributor performing a looker task.
 
 ## What it is
 

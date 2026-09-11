@@ -1,7 +1,7 @@
 # Digital Autarky — Architectural Vision
 
-**Status:** Canonical (v3.1)
-**Authority:** This document is the source of truth for the Digital Autarky principle. Any implementation decision conflicting with it is wrong.
+**Status:** Canonical (v3.5; principle unchanged from v3.1)
+**Authority:** This document is the source of truth for the Digital Autarky principle. Any implementation decision conflicting with it is wrong. Engineering parent: [`docs/SPEC_v3.5.md`](../docs/SPEC_v3.5.md).
 
 ---
 
@@ -72,7 +72,7 @@ What the Network does NOT receive:
 
 ## How this plays with the epistemology engine
 
-The redefined `epistemology-engine` (see `docs/SPEC_v3.1.md` §13.4) does not violate Autarky because it is read-mostly. It indexes public mesh state (DAG entries, reputation graph, validation outcomes) — never private context. It does not decide truth; it surfaces what the mesh has already decided. Multiple instances of the engine can run independently, and there is no canonical authoritative instance.
+The redefined `epistemology-engine` (see `docs/SPEC_v3.5.md` §20.4) does not violate Autarky because it is read-mostly. It indexes public mesh state (DAG entries, reputation graph, validation outcomes) — never private context. It does not decide truth; it surfaces what the mesh has already decided. Multiple instances of the engine can run independently, and there is no canonical authoritative instance.
 
 This is the difference between a *witness* and an *arbiter*. The engine is a witness.
 
@@ -80,7 +80,7 @@ This is the difference between a *witness* and an *arbiter*. The engine is a wit
 
 The Identity layer is the strongest test of Autarky. It must establish enough about a participant for the network to enforce uniqueness and accountability, while exposing nothing about the participant beyond what those guarantees require.
 
-The hybrid model (OAuth + on-device KYC + DID + ZKP) is the v3.1 answer:
+The hybrid model (OAuth + on-device KYC + DID + ZKP) is the v3.5 identity answer (signatures today; circuits when they exist):
 
 - KYC happens on-device. The network never sees the documents.
 - DID is generated locally. The network sees a public key.
@@ -118,4 +118,4 @@ Before any new feature ships, it must pass these tests:
 
 ## Status
 
-Autarky is the design constraint that the rest of the v3.1 architecture must satisfy. It is not a feature to be added later. It is the shape of the architecture itself.
+Autarky is the design constraint that the rest of the v3.5 architecture must satisfy. It is not a feature to be added later. It is the shape of the architecture itself.
