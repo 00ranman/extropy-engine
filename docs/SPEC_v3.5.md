@@ -6,7 +6,7 @@
 **Maintainer:** 00ranman (Randall Gossett)
 **Companion work:** *Unfuck the World for a Dollar*
 **Signed Codex:** v2.1 remains signed. This document is **not** Codex 3.0. **v4.0 is reserved until Codex 3 ships.**
-**Mint stamp in code:** `FORMULA_VERSION = 'canonical-v3.1.2'` in `packages/xp-mint`. The mint product did not change. 3.5 is the engineering catch-up around that mint.
+**Mint stamp in code:** `FORMULA_VERSION = 'canonical-v3.1.2'` in `packages/xp-mint`.
 **License:** MIT
 
 Public copies: https://extropyengine.com/docs/SPEC_v3.5.md · https://extropyengine.com/docs/extropy-engine-technical-docs-v3.5.pdf
@@ -39,7 +39,7 @@ The `epistemology-engine` package is the mesh's emergent peer-review witness lay
 
 ---
 
-## 0. This edition
+## 0. The machine as coded
 
 The machine as coded. Not Codex 3.
 
@@ -61,8 +61,6 @@ The machine as coded. Not Codex 3.
 - **Public gaps: 16 live** (12 open, 4 narrowed) as of 2026-09-07.
 
 Digital Autarky, eight domains, personal-AI handshake, PSLL, native substrate, hybrid identity, micro-quest grain, and the mint product itself are unchanged.
-
-History of prior editions lives in [`docs/CHANGELOG.md`](./CHANGELOG.md), not in this body.
 
 ---
 
@@ -233,7 +231,7 @@ IT is this-proposal standing, not a leak clock. H_cap's 10-day window is the til
 
 ### 6.3 ΔS — proxy, mapper, unknown stays unknown
 
-You do not type a score. SignalFlow + the model you trust + the PSLL propose a provisional ΔS from the task, the duration, and evidence. Evidence (before/after photos and anything else) lives on the DAG as referencable payload. The other side has to agree (if-then).
+You do not type a score. SignalFlow + the model you trust + the PSLL propose a ΔS from the task, the duration, and evidence. Evidence (before/after photos and anything else) lives on the DAG as referencable payload. The other side has to agree (if-then).
 
 ```
 domain-native signal  --M_v-->  ΔS_claimed   with uncertainty U on the vertex
@@ -486,7 +484,7 @@ Most validation is blind or implicit:
 
 The `epistemology-engine` reads validation out of the task graph. It does not appoint validators. That removes the review chokepoint and ends the watcher regress.
 
-**LOOK vertex (specified; not in Codex 2.1).** Reading more than the public predicate (band yes/no, “this loop settled”) requires emitting LOOK. No silent fetch. The looker can stay a nullifier until a governance threshold (same shape as identity reveal: cause shown). Curiosity is allowed. Invisible curiosity is not. Curator LOOKs can mint if the look is the work. Stalking-shaped bursts can slash. Pattern, not the verb.
+**LOOK vertex (specified; not in Codex 2.1).** Reading more than the public predicate (band yes/no, “this loop closed”) requires emitting LOOK. No silent fetch. The looker can stay a nullifier until a governance threshold (same shape as identity reveal: cause shown). Curiosity is allowed. Invisible curiosity is not. Curator LOOKs can mint if the look is the work. Stalking-shaped bursts can slash. Pattern, not the verb.
 
 A panopticon is one tower that can see every diary. This has neither. The PSLL is a file on your disk. The network sees a proof — yes or no — not the file. Anyone who later wants WHO writes a look vertex.
 
@@ -534,7 +532,7 @@ Unsolved (keep it unsolved): whether nesting actually stops a popular MICRO from
 
 ## 14. Personal AI handshake
 
-v3.1 made this canonical. v3.5 keeps it. Decomposition is a personal-AI responsibility. The engine itself is a witness (see §20.4).
+Decomposition is a personal-AI responsibility. The engine itself is a witness (see §20.4).
 
 ### 14.1 Personal AI responsibilities
 
@@ -551,7 +549,7 @@ v3.1 made this canonical. v3.5 keeps it. Decomposition is a personal-AI responsi
 - Routing via SignalFlow.
 - Matching lookers (volunteer micro-slices by default; no validator class).
 - Recording receipts to the DAG.
-- Running mint, burn, and settlement logic.
+- Running mint, burn, and leak.
 - Enforcing shared protocol rules.
 
 The network does not get to decide what you meant. It does not get to own your local context. It does not get to accumulate hidden world models over everyone's lives. It only receives the minimum interoperable outputs necessary for shared action.
@@ -587,7 +585,7 @@ Hybrid identity: usability, privacy, Sybil resistance. Full spec: [`docs/IDENTIT
 | Contextual nullifier material | Private local onboarding state |
 | Governance-relevant accountability hooks | Real-world identity tied to DID by default |
 
-This is not optional anonymity. It is **selective privacy under enforceable accountability**. If governance thresholds are met under valid process, specific reveal or neutralization actions may be triggered against a DID. Provisional default: **7-of-12 ecosystem-validator threshold-keyed escrow**, governance-tunable. “Validator” here means contributors performing that governance task, not a priesthood.
+This is not optional anonymity. It is **selective privacy under enforceable accountability**. If governance thresholds are met under valid process, specific reveal or neutralization actions may be triggered against a DID. Default: **7-of-12 ecosystem-validator threshold-keyed escrow**, governance-tunable. “Validator” here means contributors performing that governance task, not a priesthood.
 
 Sybil: identity is cheap, standing is not. Unique-in-DFAO stops fifty votes from one person. One captured node can lie about itself; it cannot silently rewrite a neighbor's DAG.
 
@@ -623,7 +621,7 @@ Volunteer lookers can score **1/10th blind slices** of a claim without seeing th
 
 ## 18. Substrate (final decision)
 
-v3.1 committed to a **native substrate end-to-end**. v3.5 does not reopen that. Extropy is not a hApp on Holochain or any other existing framework.
+Extropy is a **native substrate end-to-end**. It is not a hApp on Holochain or any other existing framework.
 
 Full Digital Autarky requires owning the lowest shared layer (handshake + DAG). Dependency on another project's plumbing would create a supply-chain control point we do not control.
 
@@ -643,11 +641,7 @@ Full spec: [`architecture/SUBSTRATE.md`](../architecture/SUBSTRATE.md).
 
 ## 19. Loop lifecycle
 
-```
-OPEN → VALIDATING → CONSENSUS → CLOSED
-                                       ↘ FAILED
-                              ↘ ISOLATED (integrity quarantine)
-```
+OPEN → VALIDATING → CONSENSUS → CLOSED. FAILED or ISOLATED if it does not close (integrity quarantine).
 
 - **OPEN** — Task posted. Vertex on the DAG with causal parents. Evidence can hang off it.
 - **CLOSED** — Agreement. XP mints. Leak starts. Burnable immediately.
@@ -681,7 +675,7 @@ Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is 
 | `token-economy/` | Active | Meters and sparks (XP, CT, L, EP, CAT, IT). DT wallet slot is leftover — kill it. |
 | `credentials/` | Active | Verifiable credential issuance/verification helpers |
 
-### 20.2 Edge / identity / marketplace (from v3.1)
+### 20.2 Edge / identity / marketplace
 
 | Package | Status | Purpose |
 |---|---|---|
@@ -701,8 +695,6 @@ GrantFlow (discovery + proposer), neighborhood-app, character-sheet sketch. Coll
 `packages/levelup-academy` is held, not a school product. CAT + issuer is the overlay. See [`docs/ARCHIVED.md`](./ARCHIVED.md) and [`docs/CAT-LANES.md`](./CAT-LANES.md).
 
 ### 20.4 Epistemology engine — still a witness
-
-v3.0 misread it as a central decomposition service. v3.1 corrected the reading. v3.5 does not reopen it.
 
 **What it is:** a peer-review mesh observability layer. The real epistemology engine is the network itself — every personal AI submitting claims, every looker scoring a slice, every retroactive burn. Truth-finding is what *emerges* from those primitives running on incentives at scale. The package is the formal witness, aggregator, and queryable surface.
 
@@ -764,7 +756,7 @@ No secondary market in tonnes. No net-zero sticker bought off someone else's for
 
 ---
 
-## 24. Provisional defaults
+## 24. Published defaults
 
 Published before the first live till. Humans will ask. “The MACRO publishes it” is an answer only if the numbers exist. Full table: [`docs/DEFAULTS.md`](./DEFAULTS.md). Companion: [`docs/GOVERNANCE_DEFAULTS.md`](./GOVERNANCE_DEFAULTS.md).
 
@@ -906,8 +898,6 @@ Do not invent a letter to fill these.
 - Shannon, C. E. (1948). A mathematical theory of communication.
 - Landauer, R. (1961). Irreversibility and heat generation in the computing process.
 - Bennett, C. H. (2003). Notes on Landauer's principle, reversible computation, and Maxwell's Demon.
-- [`docs/CHANGELOG.md`](./CHANGELOG.md)
-- [`docs/SPEC_v3.1.md`](./SPEC_v3.1.md) — historical. Do not implement against it.
 
 ---
 

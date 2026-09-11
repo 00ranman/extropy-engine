@@ -4,7 +4,7 @@ Publish these before the first live till. Humans will ask. “The MACRO publishe
 
 Public copy: https://extropyengine.com/docs/DEFAULTS.md
 
-**Two clocks.** Leak ticks every **10 days** (two 5-day weeks idle). Auto H and training read **10 days** of this till’s signed cash (two 5-day weeks of books). Same number because 5 and 10 are the units. Different job. No months. No 30. No 40. \(0.99^n\) is unchanged. \(n\) is idle 10-day counts.
+**Two clocks.** Leak ticks every **10 days** (two 5-day weeks idle). Auto H and training read **10 days** of this till’s signed cash (two 5-day weeks of books). Same number because 5 and 10 are the units. Different job. \(0.99^n\) is unchanged. \(n\) is idle 10-day counts.
 
 ## Planetary (fork to change)
 
@@ -14,7 +14,7 @@ Public copy: https://extropyengine.com/docs/DEFAULTS.md
 | Leak tick | 10 days | Planetary. Fork. |
 | XP leak | 0.99 per 10 days (~1% of remaining) | Planetary. Fork. n = idle 10-day counts. |
 | CT leak | 0.99 per idle 10 days (~1% of remaining) | Same keep as XP. Idle on web W. A close / till spark / posted task on W resets the clock. Does not travel to the next town. |
-| H window | 10 days (two 5-day weeks of signed cash) | Planetary starting window for Auto and training. Not a settle clock. |
+| H window | 10 days (two 5-day weeks of signed cash) | Planetary starting window for Auto and training. |
 | IT | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1) | No pile. Recomputed each proposal. Burns in the tally. |
 | Cash-out of standing | Forbidden | Lose-condition. |
 | Ordinary close | Target XP on the order of **0.01–1** for a MICRO loop (lawn, ride, ticket line) | Planetary starting band. Rarity can lift it. A 100-XP lawn is a mapper bug. |

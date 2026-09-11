@@ -14,7 +14,7 @@ See `docs/CODEX_3_NOTES.md` for the Codex 3.0 capture of mechanics that kept fal
 | Identity reveal threshold | 7-of-12 + cause-shown | Ecosystem | See `IDENTITY.md`. Looking is a vertex. |
 | Reward escalation curve (early) | linear 1.0× → 3.0× over 5d | Domain DFAO | One 5-day week. Per-domain customization allowed |
 | Reward escalation curve (late) | log to cap 10.0× | Domain DFAO | Hard cap governance-tunable |
-| Late burn | no expiry | Ecosystem / dispute path | Close mints. Burn anytime. No settle window. Settled-as-final is dead. |
+| Late burn | no expiry | Ecosystem / dispute path | Close mints. Burn anytime. |
 | **XP decay** keep | **0.99 every 10 days (~1% of remaining)** | Planetary | Access economy: you do not spend XP; it gets eaten. n is idle 10-day counts. |
 | **CT idle leak** | Same keep as XP | Planetary | Idle on web W. A close / till spark / posted task on W resets n. CT does not travel. |
 | **H window** | 10 days | Planetary | Auto H_cap and training. Two 5-day weeks of signed cash. Not the leak tick. Not a verification of the lawn. |
@@ -29,7 +29,7 @@ See `docs/CODEX_3_NOTES.md` for the Codex 3.0 capture of mechanics that kept fal
 | Skill DAG progression criteria | TBD | Domain DFAO | Phase 3 |
 | Burn-floor axiom | **not written** | PLANETARY if we mean it | Possible: some XP and some IT always burn. Capture for Codex 3.0. Do not implement here. |
 
-**Dead knobs (do not restore):** CT lockup, GT decay, EP as a decaying bag, transfer friction δ, six-token counts, settle window / two-phase mint as epistemology, 30-day anything, 40-day anything, months. CT is not transferable. EP dies in the sale. GT is a dead letter. Close mints. Burn anytime. Calendar is 5-day weeks.
+**Dead knobs (do not restore):** CT lockup, GT decay, EP as a decaying bag, transfer friction δ, six-token counts. CT is not transferable. EP dies in the sale. GT is a dead letter. Close mints. Burn anytime. Calendar is 5-day weeks.
 
 ## How to change a default
 
