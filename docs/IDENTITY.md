@@ -14,7 +14,7 @@ Establish strong Sybil resistance and selective accountability without exposing 
 2. Strong resistance to one-person-many-identity abuse
 3. No raw PII exposure to the network DAG
 4. Selective reveal under governance conditions
-5. Compatibility with edge-native intelligence (personal AI handles identity locally)
+5. Compatibility with edge-native intelligence (keys and proofs stay on the box; a personal AI is not required to open a door)
 
 ## Canonical flow
 
@@ -25,10 +25,11 @@ Establish strong Sybil resistance and selective accountability without exposing 
 2. On-device KYC binding (ID scan / biometric / trusted issuer handoff)
         │   [happens entirely on user device — network sees nothing]
         ▼
-3. Personal AI generates DID + Verifiable Credential locally
+3. Node generates DID + Verifiable Credential locally (`did:key` on first boot)
         │
         ▼
-4. Credential wrapped in ZKP (BBS+ default; zk-SNARKs supported)
+4. Credential wrapped in ZKP (BBS+ default; zk-SNARKs supported) when circuits exist
+        │   [prover/verifier = cryptography. Not a model. Not an LLM.]
         │
         ▼
 5. Network receives:

@@ -5,6 +5,8 @@
 
 Identity ZKPs already specified: uniqueness, onboarding, BBS+ wrapper, per-context nullifiers, 7-of-12 reveal escrow. Reputation is still treated like a public vector keyed on a DID. That re-identifies everyone the nullifiers just hid. This file is how standing gets proven without opening the diary.
 
+**Not a model.** A ZKP is a prover and a verifier doing cryptography. The till gets yes or no. SignalFlow / a local model may help *write a claim*. They do not evaluate the proof. Do not say the AI “figures out” the door.
+
 ---
 
 ## What must never leak

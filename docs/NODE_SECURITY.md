@@ -32,6 +32,8 @@ Prove a predicate, not a dossier:
 
 The till gets yes or no. Not the PSLL. Not the XP pile.
 
+That yes/no is a circuit. Not a model. Not an LLM reading the question. Personal AI is not in this loop.
+
 Circuits are Codex 3. Today: signatures. Same job, thinner proof.
 
 See also: [CODEX_3_NOTES_ZKP_REPUTATION.md](./CODEX_3_NOTES_ZKP_REPUTATION.md), [CODEX_3_NOTES_LOOK.md](./CODEX_3_NOTES_LOOK.md).

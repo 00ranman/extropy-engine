@@ -566,11 +566,13 @@ Hybrid identity: usability, privacy, Sybil resistance. Full spec: [`docs/IDENTIT
 
 1. User signs in locally using familiar credentials via OAuth or OpenID.
 2. User performs a one-time on-device KYC binding (ID scan, biometric bind, or trusted issuer handoff).
-3. Personal AI generates a DID and corresponding Verifiable Credential. Day-one node path: `did:key` on first boot, no registrar.
+3. The **node** generates a DID and corresponding Verifiable Credential. Day-one path: `did:key` on first boot, no registrar. A personal AI is not required for this step.
 4. Credential is wrapped in zero-knowledge proofs (BBS+ default; zk-SNARKs supported) **when circuits exist**.
 5. Network receives only proof material and per-context nullifier outputs required to establish uniqueness and permissions.
 
-**Today the handshake is signatures.** ZKP circuits are not in Codex v2.1. 2.1 is the current Codex. Do not write “chip versus photocopy.” Handing the bartender the license is showing him the information. He needs 21 or not. The till gets yes or no. Anyone who later wants WHO writes a look vertex.
+**Today the handshake is signatures.** ZKP circuits are not in Codex v2.1. 2.1 is the current Codex. The till gets yes or no. Anyone who later wants WHO writes a look vertex.
+
+The yes/no is a **circuit**. Prover builds a proof of one predicate. Verifier checks the math. Same job as a debit-chip approve/decline. Not a model. Not an LLM reading the question. Personal AI / SignalFlow may propose a claim. They do not evaluate the proof.
 
 | Network sees | Network does not see |
 |---|---|

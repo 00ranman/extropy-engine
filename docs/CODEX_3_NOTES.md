@@ -100,6 +100,18 @@ The assistant you trust *is* the UI. Character-sheet-ish is a sketch, not a spec
 
 ---
 
+## ZKP is a circuit, not a model
+
+Put this in Codex 3 so the jobs stay split.
+
+**Personal AI / SignalFlow** may propose a claim, read the PSLL, talk to whatever model the holder trusts. That is optional software on the box. It is not required for a door to open.
+
+**A ZKP is not that.** Prover builds a proof of one predicate (21 or not, band ≥ n, unique in this room, confirmed this loop, not slashed). Verifier checks the math. The till gets yes or no. Classical cryptography. BBS+ / a SNARK / signatures today. Same job as a debit-chip approve/decline. No LLM in that loop. No model “figuring out the question.” The circuit does not read. It evaluates.
+
+If someone says “the AI on your phone decides the ZKP,” they mixed the UI with the proof. Do not write the spec that way.
+
+---
+
 ## Two different clocks of death
 
 Do not mash these together. IT is not a 5%/month pile. That line is dead.
@@ -299,6 +311,7 @@ FAQ: https://extropyengine.com/faq#overlay
 12. Own lawn mints. Rest is not a hole. No PTO pile. Retirement is not extractive-economy unemployment.
 13. Tₛ is a slam window with Δt cap, not recency. Three clocks. Do not “fix” Tₛ=1. Experiments: ΔS calibration, farming, L-extraction, late mint, w·E as a knob.
 14. Overlay, not a new country. Imported credentials are opening CAT records. License is the door, not the house.
+15. Split the jobs in public language: SignalFlow/model may propose a claim. The ZKP at the door is a circuit. Yes/no is verification, not inference. Do not write “the AI checks the proof.”
 
 ---
 
