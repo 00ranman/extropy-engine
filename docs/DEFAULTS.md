@@ -56,11 +56,17 @@ Does not count: a selfie, a punch card, a listed coin, “trust me I’m the man
 
 Attest: issuer DID signs the interval. Subject DID holds the record. Issuer can revoke; spite revoke is a vertex on the issuer. Other rooms may ignore that issuer.
 
+## Class strip vs identity
+
+Public copy: https://extropyengine.com/docs/DEFAULTS.md
+
+A vertex is two envelopes. **A, public:** class, mapper, ΔS, U, buckets, evidence hashes, state, parent vertex ids. SignalFlow scours A by class. No LOOK. **B, ZKP:** unique in this DFAO, signer bound to this strip, confirmed this loop, band if asked, not slashed. DID off the row. **Sealed:** bytes that hash to evidence_root. LOOK to read. DID, GPS, exact clock, or photo bytes in A is a lose-condition. Buckets, or it does not list.
+
 ## Review LOOK — the asterisk
 
 Public copy (3.5 clocks): https://extropyengine.com/docs/DEFAULTS.md
 
-Task type, not a class, not a third watcher. The close is a signed tuple (who, parents, evidence hashes, numbers, time, room, class). That hash is the vertex. It does not edit. Later trouble writes a new vertex that cites it.
+Task type, not a class, not a third watcher. Envelope A (class strip) is public. Envelope B binds a signer to that strip without putting WHO on the row. The row does not edit. Later trouble writes a new vertex that cites it.
 
 Ordinary looking is blind 1/10 slices. Diary stays shut.
 
