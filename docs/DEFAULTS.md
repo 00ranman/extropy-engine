@@ -56,6 +56,20 @@ Does not count: a selfie, a punch card, a listed coin, “trust me I’m the man
 
 Attest: issuer DID signs the interval. Subject DID holds the record. Issuer can revoke; spite revoke is a vertex on the issuer. Other rooms may ignore that issuer.
 
+## Review LOOK — the asterisk
+
+Public copy (3.5 clocks): https://extropyengine.com/docs/DEFAULTS.md
+
+Task type, not a class, not a third watcher. The close is a signed tuple (who, parents, evidence hashes, numbers, time, room, class). That hash is the vertex. It does not edit. Later trouble writes a new vertex that cites it.
+
+Ordinary looking is blind 1/10 slices. Diary stays shut.
+
+**If** this web’s published trigger fires **then** a Review LOOK may request the sealed bytes that match the committed hashes — not the rest of either PSLL. Looker writes holds / another slice / burn-claim. Further review is another LOOK. F still applies. Hub (many children cite this one) routes to a curator LOOK. Farming asterisks pays worse. Stalking-shaped bursts slash. False burn-claim can burn the accuser. Party to the dispute: S_gov = 0.
+
+Trigger is graph facts only: contest/burn cites, cited-harm band for this claim type, or this DFAO opens dispute. Not an LLM vibe. Not a graph crawl. Not identity 7-of-12.
+
+No planetary N. Until a web publishes a number: room vote or curator, not auto-unveil on one salty child. Do not freeze N before the first live till.
+
 ## Process
 
 1. Proposed number + reason on a vertex.  
