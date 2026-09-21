@@ -1,119 +1,74 @@
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- *  HomeFlow Family Pilot, OAuth Routes
- * ═══════════════════════════════════════════════════════════════════════════════
+ * HomeFlow auth routes — node DID only.
  *
- *  Endpoints:
- *    GET  /auth/google           start OAuth flow
- *    GET  /auth/google/callback  redirect target after Google consents
- *    POST /auth/logout           clear the session
- *    GET  /auth/me               return current user (or 401)
+ * Endpoints:
+ *   POST /auth/session   open a session from a node-minted DID
+ *   POST /auth/logout    clear the session
+ *   GET  /auth/me        current user (or 401)
  *
- *  Google OAuth runs through passport with passport-google-oauth20. If
- *  GOOGLE_CLIENT_ID is not set we mount stub routes that return 503 with a
- *  helpful message; this lets the rest of the API stay testable without
- *  forcing every developer to provision OAuth credentials.
- * ═══════════════════════════════════════════════════════════════════════════════
+ * No Google Auth. No OAuth. No KYC. Protocol identity is the DID minted when
+ * you stand up your own node. Lose it without a backup → start over.
  */
 
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import passport from 'passport';
-import { Strategy as GoogleStrategy, type Profile } from 'passport-google-oauth20';
 import type { UserService, User } from '../services/user.service.js';
 import { requireSession, type AuthedRequest } from './auth.middleware.js';
 
 export interface AuthConfig {
-  googleClientId: string | undefined;
-  googleClientSecret: string | undefined;
+  /** Kept for bootstrap compatibility; unused (no OAuth). */
   baseUrl: string;
-  callbackPath?: string;
   successRedirect?: string;
   failureRedirect?: string;
 }
 
-export function configurePassport(userService: UserService, config: AuthConfig): boolean {
-  if (!config.googleClientId || !config.googleClientSecret) {
-    return false;
-  }
-  const callbackURL = `${config.baseUrl}${config.callbackPath ?? '/auth/google/callback'}`;
-  passport.use(
-    new GoogleStrategy(
-      {
-        clientID: config.googleClientId,
-        clientSecret: config.googleClientSecret,
-        callbackURL,
-      },
-      async (
-        _accessToken: string,
-        _refreshToken: string,
-        profile: Profile,
-        done: (err: Error | null, user?: User) => void,
-      ) => {
-        try {
-          const email = profile.emails?.[0]?.value ?? '';
-          const avatar = profile.photos?.[0]?.value ?? null;
-          const user = await userService.upsertFromGoogle({
-            googleSub: profile.id,
-            email,
-            displayName: profile.displayName || email || 'unknown',
-            avatarUrl: avatar,
-          });
-          done(null, user);
-        } catch (err) {
-          done(err as Error);
-        }
-      },
-    ),
-  );
+const DID_RE = /^did:[a-z0-9]+:[A-Za-z0-9._%-]+$/i;
 
-  passport.serializeUser((user: Express.User, done) => {
-    done(null, (user as User).id);
-  });
-  passport.deserializeUser(async (id: string, done) => {
+export function createAuthRoutes(userService: UserService, _config: AuthConfig): Router {
+  const router = Router();
+
+  /**
+   * Open a session from a node-minted DID.
+   * Body: { did: string, displayName?: string }
+   */
+  router.post('/session', async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const user = await userService.findById(id);
-      done(null, user ?? false);
+      const body = req.body as { did?: string; displayName?: string };
+      const did = (body.did ?? '').trim();
+      if (!did || !DID_RE.test(did)) {
+        res.status(400).json({
+          error: 'invalid_did',
+          message: 'Provide the DID minted by your own node (did:...). No Google Auth.',
+        });
+        return;
+      }
+      const user = await userService.upsertFromDid({
+        did,
+        displayName: body.displayName?.trim() || did,
+      });
+      (req.session as { userId?: string }).userId = user.id;
+      res.json({
+        ok: true,
+        userId: user.id,
+        did: user.did,
+        displayName: user.displayName,
+        onboarded: !!user.did,
+      });
     } catch (err) {
-      done(err as Error);
+      next(err);
     }
   });
-  return true;
-}
 
-export function createAuthRoutes(userService: UserService, config: AuthConfig): Router {
-  const router = Router();
-  const enabled = configurePassport(userService, config);
-  const successRedirect = config.successRedirect ?? '/';
-  const failureRedirect = config.failureRedirect ?? '/?login=failed';
-
-  if (!enabled) {
-    router.get('/google', (_req: Request, res: Response) => {
-      res.status(503).json({
-        error: 'google_oauth_disabled',
-        message:
-          'Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET env vars to enable Google sign in',
-      });
+  // Gone: Google OAuth. Keep 410 so old clients/diagrams fail loudly.
+  router.get('/google', (_req: Request, res: Response) => {
+    res.status(410).json({
+      error: 'google_oauth_removed',
+      message:
+        'Google Auth was removed. Use POST /auth/session with your node-minted DID.',
     });
-    router.get('/google/callback', (_req: Request, res: Response) => {
-      res.status(503).json({ error: 'google_oauth_disabled' });
-    });
-  } else {
-    router.get(
-      '/google',
-      passport.authenticate('google', { scope: ['profile', 'email'] }),
-    );
-    router.get(
-      '/google/callback',
-      passport.authenticate('google', { failureRedirect }),
-      (req: Request, res: Response) => {
-        const passportUser = req.user as User | undefined;
-        if (passportUser && passportUser.id) {
-          (req.session as { userId?: string }).userId = passportUser.id;
-        }
-        res.redirect(successRedirect);
-      },
-    );
-  }
+  });
+  router.get('/google/callback', (_req: Request, res: Response) => {
+    res.status(410).json({ error: 'google_oauth_removed' });
+  });
 
   router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
     req.session?.destroy((err) => {
@@ -126,9 +81,7 @@ export function createAuthRoutes(userService: UserService, config: AuthConfig): 
     const user = req.hfUser as User;
     res.json({
       id: user.id,
-      email: user.email,
       displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
       did: user.did,
       publicKeyMultibase: user.publicKeyMultibase,
       genesisVertexId: user.genesisVertexId,
@@ -136,31 +89,21 @@ export function createAuthRoutes(userService: UserService, config: AuthConfig): 
     });
   });
 
-  /**
-   * Test only stub. Mounted only when HOMEFLOW_TEST_AUTH=1, lets the integration
-   * tests create an authenticated session without round tripping through Google.
-   */
+  /** Test-only stub. Mounted when HOMEFLOW_TEST_AUTH=1. */
   if (process.env.HOMEFLOW_TEST_AUTH === '1') {
     router.post('/_test/login', async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const body = req.body as {
-          googleSub?: string;
-          email?: string;
-          displayName?: string;
-        };
-        if (!body.googleSub) {
-          res.status(400).json({ error: 'googleSub required' });
-          return;
-        }
-        const user = await userService.upsertFromGoogle({
-          googleSub: body.googleSub,
-          email: body.email ?? `${body.googleSub}@example.com`,
+        const body = req.body as { did?: string; displayName?: string };
+        const did = (body.did ?? '').trim() || `did:extropy:test-${Date.now()}`;
+        const user = await userService.upsertFromDid({
+          did,
           displayName: body.displayName ?? 'Test User',
-          avatarUrl: null,
         });
         (req.session as { userId?: string }).userId = user.id;
-        res.json({ ok: true, userId: user.id });
-      } catch (err) { next(err); }
+        res.json({ ok: true, userId: user.id, did: user.did });
+      } catch (err) {
+        next(err);
+      }
     });
   }
 
