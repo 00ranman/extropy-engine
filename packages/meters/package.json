@@ -1,0 +1,20 @@
+{
+  "name": "@extropy/meters",
+  "version": "0.1.0",
+  "description": "Meter-first facade: CT, EP, L, CAT, IT — re-exports xp-formula and CAT record types for workflows and services",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@extropy/xp-formula": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  },
+  "license": "MIT"
+}
