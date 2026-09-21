@@ -6,6 +6,7 @@
 
 | Meter / object | Role |
 |---|---|
+| **DID** | Minted by **your node** at setup. Only protocol identity. |
 | **XP** | Minted only after loop close with verified ΔS |
 | **CT** | Community meter on web W; feeds L and IT |
 | **L** | This-ticket math `clip(H_cap · S · κ · CT · β, 0, 1)` — not a bag |
@@ -17,6 +18,7 @@
 
 ```mermaid
 flowchart TB
+  NODE[Your node mints DID] --> CLAIM[Claim]
   subgraph CORE["METER CORE"]
     XP[XP]
     CT[CT]
@@ -25,7 +27,7 @@ flowchart TB
     CAT[CAT]
     IT[IT]
   end
-  CLAIM[Claim] --> ROUTE[Route]
+  CLAIM --> ROUTE[Route]
   ROUTE --> VERIFY[Both-edges verify]
   VERIFY -->|quorum| CLOSE[loop.closed]
   VERIFY -->|fail| NOMINT[No mint]
@@ -44,7 +46,8 @@ flowchart TB
 ## Do not
 
 - Do not center GrantFlow, Grants.gov, academia, or papers.
+- Do not draw Google Auth, OAuth, KYC, or a customer registry as identity.
 - Do not mint DT.
 - Do not draw EP or IT as wallet piles.
 
-Full rules: `docs/architecture/DIAGRAM_RULES.md` · `ARCHITECTURE.md` · `docs/architecture/METER_CORE.md`
+Full rules: `docs/architecture/DIAGRAM_RULES.md` · `docs/architecture/IDENTITY.md` · `ARCHITECTURE.md` · `docs/architecture/METER_CORE.md`
