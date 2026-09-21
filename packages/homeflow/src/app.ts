@@ -1,1 +1,1 @@
-@/workspace/real_app.ts
+LOADING_FROM_FILE
