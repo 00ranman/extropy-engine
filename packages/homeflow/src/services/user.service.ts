@@ -1,14 +1,8 @@
 /**
- * ═══════════════════════════════════════════════════════════════════════════════
- *  HomeFlow Family Pilot, User Service
- * ═══════════════════════════════════════════════════════════════════════════════
+ * HomeFlow user service — node DID identity.
  *
- *  Stores Google OAuth profiles and the resulting Extropy DIDs for family
- *  members. The server never holds private key material; per spec section 3
- *  (Digital Autarky) the keypair stays in the browser.
- *
- *  Schema is created lazily by ensureSchema(). It is safe to call repeatedly.
- * ═══════════════════════════════════════════════════════════════════════════════
+ * Stores Extropy DIDs for household members. The server never holds private
+ * key material. Google OAuth / google_sub are gone; DID is the identity key.
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -16,11 +10,10 @@ import type { DatabaseService } from './database.service.js';
 
 export interface User {
   id: string;
-  googleSub: string;
-  email: string;
+  email: string | null;
   displayName: string;
   avatarUrl: string | null;
-  did: string | null;
+  did: string;
   publicKeyMultibase: string | null;
   publicKeyHex: string | null;
   vcJwt: string | null;
@@ -32,11 +25,10 @@ export interface User {
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS hf_users (
   id                    TEXT PRIMARY KEY,
-  google_sub            TEXT UNIQUE NOT NULL,
-  email                 TEXT NOT NULL,
+  email                 TEXT,
   display_name          TEXT NOT NULL,
   avatar_url            TEXT,
-  did                   TEXT UNIQUE,
+  did                   TEXT UNIQUE NOT NULL,
   public_key_multibase  TEXT,
   public_key_hex        TEXT,
   vc_jwt                TEXT,
@@ -44,18 +36,28 @@ CREATE TABLE IF NOT EXISTS hf_users (
   created_at            BIGINT NOT NULL,
   onboarded_at          BIGINT
 );
-CREATE INDEX IF NOT EXISTS idx_hf_users_google_sub ON hf_users(google_sub);
-CREATE INDEX IF NOT EXISTS idx_hf_users_did        ON hf_users(did);
+CREATE INDEX IF NOT EXISTS idx_hf_users_did ON hf_users(did);
+
+-- Scrub legacy Google Auth column if an older schema left it behind.
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'hf_users' AND column_name = 'google_sub'
+  ) THEN
+    ALTER TABLE hf_users ALTER COLUMN google_sub DROP NOT NULL;
+  END IF;
+EXCEPTION WHEN others THEN
+  NULL;
+END $$;
 `;
 
 function rowToUser(row: Record<string, unknown>): User {
   return {
     id: row.id as string,
-    googleSub: row.google_sub as string,
-    email: row.email as string,
+    email: (row.email as string | null) ?? null,
     displayName: row.display_name as string,
     avatarUrl: (row.avatar_url as string | null) ?? null,
-    did: (row.did as string | null) ?? null,
+    did: row.did as string,
     publicKeyMultibase: (row.public_key_multibase as string | null) ?? null,
     publicKeyHex: (row.public_key_hex as string | null) ?? null,
     vcJwt: (row.vc_jwt as string | null) ?? null,
@@ -72,52 +74,35 @@ export class UserService {
     await this.db.query(SCHEMA_SQL);
   }
 
-  async findByGoogleSub(googleSub: string): Promise<User | null> {
-    const { rows } = await this.db.query(
-      'SELECT * FROM hf_users WHERE google_sub = $1',
-      [googleSub],
-    );
-    return rows[0] ? rowToUser(rows[0]) : null;
-  }
-
   async findById(id: string): Promise<User | null> {
-    const { rows } = await this.db.query(
-      'SELECT * FROM hf_users WHERE id = $1',
-      [id],
-    );
+    const { rows } = await this.db.query('SELECT * FROM hf_users WHERE id = $1', [id]);
     return rows[0] ? rowToUser(rows[0]) : null;
   }
 
   async findByDid(did: string): Promise<User | null> {
-    const { rows } = await this.db.query(
-      'SELECT * FROM hf_users WHERE did = $1',
-      [did],
-    );
+    const { rows } = await this.db.query('SELECT * FROM hf_users WHERE did = $1', [did]);
     return rows[0] ? rowToUser(rows[0]) : null;
   }
 
-  async upsertFromGoogle(profile: {
-    googleSub: string;
-    email: string;
+  async upsertFromDid(profile: {
+    did: string;
     displayName: string;
-    avatarUrl?: string | null;
+    email?: string | null;
   }): Promise<User> {
-    const existing = await this.findByGoogleSub(profile.googleSub);
+    const existing = await this.findByDid(profile.did);
     if (existing) {
       await this.db.query(
-        `UPDATE hf_users
-         SET email = $2, display_name = $3, avatar_url = $4
-         WHERE google_sub = $1`,
-        [profile.googleSub, profile.email, profile.displayName, profile.avatarUrl ?? null],
+        `UPDATE hf_users SET display_name = $2, email = COALESCE($3, email) WHERE did = $1`,
+        [profile.did, profile.displayName, profile.email ?? null],
       );
-      return (await this.findByGoogleSub(profile.googleSub)) as User;
+      return (await this.findByDid(profile.did)) as User;
     }
     const id = uuidv4();
     const now = Date.now();
     await this.db.query(
-      `INSERT INTO hf_users (id, google_sub, email, display_name, avatar_url, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [id, profile.googleSub, profile.email, profile.displayName, profile.avatarUrl ?? null, now],
+      `INSERT INTO hf_users (id, email, display_name, did, created_at, onboarded_at)
+       VALUES ($1, $2, $3, $4, $5, $5)`,
+      [id, profile.email ?? null, profile.displayName, profile.did, now],
     );
     return (await this.findById(id)) as User;
   }
