@@ -1,7 +1,7 @@
 {
   "name": "@extropy/grantflow-proposer",
   "version": "1.0.0",
-  "description": "GrantFlow Proposer — AI-powered grant proposal generation and refinement service for the Extropy Engine",
+  "description": "Personal grants.gov proposer door. Same Engine loop. Not a product face.",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {

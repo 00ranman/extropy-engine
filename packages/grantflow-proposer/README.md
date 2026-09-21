@@ -1,9 +1,7 @@
-# EDGE ONLY — not the architecture center
+# grantflow-proposer
 
-`grantflow-proposer` is a **product edge**. Extropy Engine is **meter-first**:
+Drafts a grant proposal as a **claim** on the Engine. Not a second pipeline.
 
-**CT · EP · L · CAT · IT** (+ XP mint)
+Personal tooling with `grantflow-discovery`. Overlay compose only. Not in default `docker compose up`.
 
-See [`ARCHITECTURE.md`](../../ARCHITECTURE.md) and [`docs/architecture/METER_CORE.md`](../../docs/architecture/METER_CORE.md).
-
-Do not use this package as the lead for architecture diagrams. Grant / academia / household UIs feed claims into the loop; they do not own meter math.
+See [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).

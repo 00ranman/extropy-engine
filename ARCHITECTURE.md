@@ -3,8 +3,8 @@
 > **Spine:** SignalFlow packages every claim and routes validation.
 > **Center:** meters CT · EP · L · CAT · IT (+ XP mint).
 > **Identity:** DID minted by **your own node** at install. No Google Auth. No KYC. No central customer registry.
-> **Faces (same loop):** HomeFlow (household) · LocalFlow (neighborhood / strip-mall / merchant). Same product everywhere: post → do → confirm.
-> **Not the product:** GrantFlow / academia demos are optional footnotes only — never center, never multiple boxes, omit from diagrams if they steal weight.
+> **Faces (same loop):** LocalFlow (person / errands) · HomeFlow (house / neighborhood) · quest market · merchant till (strip mall / EP). Same product everywhere: post → do → confirm.
+> **Not the product:** grantflow-* is a personal grants.gov door — one footnote, never center, never multiple boxes.
 
 Canon: Codex v2.1 · formula canonical-v3.12 · [extropyengine.com](https://extropyengine.com) · `packages/xp-formula` · `@extropy/meters`.
 
@@ -26,14 +26,20 @@ flowchart TB
   NODE["Your node\nmints DID"] --> FACE
 
   subgraph FACES["FACES — same loop: post → do → confirm"]
-    HF["HomeFlow\nhousehold / neighborhood"]
-    LF["LocalFlow\nstrip-mall / merchant overlay"]
+    HF["HomeFlow — house / neighborhood"]
+    LF["LocalFlow — person / errands"]
+    QM["Quest market — 2–5 min"]
+    TILL["Merchant till — strip mall / EP"]
   end
   FACE["Any face"] --- HF
   FACE --- LF
+  FACE --- QM
+  FACE --- TILL
 
   HF --> SF
   LF --> SF
+  QM --> SF
+  TILL --> SF
 
   subgraph SPINE["SPINE"]
     SF["SignalFlow\npackages claim · routes validation"]
@@ -80,15 +86,19 @@ flowchart TB
 
 | Layer | What lives here | What does not |
 |---|---|---|
-| **Faces** | HomeFlow, LocalFlow — UX for the same loop | Separate “apps” that invent their own mint |
+| **Faces** | LocalFlow, HomeFlow, quest market, merchant till — UX for the same loop | Separate “apps” that invent their own mint |
 | **Spine** | SignalFlow — claim package + validator routing | Grant proposers as protocol core |
 | **Meters** | CT, EP, L, CAT, IT, XP | Bags / cash-out / DT mint |
 | **Substrate** | DAG ledger, validation neighborhoods, PSLL, temporal leak | Central customer DB |
 | **Identity** | Node-minted DID | Google / Apple / KYC / registry |
 
-## LocalFlow (merchant / strip)
+## LocalFlow (person)
 
-LocalFlow is the neighborhood business face: cash still clears; the overlay runs beside the register as a check while the DAG learns. Absorption is ρ climbing, not a launch date. Merchant settlement uses EP (emergence / till spark) bounded to in-network benefit — never a fiat bridge.
+LocalFlow is the errand face: a ride, groceries, the car you don’t have. Post it. Someone nearby does it. You tap done. Silent DAG emission. Not the till.
+
+## Merchant till (strip)
+
+The till is the neighborhood business face: cash still clears; the overlay runs beside the register as a check while the DAG learns. Absorption is ρ climbing, not a launch date. Settlement uses EP (till spark) — born and burned in the sale. Code: `sparkTill` in `xp-formula`, demo in `two-till-demo`. There is no `MerchantFlow` package.
 
 ## HomeFlow (household)
 
@@ -110,8 +120,8 @@ SignalFlow packages the claim and routes validation (domain × standing × load 
 
 1. Draw **SignalFlow** as the only router between faces and meters.
 2. Label **CT, EP, L, CAT, IT, XP** on the main path.
-3. Show **HomeFlow** and **LocalFlow** as faces — equal weight, thin edges into SignalFlow.
+3. Show **LocalFlow**, **HomeFlow**, **quest market**, and **merchant till** as faces — equal weight, thin edges into SignalFlow.
 4. Show **node → DID** as identity.
 5. Fail-closed path must be visible.
-6. **Do not** draw GrantFlow, Grants.gov, academia, or papers as center or as multiple boxes. Prefer omit.
+6. **Grantflow:** one optional door on the same pipeline, or omit. Never two boxes. Never the top of the chart.
 7. **Do not** mint DT. Do not draw EP/IT as wallet piles.

@@ -1,9 +1,9 @@
-# EDGE ONLY — not the architecture center
+# grantflow-discovery
 
-`grantflow-discovery` is a **product edge**. Extropy Engine is **meter-first**:
+Personal grants.gov scrape. **Not a face. Not a product.**
 
-**CT · EP · L · CAT · IT** (+ XP mint)
+Same loop as everything else: SignalFlow packages the claim, the kernel mints. This package is a door onto that loop for one human’s grant search. It does not get two boxes at the top of an architecture diagram.
 
-See [`ARCHITECTURE.md`](../../ARCHITECTURE.md) and [`docs/architecture/METER_CORE.md`](../../docs/architecture/METER_CORE.md).
+Pair: `packages/grantflow-proposer`. Overlay compose: `docker-compose.grantflow.yml`.
 
-Do not use this package as the lead for architecture diagrams. Grant / academia / household UIs feed claims into the loop; they do not own meter math.
+See [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).

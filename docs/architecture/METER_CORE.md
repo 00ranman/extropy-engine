@@ -2,7 +2,7 @@
 
 **Status:** Canonical product architecture (meter-first)  
 **Authority:** `docs/SPEC_v3.5.md` → `packages/xp-formula` → this doc  
-**Faces:** HomeFlow (household) and LocalFlow (merchant / strip) sit on **SignalFlow**. Meters are the center. GrantFlow is not architecture — omit from diagrams.
+**Faces:** LocalFlow (person), HomeFlow (house), quest market, merchant till sit on **SignalFlow**. Meters are the center. grantflow-* is a personal door — one footnote, not architecture.
 
 ## Center of gravity
 
@@ -44,12 +44,14 @@ Fails closed: no quorum / reject / missing counterparty signature → **no XP mi
 
 | Face | Role |
 |------|------|
-| HomeFlow | Household / neighborhood loops into the ledger. Node DID only. |
-| LocalFlow | Strip-mall / merchant overlay — cash clears; protocol beside the register. |
+| LocalFlow | Person / errands. Rides, groceries, the car you don’t have. |
+| HomeFlow | House / neighborhood. Chores, rooms. Neighborhood-app is the MESO board. |
+| Quest market | 2–5 minute grain. |
+| Merchant till | Strip mall. Cash still rings. EP dies in the sale. `sparkTill` + `two-till-demo`. |
 
 **SignalFlow** packages every claim and routes validation. Same loop on every face: post → do → confirm.
 
-GrantFlow / academia scrapers are **not** architecture. Do not put them on diagrams. HomeFlow identity is node DID — not Google OAuth.
+grantflow-* is a personal grants.gov door on this loop. Not a face. Overlay compose only.
 
 ## Package map (meter-first)
 

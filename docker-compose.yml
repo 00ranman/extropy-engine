@@ -282,39 +282,8 @@ services:
       redis:
         condition: service_healthy
 
-  # -- GrantFlow Services ---------------------------------------------------
-  grantflow-discovery:
-    build:
-      context: .
-      dockerfile: packages/grantflow-discovery/Dockerfile
-    ports:
-      - "4020:4020"
-    environment:
-      PORT: 4020
-      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=grantflow
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  grantflow-proposer:
-    build:
-      context: .
-      dockerfile: packages/grantflow-proposer/Dockerfile
-    ports:
-      - "4021:4021"
-    environment:
-      PORT: 4021
-      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=grantflow
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      GRANTFLOW_DISCOVERY_URL: http://grantflow-discovery:4020
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+  # grantflow-* is personal grants.gov tooling, not a face.
+  # Overlay: docker compose -f docker-compose.yml -f docker-compose.grantflow.yml up
 
   # ───────── v3.1 sandbox services ─────────
   identity:

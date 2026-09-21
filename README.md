@@ -86,38 +86,35 @@ The split exists so standing cannot buy votes and a skill stamp cannot print XP.
 
 ## Architecture
 
-**Meter-first.** Extropy Engine is a closed-loop **meter** protocol. The center is **CT · EP · L · CAT · IT** (+ XP mint). GrantFlow, academia-bridge, and HomeFlow are **optional product edges** — one example of how a claim can enter the loop — not the product.
+**Meter-first.** Closed-loop meters. Faces are seats of the same loop, not extra religions.
 
-Canonical diagram sources for humans and diagram generators:
+Canonical map: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/architecture/METER_CORE.md`](docs/architecture/METER_CORE.md) · diagram rules: [`docs/architecture/DIAGRAM_RULES.md`](docs/architecture/DIAGRAM_RULES.md)
 
-- [`ARCHITECTURE.md`](ARCHITECTURE.md)
-- [`DIAGRAM.md`](DIAGRAM.md)
-- [`docs/architecture/METER_CORE.md`](docs/architecture/METER_CORE.md)
+**Faces:** LocalFlow (person / errands) · HomeFlow (house / neighborhood) · quest market (2–5 min) · merchant till (strip mall / EP spark). **Spine:** SignalFlow — the only router. **Not a face:** grantflow-* is a personal grants.gov door on this loop. Overlay compose only. Do not draw it as two boxes. HomeFlow is a face, not an optional edge.
 
-```mermaid
-flowchart TB
-  subgraph CORE["METER CORE"]
-    XP[XP meter]
-    CT[CT community meter]
-    L[L this ticket]
-    EP[EP till spark]
-    CAT[CAT skill record]
-    IT[IT this proposal]
-  end
-  CLAIM[Claim / loop open] --> ROUTE[Signal route]
-  ROUTE --> VERIFY[Both-edges verify]
-  VERIFY -->|quorum| CLOSE[loop.closed]
-  VERIFY -->|fail closed| NOMINT[No mint]
-  CLOSE --> XP --> CT
-  CT --> L
-  CAT --> L
-  L --> EP
-  CT --> IT
-  CAT --> IT
-  EP --> LEAK[Temporal leak / re-verify]
-  IT --> LEAK
-  LEAK --> CLAIM
-  EDGE["Optional edges only\\nHomeFlow / GrantFlow / academia"] -.-> CLAIM
+```
+packages/
+├── contracts/          # Shared types. Single source of truth.
+├── xp-formula/         # Canonical meters. XP, L, EP, IT. Pure functions.
+├── loop-ledger/        # Close mints.
+├── epistemology-engine # Mesh observability. Witness, not a priesthood.
+├── signalflow/         # The only router. Assistant + PSLL + proposed ΔS.
+├── xp-mint/            # Mints on close. Late burn has no expiry.
+├── reputation/         # Compressed evidence of past accuracy. Does not enter XP.
+├── dag-substrate/      # DAG ledger
+├── dfao-registry/      # MICRO → PLANETARY
+├── governance/         # IT burns in the tally.
+├── token-economy/      # XP, CT, L, EP, CAT, IT. DT leftover — kill it.
+├── temporal/           # Leak 10 days. H window 40 days.
+├── identity/           # did:key on the box.
+├── psll-sync/          # Personal Signed Local Log
+├── quest-market/       # 2–5 minute grain
+├── localflow/          # Person face. Errands.
+├── homeflow/           # House face. Chores, rooms.
+├── neighborhood-app/   # MESO board of HomeFlow
+├── two-till-demo/      # Merchant till. EP spark.
+├── validation-neighborhoods/ # Blind slices. Not a class.
+└── node-handshake/     # Signed hello
 ```
 
 | Object | Kind | Job |
@@ -131,9 +128,13 @@ flowchart TB
 
 **DT is not a bag.** Do not mint DT.
 
-Facade: `packages/meters` (`@extropy/meters`) over `packages/xp-formula`. Edge packages must not own mint math.
+Facade: `packages/meters` (`@extropy/meters`) over `packages/xp-formula` if present. Faces must not own mint math.
 
-Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is the meters and the loop, not a grant/academic org chart. Skeletons stay skeletons until a door ships.
+`packages/grantflow-discovery` and `packages/grantflow-proposer` stay in the tree as personal tooling. They are not faces. Overlay compose: `docker-compose.grantflow.yml`.
+
+**Web3 as promised** lives in [`packages/mesh`](packages/mesh). Two boxes, signed loops, no bag. `node packages/mesh/demo.mjs`. Writeup: [`docs/WEB3.md`](docs/WEB3.md).
+
+Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is the meters and the loop, not a grant org chart. Skeletons stay skeletons until a door ships.
 
 
 ---
