@@ -1,0 +1,32 @@
+%%{init: {"theme": "neutral"}}%%
+flowchart TB
+  subgraph CORE["Meter core"]
+    XP["XP meter<br/>computeXP"]
+    CT["CT_W meter<br/>leakCT"]
+    L["L this ticket<br/>computeL"]
+    EP["EP till spark<br/>sparkTill · burns"]
+    CAT["CAT record<br/>feeds β"]
+    IT["IT proposal<br/>sparkVote · burns"]
+  end
+
+  CLAIM[Claim / loop open] --> ROUTE[Signal route]
+  ROUTE --> VERIFY[Both-edges neighborhood]
+  VERIFY -->|quorum| CLOSE[loop.closed]
+  VERIFY -->|fail closed| NOMINT[No mint]
+  CLOSE --> XP
+  XP --> CT
+  CT --> L
+  CAT --> L
+  L --> EP
+  CT --> IT
+  CAT --> IT
+  EP --> TEMP[Temporal leak / re-verify]
+  IT --> TEMP
+  TEMP --> CLAIM
+
+  subgraph EDGES["Product edges only"]
+    HF[HomeFlow]
+    GF[GrantFlow]
+  end
+  HF --> CLAIM
+  GF --> CLAIM
