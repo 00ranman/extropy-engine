@@ -2,7 +2,7 @@
 
 **Status:** Canonical product architecture (meter-first)  
 **Authority:** `docs/SPEC_v3.5.md` → `packages/xp-formula` → this doc  
-**Non-goals:** GrantFlow / HomeFlow are **edge apps**, not the center.
+**Faces:** HomeFlow (household) and LocalFlow (merchant / strip) sit on SignalFlow. Meters are the center. GrantFlow is not architecture — omit from diagrams.
 
 ## Center of gravity
 

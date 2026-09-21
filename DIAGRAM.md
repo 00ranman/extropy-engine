@@ -1,25 +1,49 @@
 # Extropy Engine — canonical architecture diagram
 
-**This file is the architecture diagram source.** Regenerators must follow it.
+**This file is the architecture diagram source.** Regenerators must follow it and `docs/architecture/DIAGRAM_RULES.md`.
 
-## Center (always draw these)
+Grounding: [extropyengine.com](https://extropyengine.com) · Codex v2.1 · Meter Core.
 
-| Meter / object | Role |
+## Center (always draw)
+
+| Object | Role |
 |---|---|
 | **DID** | Minted by **your node** at setup. Only protocol identity. |
+| **SignalFlow** | Packages the claim; routes validation. The spine. |
 | **XP** | Minted only after loop close with verified ΔS |
 | **CT** | Community meter on web W; feeds L and IT |
-| **L** | This-ticket math `clip(H_cap · S · κ · CT · β, 0, 1)` — not a bag |
-| **EP** | Till spark `XP · L + λ · L` — burns in the sale |
+| **L** | This-ticket math — not a bag |
+| **EP** | Till spark — burns in the sale |
 | **CAT** | Skill record `(DID, lane, level, issuer)` — feeds β |
 | **IT** | This-proposal spark — burns in the tally |
+
+## Faces (always draw, equal weight)
+
+| Face | Role |
+|---|---|
+| **HomeFlow** | Household / neighborhood loops |
+| **LocalFlow** | Strip-mall / merchant overlay (cash clears; protocol beside it) |
+
+Same loop on every face: **post → do → confirm**.
 
 ## Mermaid (copy this)
 
 ```mermaid
 flowchart TB
-  NODE[Your node mints DID] --> CLAIM[Claim]
-  subgraph CORE["METER CORE"]
+  NODE[Your node mints DID] --> HF
+  NODE --> LF
+  subgraph FACES[Faces — post / do / confirm]
+    HF[HomeFlow]
+    LF[LocalFlow]
+  end
+  HF --> SF
+  LF --> SF
+  SF[SignalFlow packages claim + routes]
+  SF --> VERIFY[Both-edges neighborhood]
+  VERIFY -->|quorum| CLOSE[loop.closed]
+  VERIFY -->|fail| NOMINT[No mint]
+  CLOSE --> XP
+  subgraph CORE[Meter core]
     XP[XP]
     CT[CT]
     L[L]
@@ -27,11 +51,7 @@ flowchart TB
     CAT[CAT]
     IT[IT]
   end
-  CLAIM --> ROUTE[Route]
-  ROUTE --> VERIFY[Both-edges verify]
-  VERIFY -->|quorum| CLOSE[loop.closed]
-  VERIFY -->|fail| NOMINT[No mint]
-  CLOSE --> XP --> CT
+  XP --> CT
   CT --> L
   CAT --> L
   L --> EP
@@ -39,15 +59,19 @@ flowchart TB
   CAT --> IT
   EP --> LEAK[Leak / re-verify]
   IT --> LEAK
-  LEAK --> CLAIM
-  EDGE["Edge claim sources only"] -.-> CLAIM
+  LEAK --> SF
+  DAG[DAG ledger] -.-> CLOSE
+  VN[Validation neighborhood] -.-> VERIFY
 ```
 
 ## Do not
 
-- Do not center GrantFlow, Grants.gov, academia, or papers.
+- Do not center or multiply GrantFlow / grants / academia / papers.
 - Do not draw Google Auth, OAuth, KYC, or a customer registry as identity.
+- Do not treat HomeFlow or LocalFlow as separate protocols — they are faces on SignalFlow.
 - Do not mint DT.
 - Do not draw EP or IT as wallet piles.
 
-Full rules: `docs/architecture/DIAGRAM_RULES.md` · `docs/architecture/IDENTITY.md` · `ARCHITECTURE.md` · `docs/architecture/METER_CORE.md`
+## Full-board checklist (complete system)
+
+A complete board includes all of: node DID · HomeFlow · LocalFlow · SignalFlow · post/do/confirm · both-edges verify · fail-closed · XP mint formula · CT · L · EP · CAT · IT · temporal leak · DAG ledger · validation neighborhood · PSLL. If GrantFlow appears at all, it is one tiny footnote — prefer absent.
