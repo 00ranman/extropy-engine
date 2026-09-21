@@ -1,1 +1,1 @@
-PLACEHOLDER_APP
+@/workspace/real_app.ts
