@@ -2,7 +2,7 @@
 
 **Status:** Canonical product architecture (meter-first)  
 **Authority:** `docs/SPEC_v3.5.md` → `packages/xp-formula` → this doc  
-**Faces:** HomeFlow (household) and LocalFlow (merchant / strip) sit on SignalFlow. Meters are the center. GrantFlow is not architecture — omit from diagrams.
+**Faces:** HomeFlow (household) and LocalFlow (merchant / strip) sit on **SignalFlow**. Meters are the center. GrantFlow is not architecture — omit from diagrams.
 
 ## Center of gravity
 
@@ -34,21 +34,22 @@ Code: `packages/xp-formula` — `computeXP`, `computeL`, `computeEP`, `computeIT
 ## Closed loop (happy path)
 
 ```
-claim → route → both-edges verify → consensus close
+face → SignalFlow packages claim → both-edges verify → consensus close
   → mint XP → credit CT → spark EP (via L) → CAT→β → spark IT (gov) → temporal leak
 ```
 
 Fails closed: no quorum / reject / missing counterparty signature → **no XP mint**, no CT credit, no EP.
 
-## Edge apps (demoted)
+## Faces on SignalFlow (not the center)
 
-| App | Role |
-|-----|------|
-| HomeFlow (`:4015`) | Household loops into loop-ledger. Google OAuth identity only. |
-| GrantFlow discovery (`:4020`) | Queries Grants.gov only. |
-| GrantFlow proposer (`:4021`) | Builds proposals → claims. Never owns meter math. |
+| Face | Role |
+|------|------|
+| HomeFlow | Household / neighborhood loops into the ledger. Node DID only. |
+| LocalFlow | Strip-mall / merchant overlay — cash clears; protocol beside the register. |
 
-If a diagram leads with grants, it is wrong. Fix the diagram.
+**SignalFlow** packages every claim and routes validation. Same loop on every face: post → do → confirm.
+
+GrantFlow / academia scrapers are **not** architecture. Do not put them on diagrams. HomeFlow identity is node DID — not Google OAuth.
 
 ## Package map (meter-first)
 
