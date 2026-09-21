@@ -86,39 +86,55 @@ The split exists so standing cannot buy votes and a skill stamp cannot print XP.
 
 ## Architecture
 
-Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is the meters and the loop, not a 12-service org chart. Skeletons stay skeletons until a door ships.
+**Meter-first.** Extropy Engine is a closed-loop **meter** protocol. The center is **CT · EP · L · CAT · IT** (+ XP mint). GrantFlow, academia-bridge, and HomeFlow are **optional product edges** — one example of how a claim can enter the loop — not the product.
 
+Canonical diagram sources for humans and diagram generators:
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md)
+- [`DIAGRAM.md`](DIAGRAM.md)
+- [`docs/architecture/METER_CORE.md`](docs/architecture/METER_CORE.md)
+
+```mermaid
+flowchart TB
+  subgraph CORE["METER CORE"]
+    XP[XP meter]
+    CT[CT community meter]
+    L[L this ticket]
+    EP[EP till spark]
+    CAT[CAT skill record]
+    IT[IT this proposal]
+  end
+  CLAIM[Claim / loop open] --> ROUTE[Signal route]
+  ROUTE --> VERIFY[Both-edges verify]
+  VERIFY -->|quorum| CLOSE[loop.closed]
+  VERIFY -->|fail closed| NOMINT[No mint]
+  CLOSE --> XP --> CT
+  CT --> L
+  CAT --> L
+  L --> EP
+  CT --> IT
+  CAT --> IT
+  EP --> LEAK[Temporal leak / re-verify]
+  IT --> LEAK
+  LEAK --> CLAIM
+  EDGE["Optional edges only\\nHomeFlow / GrantFlow / academia"] -.-> CLAIM
 ```
-packages/
-├── contracts/          # Shared types, interfaces, enums (~72KB). Single source of truth.
-├── xp-formula/         # Canonical formula implementation. Pure function, no side effects.
-├── loop-ledger/        # Loop lifecycle: OPEN → CONSENSUS → CLOSED
-├── epistemology-engine # MESH OBSERVABILITY: aggregates emergent peer review,
-│                       # surfaces consensus drift, falsifiability stats, Sybil clusters.
-│                       # Redefined in v3.1 — NOT a central decomposition service.
-├── signalflow/         # Validator routing: domain match × reputation × load × accuracy
-├── xp-mint/            # Two-phase minting: provisional on close, confirmed or burned on settle
-├── reputation/         # Per-domain reputation, 10 levels, decay mechanics
-├── dag-substrate/      # DAG ledger: every action is a vertex with causal parents
-├── dfao-registry/      # Fractal org structure: MICRO(2-7) → ECOSYSTEM(1000+)
-├── governance/         # Proposals, conviction voting, quorum, execution
-├── token-economy/      # XP, CT, L, EP, CAT, IT. DT wallet slot is leftover — kill it.
-├── temporal/           # Seasons, decay scheduling, loop timeouts
-├── identity/           # v3.1: OAuth + on-device KYC + DID + ZKP (BBS+ default)
-├── psll-sync/          # v3.1: Personal Signed Local Log maintenance + DAG anchoring
-├── quest-market/       # v3.1: Micro-quest marketplace + dynamic reward escalation
-├── validation-neighborhoods/ # v3.1: Sharded 1/10th blind-slice validation routing
-└── node-handshake/     # v3.1 sandbox: VPS↔local-laptop proof-of-concept handshake
-```
 
-**v3.5 packages.** Interface contracts are the source of truth; implementation is incremental. Identity / PSLL / quest-market / validation-neighborhoods remain skeletons until a door ships. See each package's README for status. Engineering parent: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md).
+| Object | Kind | Job |
+|---|---|---|
+| XP | Meter | Standing from verified ΔS. Non-transferable. Leaks. |
+| CT | Meter | Community standing on web W. Feeds L and IT. Outside the mint product. |
+| L | This-ticket math | `clip(H_cap · S · κ · CT · β, 0, 1)`. Not a bag. |
+| EP | Till spark | `XP · L + λ · L`. Burns in the sale. Not a pile. |
+| CAT | Record | `(DID, lane, level, issuer)`. Feeds β. Off the mint. |
+| IT | This proposal | Burns in the tally. Not a pile. |
 
-Archived standalones were folded here. `packages/levelup-academy` is held, not a school product. CAT + issuer is the overlay. See [`docs/ARCHIVED.md`](docs/ARCHIVED.md) and [`docs/CAT-LANES.md`](docs/CAT-LANES.md).
+**DT is not a bag.** Do not mint DT.
 
-**Web3 as promised** lives in [`packages/mesh`](packages/mesh). Two boxes, signed loops, no bag. `node packages/mesh/demo.mjs`. Writeup: [`docs/WEB3.md`](docs/WEB3.md).
+Facade: `packages/meters` (`@extropy/meters`) over `packages/xp-formula`. Edge packages must not own mint math.
 
+Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is the meters and the loop, not a grant/academic org chart. Skeletons stay skeletons until a door ships.
 
-The ledger exists specifically to prevent the failure mode that killed most Web3 governance: **conflation**. XP (standing) is non-transferable. IT is this-proposal standing, clipped to 1, burned in the tally. You cannot buy a gavel. CAT is a skill **record**, not a pile.
 
 ---
 
