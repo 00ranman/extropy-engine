@@ -2,8 +2,20 @@
   "name": "@extropy/validation-neighborhoods",
   "version": "0.1.0",
   "description": "Sharded validation routing. Volunteer 1/10th blind slices. Borrowed pattern from Holochain DHT neighborhoods, reimplemented natively. v3.1.",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/lib.js",
+  "types": "./dist/lib.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/lib.d.ts",
+      "import": "./dist/lib.js",
+      "require": "./dist/lib.js"
+    },
+    "./lib": {
+      "types": "./dist/lib.d.ts",
+      "import": "./dist/lib.js",
+      "require": "./dist/lib.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx watch src/index.ts",

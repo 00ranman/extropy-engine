@@ -5,13 +5,13 @@ COPY packages/contracts ./packages/contracts
 COPY packages/xp-formula ./packages/xp-formula
 COPY packages/validation-neighborhoods ./packages/validation-neighborhoods
 COPY packages/signalflow ./packages/signalflow
-COPY packages/quest-market ./packages/quest-market
+COPY packages/localflow ./packages/localflow
 RUN npm install -g pnpm@9 \
- && pnpm install --filter @extropy/contracts --filter @extropy/xp-formula --filter @extropy/validation-neighborhoods --filter @extropy/signalflow --filter @extropy/quest-market --frozen-lockfile=false
-WORKDIR /app/packages/quest-market
+ && pnpm install --filter @extropy/contracts --filter @extropy/xp-formula --filter @extropy/validation-neighborhoods --filter @extropy/signalflow --filter @extropy/localflow --frozen-lockfile=false
+WORKDIR /app/packages/localflow
 RUN pnpm --filter @extropy/xp-formula build \
  && pnpm --filter @extropy/validation-neighborhoods build \
  && pnpm --filter @extropy/signalflow build \
  && pnpm build
-EXPOSE 4103
+EXPOSE 4030
 CMD ["pnpm", "start"]

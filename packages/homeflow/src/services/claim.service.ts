@@ -19,6 +19,7 @@ import type { HomeEntropyReduction, HouseholdId } from '../types/index.js';
 import { HomeFlowEventType } from '../types/index.js';
 import { EntropyDomain } from '@extropy/contracts';
 import type { ClaimId, LoopId, ValidatorId } from '@extropy/contracts';
+import { packageClaim } from '@extropy/signalflow';
 
 export class ClaimService {
   constructor(
@@ -60,53 +61,19 @@ export class ClaimService {
     );
     const validatorId = households[0]?.validator_id ?? 'homeflow-system';
 
-    // 1. Open a loop in Loop Ledger
-    try {
-      const loopResponse = await fetch(`${this.config.loopLedgerUrl}/loops`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          domain: EntropyDomain.THERMODYNAMIC,
-          claimId,
-          parentLoopIds: [],
-        }),
-      });
+    const packed = packageClaim({
+      face: 'homeflow',
+      class: 'home.automation.thermo',
+      instrumentDeltaS: reduction.deltaS,
+    });
 
-      if (loopResponse.ok) {
-        const loopData = await loopResponse.json() as Record<string, unknown>;
-        console.log(`[homeflow:claims] Loop opened: ${loopData.id ?? loopId}`);
-      }
-    } catch (err) {
-      console.warn('[homeflow:claims] Failed to open loop in Loop Ledger (service may be offline):', err);
-    }
-
-    // 2. Submit claim to Epistemology Engine
-    try {
-      const claimResponse = await fetch(`${this.config.epistemologyUrl}/claims`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          loopId,
-          statement,
-          domain: EntropyDomain.THERMODYNAMIC,
-          submitterId: validatorId,
-          initialPrior: Math.min(0.9, 0.5 + reduction.confidence * 0.4),
-        }),
-      });
-
-      if (claimResponse.ok) {
-        const claimData = await claimResponse.json() as Record<string, unknown>;
-        console.log(`[homeflow:claims] Claim submitted to Epistemology Engine`);
-      }
-    } catch (err) {
-      console.warn('[homeflow:claims] Failed to submit claim to Epistemology Engine (service may be offline):', err);
-    }
+    // SignalFlow packages the claim. HomeFlow does not talk to the book.
 
     // 3. Local tracking
     await this.db.query(
       `INSERT INTO hf_claims (id, household_id, loop_id, claim_id, delta_s, statement, status)
        VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [uuidv4(), reduction.householdId, loopId, claimId, reduction.deltaS, statement, 'submitted'],
+      [uuidv4(), reduction.householdId, loopId, claimId, packed.proposedDeltaS, statement, 'submitted'],
     );
 
     // 4. Update the entropy reduction with loop reference

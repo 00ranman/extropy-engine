@@ -14,14 +14,14 @@ COPY tsconfig.json ./
 
 # Copy packages
 COPY packages/contracts ./packages/contracts
-COPY packages/grantflow-discovery ./packages/grantflow-discovery
+COPY overlays/grantflow-discovery ./overlays/grantflow-discovery
 
 # Install dependencies
 RUN npm install --workspaces --if-present
 
 # Build contracts first, then the service
 RUN npm run build --workspace=packages/contracts
-RUN npm run build --workspace=packages/grantflow-discovery
+RUN npm run build --workspace=overlays/grantflow-discovery
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 2: Runtime
@@ -35,11 +35,11 @@ ENV NODE_ENV=production
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/contracts/dist ./packages/contracts/dist
 COPY --from=builder /app/packages/contracts/package.json ./packages/contracts/package.json
-COPY --from=builder /app/packages/grantflow-discovery/dist ./packages/grantflow-discovery/dist
-COPY --from=builder /app/packages/grantflow-discovery/package.json ./packages/grantflow-discovery/package.json
-COPY --from=builder /app/packages/grantflow-discovery/migrations ./packages/grantflow-discovery/migrations
+COPY --from=builder /app/overlays/grantflow-discovery/dist ./overlays/grantflow-discovery/dist
+COPY --from=builder /app/overlays/grantflow-discovery/package.json ./overlays/grantflow-discovery/package.json
+COPY --from=builder /app/overlays/grantflow-discovery/migrations ./overlays/grantflow-discovery/migrations
 
-WORKDIR /app/packages/grantflow-discovery
+WORKDIR /app/overlays/grantflow-discovery
 
 EXPOSE 4020
 

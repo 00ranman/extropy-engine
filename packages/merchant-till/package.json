@@ -1,0 +1,23 @@
+{
+  "name": "@extropy/merchant-till",
+  "version": "0.1.0",
+  "description": "Merchant till face. Cash still rings. EP dies in the sale.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "demo": "node till.mjs",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@extropy/signalflow": "*",
+    "@extropy/xp-formula": "*",
+    "express": "^4.19.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

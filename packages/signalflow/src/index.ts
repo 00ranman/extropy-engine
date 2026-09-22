@@ -1,8 +1,7 @@
 /**
  * SignalFlow Orchestrator — Service Entrypoint
  *
- * Routes validation tasks to human and AI validators based on
- * complexity scores, manages task queues, and tracks completion.
+ * Packages claims. Routes LOOK slices. Does not mint. There is no consensus engine.
  */
 
 import express, { Request, Response, NextFunction } from 'express';
@@ -11,6 +10,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import Redis from 'ioredis';
 import { applyBaseSecurity, sanitizedErrorHandler } from '@extropy/contracts';
+import { packageClaim, closeLoop } from './lib.js';
 
 // Dashboard origins allowed to open a socket.io connection. Comma-separated.
 // Falls back to localhost in non-production; required in production.
@@ -26,7 +26,7 @@ if (process.env.NODE_ENV === 'production' && DASHBOARD_ORIGINS.length === 0) {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type TaskStatus = 'pending' | 'assigned' | 'in_progress' | 'completed' | 'failed' | 'expired';
-type ValidatorType = 'human' | 'ai' | 'consensus';
+type ValidatorType = 'looker' | 'ai';
 type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 
 interface ValidationTask {
@@ -54,9 +54,8 @@ interface TaskResult {
 }
 
 interface RoutingConfig {
-  humanThreshold: number;  // complexity >= this → human validator
-  aiThreshold: number;     // complexity < this → AI validator
-  consensusThreshold: number; // for high-stakes claims
+  lookerThreshold: number;
+  aiThreshold: number;
 }
 
 // ─── Configuration ────────────────────────────────────────────────────────────
@@ -67,9 +66,8 @@ const TASK_TTL = parseInt(process.env.TASK_TTL || '86400'); // 24 hours
 const TASK_EXPIRY_MS = parseInt(process.env.TASK_EXPIRY_MS || '3600000'); // 1 hour
 
 const routingConfig: RoutingConfig = {
-  humanThreshold: parseFloat(process.env.HUMAN_THRESHOLD || '0.7'),
+  lookerThreshold: parseFloat(process.env.LOOKER_THRESHOLD || '0.7'),
   aiThreshold: parseFloat(process.env.AI_THRESHOLD || '0.3'),
-  consensusThreshold: parseFloat(process.env.CONSENSUS_THRESHOLD || '0.9'),
 };
 
 // ─── Infrastructure ───────────────────────────────────────────────────────────
@@ -86,8 +84,7 @@ applyBaseSecurity(app);
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function routeToValidator(complexityScore: number): ValidatorType {
-  if (complexityScore >= routingConfig.consensusThreshold) return 'consensus';
-  if (complexityScore >= routingConfig.humanThreshold) return 'human';
+  if (complexityScore >= routingConfig.lookerThreshold) return 'looker';
   return 'ai';
 }
 
@@ -122,6 +119,22 @@ app.get('/health', (_req: Request, res: Response) => {
       redis: redis.status,
     },
   });
+});
+
+app.post('/claims/package', (req: Request, res: Response) => {
+  const { face, class: actionClass, evidenceRoot, instrumentDeltaS } = req.body ?? {};
+  if (!face || !actionClass) {
+    return res.status(400).json({ error: 'MISSING_FIELDS', message: 'face and class are required' });
+  }
+  res.json(packageClaim({ face, class: actionClass, evidenceRoot, instrumentDeltaS }));
+});
+
+app.post('/claims/close', (req: Request, res: Response) => {
+  const { claim, bothSigned, deltaTSeconds } = req.body ?? {};
+  if (!claim) {
+    return res.status(400).json({ error: 'MISSING_FIELDS', message: 'claim is required' });
+  }
+  res.json(closeLoop(claim, { bothSigned: !!bothSigned, deltaTSeconds: Number(deltaTSeconds) || 0 }));
 });
 
 // Create a new validation task
@@ -315,17 +328,15 @@ app.get('/tasks/:taskId/result', async (req: Request, res: Response, next: NextF
 // Queue depth metrics
 app.get('/metrics/queues', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const [humanDepth, aiDepth, consensusDepth] = await Promise.all([
-      redis.llen('queue:human'),
+    const [lookerDepth, aiDepth] = await Promise.all([
+      redis.llen('queue:looker'),
       redis.llen('queue:ai'),
-      redis.llen('queue:consensus'),
     ]);
 
     res.json({
-      human: humanDepth,
+      looker: lookerDepth,
       ai: aiDepth,
-      consensus: consensusDepth,
-      total: humanDepth + aiDepth + consensusDepth,
+      total: lookerDepth + aiDepth,
     });
   } catch (err) {
     next(err);
@@ -338,7 +349,7 @@ io.on('connection', (socket) => {
   console.log(`Validator connected: ${socket.id}`);
 
   socket.on('join:room', (room: string) => {
-    if (['human', 'ai', 'consensus'].includes(room)) {
+    if (['looker', 'ai'].includes(room)) {
       socket.join(room);
       console.log(`${socket.id} joined room: ${room}`);
     }

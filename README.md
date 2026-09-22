@@ -142,7 +142,7 @@ packages/
 ├── localflow/          # Person face. Errands.
 ├── homeflow/           # House face. Chores, rooms.
 ├── neighborhood-app/   # MESO board of HomeFlow
-├── two-till-demo/      # Merchant till. EP spark.
+├── merchant-till/      # Strip mall. EP spark dies in the sale.
 ├── validation-neighborhoods/ # Blind slices. Not a class.
 └── node-handshake/     # Signed hello
 ```

@@ -15,7 +15,7 @@ services:
   grantflow-discovery:
     build:
       context: .
-      dockerfile: packages/grantflow-discovery/Dockerfile
+      dockerfile: overlays/grantflow-discovery/Dockerfile
     ports:
       - "4020:4020"
     environment:
@@ -49,7 +49,7 @@ services:
   grantflow-proposer:
     build:
       context: .
-      dockerfile: packages/grantflow-proposer/Dockerfile
+      dockerfile: overlays/grantflow-proposer/Dockerfile
     ports:
       - "4021:4021"
     environment:

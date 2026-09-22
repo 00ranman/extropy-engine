@@ -204,23 +204,6 @@ services:
       redis:
         condition: service_healthy
 
-  token-economy:
-    build:
-      context: .
-      dockerfile: packages/token-economy/Dockerfile
-    ports:
-      - "4012:4012"
-    environment:
-      PORT: 4012
-      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=economy
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      XP_MINT_URL: http://xp-mint:4005
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
   credentials:
     build:
       context: .
@@ -238,22 +221,6 @@ services:
       redis:
         condition: service_healthy
 
-  ecosystem:
-    build:
-      context: .
-      dockerfile: packages/ecosystem/Dockerfile
-    ports:
-      - "4014:4014"
-    environment:
-      PORT: 4014
-      DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=ecosystem
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
   homeflow:
     build:
       context: .
@@ -264,28 +231,78 @@ services:
       PORT: 4015
       DATABASE_URL: postgresql://${POSTGRES_USER:-extropy}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-extropy_engine}?schema=homeflow
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-      EPISTEMOLOGY_URL: http://epistemology-engine:4001
       SIGNALFLOW_URL: http://signalflow:4002
-      LOOP_LEDGER_URL: http://loop-ledger:4003
-      REPUTATION_URL: http://reputation:4004
-      XP_MINT_URL: http://xp-mint:4005
-      DAG_SUBSTRATE_URL: http://dag-substrate:4008
-      DFAO_REGISTRY_URL: http://dfao-registry:4009
-      GOVERNANCE_URL: http://governance:4010
-      TEMPORAL_URL: http://temporal:4011
-      TOKEN_ECONOMY_URL: http://token-economy:4012
-      CREDENTIALS_URL: http://credentials:4013
-      ECOSYSTEM_URL: http://ecosystem:4014
     depends_on:
+      signalflow:
+        condition: service_started
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
 
+  localflow:
+    build:
+      context: .
+      dockerfile: packages/localflow/Dockerfile
+    ports:
+      - "4030:4030"
+    environment:
+      PORT: 4030
+      SIGNALFLOW_URL: http://signalflow:4002
+    depends_on:
+      signalflow:
+        condition: service_started
+
+  quest-market:
+    build:
+      context: .
+      dockerfile: packages/quest-market/Dockerfile
+    ports:
+      - "4103:4103"
+    environment:
+      PORT: 4103
+      SIGNALFLOW_URL: http://signalflow:4002
+    depends_on:
+      signalflow:
+        condition: service_started
+
+  merchant-till:
+    build:
+      context: .
+      dockerfile: packages/merchant-till/Dockerfile
+    ports:
+      - "4031:4031"
+    environment:
+      PORT: 4031
+      SIGNALFLOW_URL: http://signalflow:4002
+    depends_on:
+      signalflow:
+        condition: service_started
+
   # grantflow-* is personal grants.gov tooling, not a face.
   # Overlay: docker compose -f docker-compose.yml -f docker-compose.grantflow.yml up
 
-  # ───────── v3.1 sandbox services ─────────
+  # ───────── leftover wallet / sandbox ─────────
+  token-economy:
+    build:
+      context: .
+      dockerfile: packages/token-economy/Dockerfile
+    ports:
+      - "4012:4012"
+    environment:
+      PORT: 4012
+    profiles: ["leftover"]
+
+  ecosystem:
+    build:
+      context: .
+      dockerfile: packages/ecosystem/Dockerfile
+    ports:
+      - "4014:4014"
+    environment:
+      PORT: 4014
+    profiles: ["leftover"]
+
   identity:
     build:
       context: .
@@ -306,16 +323,6 @@ services:
       PORT: 4102
     profiles: ["v3.1", "sandbox"]
 
-  quest-market:
-    build:
-      context: .
-      dockerfile: packages/quest-market/Dockerfile
-    ports:
-      - "4103:4103"
-    environment:
-      PORT: 4103
-    profiles: ["v3.1", "sandbox"]
-
   validation-neighborhoods:
     build:
       context: .
@@ -324,7 +331,9 @@ services:
       - "4104:4104"
     environment:
       PORT: 4104
-    profiles: ["v3.1", "sandbox"]
+    depends_on:
+      signalflow:
+        condition: service_started
 
   node-handshake:
     build:

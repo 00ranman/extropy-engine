@@ -24,6 +24,7 @@ import {
   ServiceName,
   CAUSAL_CLOSURE_SPEEDS,
 } from '@extropy/contracts';
+import { computeXP, computeTimestampDecay } from '@extropy/xp-formula';
 import type {
   XPMintEvent,
   MintEventId,
@@ -87,13 +88,18 @@ const bus = new EventBus(redis, pool, SERVICE);
 
 function calculateXP(inputs: XPFormulaInputs): number {
   const { rarity, frequencyOfDecay, deltaS, domainWeight, essentiality, settlementTimeSeconds } = inputs;
-  if (deltaS <= 0) return 0;
-  if (rarity <= 0 || frequencyOfDecay <= 0 || domainWeight <= 0 || essentiality <= 0) return 0;
-  if (settlementTimeSeconds <= 0) return 0;
-  const settlementFactor = Math.log(1 / settlementTimeSeconds);
-  if (settlementFactor <= 0) return 0;
-  const xp = rarity * frequencyOfDecay * deltaS * (domainWeight * essentiality) * settlementFactor;
-  return Math.max(0, xp);
+  const Ts = settlementTimeSeconds > 1
+    ? computeTimestampDecay(settlementTimeSeconds)
+    : settlementTimeSeconds;
+  const result = computeXP({
+    R: rarity,
+    F: frequencyOfDecay,
+    deltaS,
+    w: [domainWeight],
+    E: [essentiality],
+    Ts,
+  });
+  return result.valid ? result.xp : 0;
 }
 
 function calculateIrreducibleXP(inputs: IrreducibleXPInputs): number {

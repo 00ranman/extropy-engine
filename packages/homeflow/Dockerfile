@@ -11,23 +11,35 @@ COPY .npmrc tsconfig.base.json ./
 
 # Manifests for the slice we need to build
 COPY packages/contracts/package.json packages/contracts/
+COPY packages/xp-formula/package.json packages/xp-formula/
+COPY packages/validation-neighborhoods/package.json packages/validation-neighborhoods/
+COPY packages/signalflow/package.json packages/signalflow/
 COPY packages/identity/package.json  packages/identity/
 COPY packages/homeflow/package.json  packages/homeflow/
 
 # Install only deps for contracts + identity + homeflow (and their transitives)
 RUN pnpm install --frozen-lockfile \
       --filter ./packages/contracts... \
+      --filter ./packages/xp-formula... \
+      --filter ./packages/validation-neighborhoods... \
+      --filter ./packages/signalflow... \
       --filter ./packages/identity... \
       --filter ./packages/homeflow...
 
 # Source
 COPY packages/contracts/ packages/contracts/
+COPY packages/xp-formula/ packages/xp-formula/
+COPY packages/validation-neighborhoods/ packages/validation-neighborhoods/
+COPY packages/signalflow/ packages/signalflow/
 COPY packages/identity/  packages/identity/
 COPY packages/homeflow/  packages/homeflow/
 COPY frontends/homeflow-ui/ frontends/homeflow-ui/
 
 # Build contracts and identity first (shared deps), then homeflow
 RUN pnpm --filter ./packages/contracts run build \
+ && pnpm --filter ./packages/xp-formula run build \
+ && pnpm --filter ./packages/validation-neighborhoods run build \
+ && pnpm --filter ./packages/signalflow run build \
  && pnpm --filter ./packages/identity  run build \
  && pnpm --filter ./packages/homeflow  run build
 

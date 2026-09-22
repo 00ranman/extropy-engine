@@ -16,6 +16,7 @@
  */
 
 import express, { Request, Response } from 'express';
+import { packageClaim } from '@extropy/signalflow';
 
 const PORT = Number(process.env.PORT ?? 4103);
 const SERVICE_NAME = '@extropy/quest-market';
@@ -46,8 +47,13 @@ export function rewardMultiplier(daysOpen: number): number {
   return Math.min(cap, 3.0 + (cap - 3.0) * ramp);
 }
 
-app.post('/quests', (_req: Request, res: Response) => {
-  res.status(501).json({ error: 'not implemented', spec: 'docs/QUEST_MARKET.md §lifecycle' });
+app.post('/quests', (req: Request, res: Response) => {
+  const packed = packageClaim({
+    face: 'quest-market',
+    class: 'quest.micro',
+    instrumentDeltaS: typeof req.body?.deltaS === 'number' ? req.body.deltaS : undefined,
+  });
+  res.status(201).json({ quest: packed, grain: '2-5 min' });
 });
 
 app.get('/quests', (_req: Request, res: Response) => {

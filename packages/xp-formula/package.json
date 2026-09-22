@@ -4,6 +4,13 @@
   "description": "Canonical XP = R \u00d7 F \u00d7 \u0394S \u00d7 (w \u00b7 E) \u00d7 log(1/T\u209b) formula \u2014 single source of truth for xp-mint and xp-dag-mesh",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc"
   },
