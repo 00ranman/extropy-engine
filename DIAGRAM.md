@@ -22,7 +22,9 @@ Grounding: [extropyengine.com](https://extropyengine.com) · Codex v2.1 · Meter
 | Face | Role |
 |---|---|
 | **HomeFlow** | Household / neighborhood loops |
-| **LocalFlow** | Strip-mall / merchant overlay (cash clears; protocol beside it) |
+| **LocalFlow** | Person / errands — rides, groceries, the car you don’t have |
+| **Quest market** | 2–5 minute grain |
+| **Merchant till** | Strip mall. Cash still rings. EP dies in the sale |
 
 Same loop on every face: **post → do → confirm**.
 
@@ -32,12 +34,18 @@ Same loop on every face: **post → do → confirm**.
 flowchart TB
   NODE[Your node mints DID] --> HF
   NODE --> LF
+  NODE --> QM
+  NODE --> TILL
   subgraph FACES[Faces — post / do / confirm]
-    HF[HomeFlow]
-    LF[LocalFlow]
+    HF[HomeFlow — house]
+    LF[LocalFlow — errands]
+    QM[Quest market]
+    TILL[Merchant till]
   end
   HF --> SF
   LF --> SF
+  QM --> SF
+  TILL --> SF
   SF[SignalFlow packages claim + routes]
   SF --> VERIFY[Both-edges neighborhood]
   VERIFY -->|quorum| CLOSE[loop.closed]
@@ -57,21 +65,19 @@ flowchart TB
   L --> EP
   CT --> IT
   CAT --> IT
-  EP --> LEAK[Leak / re-verify]
-  IT --> LEAK
-  LEAK --> SF
+  EP --> TILL
   DAG[DAG ledger] -.-> CLOSE
   VN[Validation neighborhood] -.-> VERIFY
 ```
 
 ## Do not
 
-- Do not center or multiply GrantFlow / grants / academia / papers.
+- Do not inventory `packages/`. A folder is not a face.
 - Do not draw Google Auth, OAuth, KYC, or a customer registry as identity.
-- Do not treat HomeFlow or LocalFlow as separate protocols — they are faces on SignalFlow.
+- Do not treat faces as separate protocols — they sit on SignalFlow.
 - Do not mint DT.
 - Do not draw EP or IT as wallet piles.
 
 ## Full-board checklist (complete system)
 
-A complete board includes all of: node DID · HomeFlow · LocalFlow · SignalFlow · post/do/confirm · both-edges verify · fail-closed · XP mint formula · CT · L · EP · CAT · IT · temporal leak · DAG ledger · validation neighborhood · PSLL. If GrantFlow appears at all, it is one tiny footnote — prefer absent.
+A complete board includes all of: node DID · LocalFlow · HomeFlow · quest market · merchant till · SignalFlow · post/do/confirm · both-edges verify · fail-closed · XP mint formula · CT · L · EP · CAT · IT · temporal leak · DAG ledger · validation neighborhood · PSLL.

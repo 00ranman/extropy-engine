@@ -4,7 +4,6 @@
 > **Center:** meters CT · EP · L · CAT · IT (+ XP mint).
 > **Identity:** DID minted by **your own node** at install. No Google Auth. No KYC. No central customer registry.
 > **Faces (same loop):** LocalFlow (person / errands) · HomeFlow (house / neighborhood) · quest market · merchant till (strip mall / EP). Same product everywhere: post → do → confirm.
-> **Not the product:** grantflow-* is a personal grants.gov door — one footnote, never center, never multiple boxes.
 
 Canon: Codex v2.1 · formula canonical-v3.12 · [extropyengine.com](https://extropyengine.com) · `packages/xp-formula` · `@extropy/meters`.
 
@@ -87,7 +86,7 @@ flowchart TB
 | Layer | What lives here | What does not |
 |---|---|---|
 | **Faces** | LocalFlow, HomeFlow, quest market, merchant till — UX for the same loop | Separate “apps” that invent their own mint |
-| **Spine** | SignalFlow — claim package + validator routing | Grant proposers as protocol core |
+| **Spine** | SignalFlow — claim package + routing | A second app that invents mint |
 | **Meters** | CT, EP, L, CAT, IT, XP | Bags / cash-out / DT mint |
 | **Substrate** | DAG ledger, validation neighborhoods, PSLL, temporal leak | Central customer DB |
 | **Identity** | Node-minted DID | Google / Apple / KYC / registry |
@@ -123,5 +122,5 @@ SignalFlow packages the claim and routes validation (domain × standing × load 
 3. Show **LocalFlow**, **HomeFlow**, **quest market**, and **merchant till** as faces — equal weight, thin edges into SignalFlow.
 4. Show **node → DID** as identity.
 5. Fail-closed path must be visible.
-6. **Grantflow:** one optional door on the same pipeline, or omit. Never two boxes. Never the top of the chart.
+6. Draw **only** the four faces. Do not inventory `packages/`.
 7. **Do not** mint DT. Do not draw EP/IT as wallet piles.

@@ -1,7 +1,7 @@
 # Architecture — faces, one router, one book
 
 If a diagram bot is reading this: **ingest this file, not the package folder list.**
-Folder count is not architecture. `grantflow-*` is two folders. That does not make it two faces.
+Folder count is not architecture. Draw only the four faces below.
 
 Public letters: https://extropyengine.com/key
 Meter math: https://extropyengine.com/docs/METER-MATH.md
@@ -50,15 +50,9 @@ XP and CT leak. CAT is a skill **record** (feeds β this ticket). DT is leftover
 
 Vertex split (spec §12): public **class strip** (class, mapper, ΔS, buckets, hashes) so like-cases can exist. Identity is a ZKP yes/no. Payload bytes stay sealed. Looking at WHO or bytes writes a LOOK.
 
-## Grants — one door, not a face
-
-`packages/grantflow-discovery` and `packages/grantflow-proposer` are a **personal grants.gov scrape** on this loop. Same SignalFlow. Same close. Not a product. Not a second pipeline. Not two boxes at the top of a diagram.
-
-Do not boot them with the kernel. Overlay: `docker compose -f docker-compose.yml -f docker-compose.grantflow.yml up`
-
-`academia-bridge` is paper receipts into the same book. Also not a face.
-
 ## Diagram
+
+Draw **only** these faces. Do not inventory `packages/`.
 
 ```mermaid
 flowchart TB
@@ -109,18 +103,15 @@ flowchart TB
   L --> EP
   EP --> TILL
   CT --> IT
-
-  DOOR["Optional door: grants.gov scrape\nsame pipeline — not a face"]
-  DOOR -.-> SF
 ```
 
 ## What a package-map bot will get wrong
 
-- Two grantflow folders → two product boxes. Wrong.
+- Inventorying `packages/` as the product. Wrong. Faces are the four above.
 - No merchantflow folder → till vanishes. Wrong. The till is `sparkTill`.
 - L / EP / IT as services. Wrong. They are functions in `xp-formula`.
 - Leak “reopens the loop.” Wrong. Leak eats idle standing. Close is what mints.
-- HomeFlow as an optional edge next to grants. Wrong. HomeFlow is a face.
+- HomeFlow as an optional edge. Wrong. HomeFlow is a face.
 
 ## Letter order if copy fights
 

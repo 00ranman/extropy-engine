@@ -1,16 +1,28 @@
 %%{init: {"theme": "neutral"}}%%
 flowchart TB
-  subgraph CORE["Meter core"]
-    XP["XP meter<br/>computeXP"]
-    CT["CT_W meter<br/>leakCT"]
-    L["L this ticket<br/>computeL"]
-    EP["EP till spark<br/>sparkTill · burns"]
-    CAT["CAT record<br/>feeds β"]
-    IT["IT proposal<br/>sparkVote · burns"]
+  subgraph FACES["Faces — post / do / confirm"]
+    LF["LocalFlow — person / errands"]
+    HF["HomeFlow — house / neighborhood"]
+    QM["Quest market"]
+    TILL["Merchant till — EP"]
   end
 
-  CLAIM[Claim / loop open] --> ROUTE[Signal route]
-  ROUTE --> VERIFY[Both-edges neighborhood]
+  SF["SignalFlow — only router"]
+
+  subgraph CORE["Meter core"]
+    XP["XP meter"]
+    CT["CT_W meter"]
+    L["L this ticket"]
+    EP["EP till spark"]
+    CAT["CAT record"]
+    IT["IT this proposal"]
+  end
+
+  LF --> SF
+  HF --> SF
+  QM --> SF
+  TILL --> SF
+  SF --> VERIFY[Both-edges]
   VERIFY -->|quorum| CLOSE[loop.closed]
   VERIFY -->|fail closed| NOMINT[No mint]
   CLOSE --> XP
@@ -20,13 +32,4 @@ flowchart TB
   L --> EP
   CT --> IT
   CAT --> IT
-  EP --> TEMP[Temporal leak / re-verify]
-  IT --> TEMP
-  TEMP --> CLAIM
-
-  subgraph EDGES["Product edges only"]
-    HF[HomeFlow]
-    GF[GrantFlow]
-  end
-  HF --> CLAIM
-  GF --> CLAIM
+  EP --> TILL

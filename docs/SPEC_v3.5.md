@@ -686,7 +686,7 @@ Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is 
 
 ### 20.3 Faces that are not the kernel
 
-GrantFlow (discovery + proposer), neighborhood-app, character-sheet sketch. Collapsing the Engine into LocalFlow + SignalFlow is a reading error. Those are two packages. The book is xp-formula / xp-mint / loop-ledger / dag-substrate.
+LocalFlow, HomeFlow, quest market, merchant till. Neighborhood-app is the MESO board of HomeFlow. Collapsing the Engine into LocalFlow + SignalFlow is a reading error. Those are two packages. The book is xp-formula / xp-mint / loop-ledger / dag-substrate.
 
 `packages/levelup-academy` is held, not a school product. CAT + issuer is the overlay. See [`docs/ARCHIVED.md`](./ARCHIVED.md) and [`docs/CAT-LANES.md`](./CAT-LANES.md).
 

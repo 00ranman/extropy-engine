@@ -2,7 +2,7 @@
 
 **Status:** Canonical product architecture (meter-first)  
 **Authority:** `docs/SPEC_v3.5.md` → `packages/xp-formula` → this doc  
-**Faces:** LocalFlow (person), HomeFlow (house), quest market, merchant till sit on **SignalFlow**. Meters are the center. grantflow-* is a personal door — one footnote, not architecture.
+**Faces:** LocalFlow (person), HomeFlow (house), quest market, merchant till sit on **SignalFlow**. Meters are the center.
 
 ## Center of gravity
 
@@ -51,7 +51,7 @@ Fails closed: no quorum / reject / missing counterparty signature → **no XP mi
 
 **SignalFlow** packages every claim and routes validation. Same loop on every face: post → do → confirm.
 
-grantflow-* is a personal grants.gov door on this loop. Not a face. Overlay compose only.
+HomeFlow identity is node DID — not Google OAuth.
 
 ## Package map (meter-first)
 

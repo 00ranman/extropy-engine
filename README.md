@@ -90,7 +90,7 @@ The split exists so standing cannot buy votes and a skill stamp cannot print XP.
 
 Canonical map: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/architecture/METER_CORE.md`](docs/architecture/METER_CORE.md) · diagram rules: [`docs/architecture/DIAGRAM_RULES.md`](docs/architecture/DIAGRAM_RULES.md)
 
-**Faces:** LocalFlow (person / errands) · HomeFlow (house / neighborhood) · quest market (2–5 min) · merchant till (strip mall / EP spark). **Spine:** SignalFlow — the only router. **Not a face:** grantflow-* is a personal grants.gov door on this loop. Overlay compose only. Do not draw it as two boxes. HomeFlow is a face, not an optional edge.
+**Faces:** LocalFlow (person / errands) · HomeFlow (house / neighborhood) · quest market (2–5 min) · merchant till (strip mall / EP spark). **Spine:** SignalFlow — the only router. HomeFlow is a face, not an optional edge.
 
 ```
 packages/
@@ -130,11 +130,9 @@ packages/
 
 Facade: `packages/meters` (`@extropy/meters`) over `packages/xp-formula` if present. Faces must not own mint math.
 
-`packages/grantflow-discovery` and `packages/grantflow-proposer` stay in the tree as personal tooling. They are not faces. Overlay compose: `docker-compose.grantflow.yml`.
-
 **Web3 as promised** lives in [`packages/mesh`](packages/mesh). Two boxes, signed loops, no bag. `node packages/mesh/demo.mjs`. Writeup: [`docs/WEB3.md`](docs/WEB3.md).
 
-Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is the meters and the loop, not a grant org chart. Skeletons stay skeletons until a door ships.
+Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is the meters and the loop. Skeletons stay skeletons until a door ships.
 
 
 ---
