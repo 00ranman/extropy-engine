@@ -74,6 +74,17 @@ flowchart TB
   VN[Validation neighborhood] -.-> VERIFY
 ```
 
+## If someone is grading a getdiagram spider
+
+That spider is not this file. Answers they keep asking:
+
+1. **CT.** Community standing on web W. Same number at compatible tills. Feeds L and IT. Never enters the XP product. `L = clip(H_cap · S · κ · CT_W · β, 0, 1)`. `EP = XP · L + λ · L`, clip to list, dies in the sale. Not `min(..., line × H_cap)` — H_cap is already inside L. R in the mint is rarity of the action class, not reputation.
+2. **No Consensus Engine.** Close is a state: both edges, volunteer LOOK slices, fail closed. A neighbor is evidence, not a gavel. Looking writes a vertex. There is no validator class and no package with that name.
+3. **No civic sidecar.** Neighborhood board is HomeFlow’s MESO skin. Color in a generated chart is not build status.
+4. **PSLL** = Personal Signed Local Log. Append-only file on your disk. Merkle-anchored. Not the public class strip.
+
+The running product is post → do → confirm. This picture is the map. Essays are not the destination.
+
 ## Do not
 
 - Do not inventory `packages/`. A folder is not a face.

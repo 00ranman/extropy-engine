@@ -34,7 +34,7 @@ Code: `packages/xp-formula` — `computeXP`, `computeL`, `computeEP`, `computeIT
 ## Closed loop (happy path)
 
 ```
-face → SignalFlow packages claim → both-edges verify → consensus close
+face → SignalFlow packages claim → both-edges verify → loop.closed
   → mint XP → credit CT → spark EP (via L) → CAT→β → spark IT (gov) → temporal leak
 ```
 
