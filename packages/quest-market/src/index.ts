@@ -16,7 +16,7 @@
  */
 
 import express, { Request, Response } from 'express';
-import { packageClaim } from '@extropy/signalflow';
+import { packageClaim, closeLoop } from '@extropy/signalflow';
 
 const PORT = Number(process.env.PORT ?? 4103);
 const SERVICE_NAME = '@extropy/quest-market';
@@ -64,8 +64,17 @@ app.post('/quests/:id/accept', (_req: Request, res: Response) => {
   res.status(501).json({ error: 'not implemented' });
 });
 
-app.post('/quests/:id/complete', (_req: Request, res: Response) => {
-  res.status(501).json({ error: 'not implemented' });
+app.post('/quests/:id/complete', (req: Request, res: Response) => {
+  const packed = packageClaim({
+    face: 'quest-market',
+    class: 'quest.micro',
+    instrumentDeltaS: typeof req.body?.deltaS === 'number' ? req.body.deltaS : undefined,
+  });
+  const closed = closeLoop(packed, {
+    bothSigned: req.body?.bothSigned !== false,
+    deltaTSeconds: Number(req.body?.deltaTSeconds) || 180,
+  });
+  res.json({ questId: req.params.id, ...closed });
 });
 
 app.get('/escalation/:days', (req: Request, res: Response) => {

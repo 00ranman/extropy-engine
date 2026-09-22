@@ -26,7 +26,7 @@ if (process.env.NODE_ENV === 'production' && DASHBOARD_ORIGINS.length === 0) {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type TaskStatus = 'pending' | 'assigned' | 'in_progress' | 'completed' | 'failed' | 'expired';
-type ValidatorType = 'looker' | 'ai';
+type LookKind = 'looker' | 'ai';
 type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 
 interface ValidationTask {
@@ -34,7 +34,7 @@ interface ValidationTask {
   subClaimId: string;
   claimId: string;
   text: string;
-  validatorType: ValidatorType;
+  lookKind: LookKind;
   priority: TaskPriority;
   status: TaskStatus;
   assignedTo?: string;
@@ -46,7 +46,7 @@ interface ValidationTask {
 
 interface TaskResult {
   taskId: string;
-  validatorId: string;
+  lookerId: string;
   verdict: 'true' | 'false' | 'uncertain';
   confidence: number;
   evidence?: string;
@@ -83,7 +83,7 @@ applyBaseSecurity(app);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function routeToValidator(complexityScore: number): ValidatorType {
+function routeLook(complexityScore: number): LookKind {
   if (complexityScore >= routingConfig.lookerThreshold) return 'looker';
   return 'ai';
 }
@@ -91,7 +91,7 @@ function routeToValidator(complexityScore: number): ValidatorType {
 async function saveTask(task: ValidationTask): Promise<void> {
   await redis.setex(`task:${task.id}`, TASK_TTL, JSON.stringify(task));
   // Add to appropriate queue
-  await redis.lpush(`queue:${task.validatorType}`, task.id);
+  await redis.lpush(`queue:${task.lookKind}`, task.id);
 }
 
 async function getTask(taskId: string): Promise<ValidationTask | null> {
@@ -161,7 +161,7 @@ app.post('/tasks', async (req: Request, res: Response, next: NextFunction) => {
       subClaimId,
       claimId,
       text,
-      validatorType: routeToValidator(complexityScore),
+      lookKind: routeLook(complexityScore),
       priority: priority || 'medium',
       status: 'pending',
       complexityScore,
@@ -172,8 +172,8 @@ app.post('/tasks', async (req: Request, res: Response, next: NextFunction) => {
 
     await saveTask(task);
 
-    // Notify connected validators via WebSocket
-    io.to(task.validatorType).emit('task:new', task);
+    // Notify connected lookers via WebSocket
+    io.to(task.lookKind).emit('task:new', task);
 
     res.status(201).json(task);
   } catch (err) {
@@ -184,7 +184,7 @@ app.post('/tasks', async (req: Request, res: Response, next: NextFunction) => {
 // List tasks (optionally filter by status/type)
 app.get('/tasks', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { status, validatorType, limit = '20', offset = '0' } = req.query;
+    const { status, lookKind, limit = '20', offset = '0' } = req.query;
 
     // Scan Redis for tasks
     const keys = await redis.keys('task:*');
@@ -195,7 +195,7 @@ app.get('/tasks', async (req: Request, res: Response, next: NextFunction) => {
       if (data) {
         const task = JSON.parse(data) as ValidationTask;
         if (status && task.status !== status) continue;
-        if (validatorType && task.validatorType !== validatorType) continue;
+        if (lookKind && task.lookKind !== lookKind) continue;
         tasks.push(task);
       }
     }
@@ -230,12 +230,12 @@ app.get('/tasks/:taskId', async (req: Request, res: Response, next: NextFunction
   }
 });
 
-// Claim a task (validator picks it up)
+// Claim a look slice
 app.post('/tasks/:taskId/claim', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { validatorId } = req.body;
-    if (!validatorId) {
-      return res.status(400).json({ error: 'MISSING_FIELDS', message: 'validatorId is required' });
+    const { lookerId } = req.body;
+    if (!lookerId) {
+      return res.status(400).json({ error: 'MISSING_FIELDS', message: 'lookerId is required' });
     }
 
     const task = await getTask(req.params.taskId);
@@ -247,14 +247,14 @@ app.post('/tasks/:taskId/claim', async (req: Request, res: Response, next: NextF
     }
 
     task.status = 'assigned';
-    task.assignedTo = validatorId;
+    task.assignedTo = lookerId;
     task.updatedAt = nowISO();
     if (!task.deadline) {
       task.deadline = new Date(Date.now() + TASK_EXPIRY_MS).toISOString();
     }
 
     await updateTask(task);
-    io.to(task.validatorType).emit('task:claimed', { taskId: task.id, validatorId });
+    io.to(task.lookKind).emit('task:claimed', { taskId: task.id, lookerId });
 
     res.json(task);
   } catch (err) {
@@ -265,12 +265,12 @@ app.post('/tasks/:taskId/claim', async (req: Request, res: Response, next: NextF
 // Submit result for a task
 app.post('/tasks/:taskId/result', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { validatorId, verdict, confidence, evidence } = req.body;
+    const { lookerId, verdict, confidence, evidence } = req.body;
 
-    if (!validatorId || !verdict || confidence === undefined) {
+    if (!lookerId || !verdict || confidence === undefined) {
       return res.status(400).json({
         error: 'MISSING_FIELDS',
-        message: 'validatorId, verdict, and confidence are required',
+        message: 'lookerId, verdict, and confidence are required',
       });
     }
 
@@ -293,7 +293,7 @@ app.post('/tasks/:taskId/result', async (req: Request, res: Response, next: Next
 
     const result: TaskResult = {
       taskId: task.id,
-      validatorId,
+      lookerId,
       verdict,
       confidence,
       evidence,
@@ -346,7 +346,7 @@ app.get('/metrics/queues', async (_req: Request, res: Response, next: NextFuncti
 // ─── WebSocket ────────────────────────────────────────────────────────────────
 
 io.on('connection', (socket) => {
-  console.log(`Validator connected: ${socket.id}`);
+  console.log(`Looker connected: ${socket.id}`);
 
   socket.on('join:room', (room: string) => {
     if (['looker', 'ai'].includes(room)) {
@@ -356,7 +356,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`Validator disconnected: ${socket.id}`);
+    console.log(`Looker disconnected: ${socket.id}`);
   });
 });
 

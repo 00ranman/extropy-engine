@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { packageClaim, closeLoop } from './lib.js';
+import { packageClaim, closeLoop, ringTill } from './lib.js';
 
 describe('SignalFlow packager', () => {
   it('faces do not mint — packaging only', () => {
@@ -24,5 +24,21 @@ describe('SignalFlow packager', () => {
     const packed = packageClaim({ face: 'localflow', class: 'errand.ride' });
     const closed = closeLoop(packed, { bothSigned: true, deltaTSeconds: 180 });
     expect(closed.minted).toBe(true);
+  });
+
+  it('explicit deltaS 0 does not mint', () => {
+    const packed = packageClaim({ face: 'localflow', class: 'errand.ride', instrumentDeltaS: 0 });
+    expect(packed.proposedDeltaS).toBe(0);
+    expect(closeLoop(packed, { bothSigned: true, deltaTSeconds: 120 }).minted).toBe(false);
+  });
+
+  it('till sale does not mint XP — EP dies, cash rings', () => {
+    const sale = ringTill({
+      xpStanding: 10,
+      standing: { CT: 1, H_cap: 0.5, S: 1, listPrice: 20 },
+    });
+    expect(sale.strip.class).toBe('till.sale');
+    expect(sale.spark.burned).toBe(true);
+    expect(sale.cash).toBeGreaterThanOrEqual(0);
   });
 });

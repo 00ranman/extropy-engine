@@ -101,8 +101,7 @@ export class ClaimService {
   }
 
   /**
-   * Handle a validation task assigned by SignalFlow.
-   * HomeFlow validates entropy claims from other users' home automation.
+   * LOOK slice routed here. Volunteer work, not a validator class.
    */
   async handleValidationTask(
     taskId: string,

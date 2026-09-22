@@ -44,7 +44,7 @@ const CLASS_PRIORS: Record<string, number> = {
 };
 
 export function proposeDeltaS(actionClass: string, instrument?: number): number {
-  if (typeof instrument === 'number' && instrument > 0) return instrument;
+  if (typeof instrument === 'number') return instrument > 0 ? instrument : 0;
   return CLASS_PRIORS[actionClass] ?? 0.25;
 }
 
@@ -115,6 +115,22 @@ export function closeLoop(
 
 export function tillSpark(xp: number, standing: LocalStandingInputs): TillSparkResult {
   return sparkTill(xp, standing);
+}
+
+/** Sale at the till: record on the class strip, spark dies, cash rings the rest. Does not mint XP. */
+export function ringTill(input: {
+  xpStanding: number;
+  standing: LocalStandingInputs;
+  evidenceRoot?: string;
+}): { strip: ClassStrip; spark: TillSparkResult; cash: number } {
+  const packed = packageClaim({ face: 'merchant-till', class: 'till.sale', evidenceRoot: input.evidenceRoot });
+  const spark = tillSpark(input.xpStanding, input.standing);
+  const list = input.standing.listPrice ?? 0;
+  return {
+    strip: packed.strip,
+    spark,
+    cash: Math.max(0, list - spark.EP),
+  };
 }
 
 export { lookSlice };
