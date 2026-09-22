@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" role="img" aria-labelledby="title desc">
+  <title id="title">Extropy Engine — faces, SignalFlow, meters</title>
+  <desc id="desc">Four faces sit on SignalFlow. Close mints XP. EP dies in the sale. Same loop everywhere.</desc>
+  <rect width="1200" height="780" fill="#060606"/>
+  <text x="600" y="36" text-anchor="middle" fill="#ff5a1f" font-family="ui-sans-serif, system-ui, sans-serif" font-size="15" letter-spacing="3">EXTROPY ENGINE</text>
+  <text x="600" y="58" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">did:key on the box · post, do, confirm · one router</text>
+
+  <!-- Faces -->
+  <text x="40" y="92" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">FACES — SAME LOOP, DIFFERENT SEATS</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif">
+    <rect x="40" y="104" width="270" height="86" rx="10" fill="#140c08" stroke="#ff5a1f" stroke-width="1.5"/>
+    <text x="175" y="138" text-anchor="middle" fill="#f3ece1" font-size="16" font-weight="600">LocalFlow</text>
+    <text x="175" y="162" text-anchor="middle" fill="#d8ccb8" font-size="12">person · errands · rides</text>
+
+    <rect x="330" y="104" width="270" height="86" rx="10" fill="#140c08" stroke="#ff5a1f" stroke-width="1.5"/>
+    <text x="465" y="138" text-anchor="middle" fill="#f3ece1" font-size="16" font-weight="600">HomeFlow</text>
+    <text x="465" y="162" text-anchor="middle" fill="#d8ccb8" font-size="12">house · neighborhood</text>
+
+    <rect x="620" y="104" width="250" height="86" rx="10" fill="#140c08" stroke="#ff5a1f" stroke-width="1.5"/>
+    <text x="745" y="138" text-anchor="middle" fill="#f3ece1" font-size="16" font-weight="600">Quest market</text>
+    <text x="745" y="162" text-anchor="middle" fill="#d8ccb8" font-size="12">2–5 minute grain</text>
+
+    <rect x="890" y="104" width="270" height="86" rx="10" fill="#140c08" stroke="#ff5a1f" stroke-width="1.5"/>
+    <text x="1025" y="138" text-anchor="middle" fill="#f3ece1" font-size="16" font-weight="600">Merchant till</text>
+    <text x="1025" y="162" text-anchor="middle" fill="#d8ccb8" font-size="12">strip mall · EP dies here</text>
+  </g>
+
+  <path d="M175 190 L175 228 M465 190 L465 228 M745 190 L745 228 M1025 190 L1025 228" stroke="#ff5a1f" stroke-width="2" fill="none"/>
+
+  <!-- Spine -->
+  <rect x="40" y="228" width="1120" height="72" rx="12" fill="#ff5a1f"/>
+  <text x="600" y="258" text-anchor="middle" fill="#060606" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="700">SignalFlow</text>
+  <text x="600" y="282" text-anchor="middle" fill="#060606" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">the only router · assistant + PSLL + proposed ΔS · you do not score yourself</text>
+
+  <path d="M600 300 L600 338" stroke="#22d3ee" stroke-width="2"/>
+
+  <!-- Close -->
+  <g font-family="ui-sans-serif, system-ui, sans-serif">
+    <rect x="200" y="338" width="360" height="78" rx="10" fill="#140c08" stroke="#22d3ee" stroke-width="1.5"/>
+    <text x="380" y="370" text-anchor="middle" fill="#f3ece1" font-size="15" font-weight="600">LOOK · both edges agree</text>
+    <text x="380" y="394" text-anchor="middle" fill="#d8ccb8" font-size="12">no validator class · evidence on the DAG</text>
+
+    <rect x="640" y="338" width="360" height="78" rx="10" fill="#140c08" stroke="#7fffb0" stroke-width="1.5"/>
+    <text x="820" y="370" text-anchor="middle" fill="#7fffb0" font-size="15" font-weight="600">Close mints</text>
+    <text x="820" y="394" text-anchor="middle" fill="#d8ccb8" font-size="12">fail closed → XP = 0 · slam window</text>
+  </g>
+  <path d="M560 377 L640 377" stroke="#22d3ee" stroke-width="2" marker-end="url(#arr)"/>
+  <path d="M820 416 L820 454" stroke="#7fffb0" stroke-width="2"/>
+
+  <!-- XP -->
+  <rect x="200" y="454" width="800" height="70" rx="10" fill="#140c08" stroke="#7fffb0" stroke-width="1.5"/>
+  <text x="600" y="484" text-anchor="middle" fill="#7fffb0" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="700">XP = R × F × ΔS × (w · E) × log(1/Tₛ)</text>
+  <text x="600" y="508" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">instant close = 0 · leak 0.99ⁿ idle 10-day ticks · late burn has no expiry</text>
+
+  <path d="M600 524 L600 558" stroke="#a78bfa" stroke-width="2"/>
+
+  <!-- Meters -->
+  <text x="40" y="552" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">METERS — MATH, NOT BAGS</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">
+    <rect x="40" y="562" width="175" height="70" rx="8" fill="#140c08" stroke="#a78bfa"/>
+    <text x="127" y="592" text-anchor="middle" fill="#f3ece1" font-weight="600">CT_W</text>
+    <text x="127" y="614" text-anchor="middle" fill="#888888" font-size="11">community standing</text>
+
+    <rect x="230" y="562" width="175" height="70" rx="8" fill="#140c08" stroke="#a78bfa"/>
+    <text x="317" y="592" text-anchor="middle" fill="#f3ece1" font-weight="600">H_cap · S · β</text>
+    <text x="317" y="614" text-anchor="middle" fill="#888888" font-size="11">till · person · CAT</text>
+
+    <rect x="420" y="562" width="175" height="70" rx="8" fill="#140c08" stroke="#a78bfa"/>
+    <text x="507" y="592" text-anchor="middle" fill="#f3ece1" font-weight="600">L</text>
+    <text x="507" y="614" text-anchor="middle" fill="#888888" font-size="11">this ticket, clip 0–1</text>
+
+    <rect x="610" y="562" width="175" height="70" rx="8" fill="#140c08" stroke="#ff5a1f"/>
+    <text x="697" y="592" text-anchor="middle" fill="#ff5a1f" font-weight="600">EP spark</text>
+    <text x="697" y="614" text-anchor="middle" fill="#888888" font-size="11">born and burned</text>
+
+    <rect x="800" y="562" width="175" height="70" rx="8" fill="#140c08" stroke="#a78bfa"/>
+    <text x="887" y="592" text-anchor="middle" fill="#f3ece1" font-weight="600">IT</text>
+    <text x="887" y="614" text-anchor="middle" fill="#888888" font-size="11">this proposal, burns</text>
+
+    <rect x="985" y="562" width="175" height="70" rx="8" fill="#140c08" stroke="#a78bfa"/>
+    <text x="1072" y="592" text-anchor="middle" fill="#f3ece1" font-weight="600">CAT</text>
+    <text x="1072" y="614" text-anchor="middle" fill="#888888" font-size="11">skill record → β</text>
+  </g>
+
+  <path d="M697 632 L697 668 L1025 668 L1025 190" stroke="#ff5a1f" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/>
+  <text x="860" y="660" fill="#ff5a1f" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">EP dies at the till — not a wallet</text>
+
+  <text x="600" y="748" text-anchor="middle" fill="#555555" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">A folder is not a face. Draw this. Do not inventory packages/.</text>
+</svg>

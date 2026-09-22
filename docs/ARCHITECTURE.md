@@ -6,6 +6,9 @@ Folder count is not architecture. Draw only the four faces below.
 Public letters: https://extropyengine.com/key
 Meter math: https://extropyengine.com/docs/METER-MATH.md
 Spec: https://extropyengine.com/docs/SPEC_v3.5.md
+Picture: [`engine.svg`](architecture/engine.svg)
+
+![Extropy Engine](architecture/engine.svg)
 
 ## What this is
 
@@ -101,7 +104,6 @@ flowchart TB
   S --> L
   XP --> EP
   L --> EP
-  EP --> TILL
   CT --> IT
 ```
 

@@ -2,6 +2,10 @@
 
 **This file is the architecture diagram source.** Regenerators must follow it and `docs/architecture/DIAGRAM_RULES.md`.
 
+Locked picture: [`docs/architecture/engine.svg`](docs/architecture/engine.svg)
+
+![Extropy Engine](docs/architecture/engine.svg)
+
 Grounding: [extropyengine.com](https://extropyengine.com) · Codex v2.1 · Meter Core.
 
 ## Center (always draw)
@@ -65,7 +69,7 @@ flowchart TB
   L --> EP
   CT --> IT
   CAT --> IT
-  EP --> TILL
+  EP -.-> DIE[EP dies in the sale]
   DAG[DAG ledger] -.-> CLOSE
   VN[Validation neighborhood] -.-> VERIFY
 ```

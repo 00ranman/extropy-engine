@@ -9,7 +9,7 @@ Canon: Codex v2.1 · formula canonical-v3.12 · [extropyengine.com](https://extr
 
 Identity: [`docs/architecture/IDENTITY.md`](docs/architecture/IDENTITY.md)  
 Meters: [`docs/architecture/METER_CORE.md`](docs/architecture/METER_CORE.md)  
-Diagram source: [`DIAGRAM.md`](DIAGRAM.md) · rules: [`docs/architecture/DIAGRAM_RULES.md`](docs/architecture/DIAGRAM_RULES.md)
+Diagram source: [`DIAGRAM.md`](DIAGRAM.md) · picture: [`docs/architecture/engine.svg`](docs/architecture/engine.svg) · rules: [`docs/architecture/DIAGRAM_RULES.md`](docs/architecture/DIAGRAM_RULES.md)
 
 ## What the product is
 
@@ -67,9 +67,7 @@ flowchart TB
   L --> EP
   CT --> IT
   CAT --> IT
-  EP --> TEMP["Temporal leak / re-verify"]
-  IT --> TEMP
-  TEMP --> OPEN
+  EP -.-> DIE["EP dies in the sale"]
 
   subgraph SUBSTRATE["SUBSTRATE"]
     DAG["DAG / loop ledger"]
