@@ -1,5 +1,7 @@
 # Extropy Ecosystem — Repository Map
 
+**Not the product map.** Org folders, not faces. Architecture: [`DIAGRAM.md`](DIAGRAM.md). There is no MerchantFlow face. Neighborhood-app is HomeFlow’s MESO board.
+
 This document maps every repository in the 00ranman GitHub organization to its
 role in the Extropy Engine monorepo. Standalone repos are the original Python/Rust
 implementations; the deployed TypeScript packages live under `packages/`.

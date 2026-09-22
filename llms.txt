@@ -1,0 +1,43 @@
+# Extropy Engine — ingest this, then DIAGRAM.md
+
+Architecture for notebooks, getdiagram, and humans.
+
+**Ingest:** DIAGRAM.md · diagram.mmd · docs/architecture/engine.svg · this file.
+**Do not inventory `packages/`.** A folder is not a face.
+**If README and this file disagree on architecture, this file and DIAGRAM.md win.**
+
+Four faces, equal: LocalFlow (person/errands) · HomeFlow (house/neighborhood; neighborhood-app is its MESO board) · quest market (2–5 min) · merchant till (cash still rings, EP dies in the sale).
+Spine: SignalFlow — the only router. Assistant you trust + PSLL + public class-strip priors. Proposes ΔS. You do not type the mint. You do not score yourself.
+
+PSLL = Personal Signed Local Log. File on YOUR disk. Mesh gets receipts, not the diary.
+Identity: did:key on YOUR node. No Google. No KYC. No registrar.
+
+DAG vertex = three envelopes:
+  A public class strip (class, mapper, ΔS, U, buckets, hashes, state, opaque parents). SignalFlow scours A. No LOOK.
+  B ZKP (circuit, not a model): unique in this DFAO, signer bound to strip, confirmed this loop, band if asked, not slashed. DID off the row.
+  C sealed bytes. LOOK to read. No silent fetch.
+
+LOOK is a vertex. Volunteer slices 3–10 later. No validator class. No Consensus Engine package. A neighbor is evidence, not a gavel. Fail closed → XP = 0.
+
+XP = R × F × ΔS × (w·E) × log(1/Ts)
+  R = rarity of the ACTION CLASS, not reputation. Reputation never enters this product.
+  F = frequency-of-decay. Repeats pay less.
+  ΔS = bits-equivalent PROXY. Proposed, not typed.
+  w·E = eight-domain weights · this loop.
+  Ts = slam window. Instant close mints 0.
+
+L  = clip(H_cap · S · κ · CT_W · β, 0, 1)
+EP = XP · L + λ · L   (λ default 0.15, clip to list, dies in the sale)
+IT = clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1)  burns in the tally. Not XP·G. Not a pile.
+
+CT_W = community standing on web W. Same at compatible tills. Door does not own CT. Feeds L and IT. Never the XP product. Idle leak 0.99^n. Does not travel.
+H_cap Auto from 10-day signed cash. Training remainder 0.
+CAT record (DID, lane, level, issuer) feeds β. Off the mint.
+
+Clocks, do not mash: Ts slam · leak 0.99^n idle 10-day ticks on XP and CT · H window 10-day cash · late burn no expiry, no settle window.
+
+DFAO rooms NANO→PLANETARY. Votes stay in the room. Only PLANETARY hits the mesh.
+
+Do not draw: GrantFlow as a face · Consensus Engine · Token Economy bag · validator class · Google Auth · civic sidecar · EP/IT piles · DT bag · contributor hub bypassing SignalFlow · [index.ts] boxes.
+
+Authority: https://extropyengine.com/key > xp-formula > DEFAULTS > SPEC 3.5 > DIAGRAM.md

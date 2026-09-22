@@ -1,5 +1,7 @@
 # Extropy Engine — Dependency Graph & Data Flow
 
+**Not the product map.** Compose/build order only. Architecture: [`DIAGRAM.md`](DIAGRAM.md) · [`diagram.mmd`](diagram.mmd). Do not draw this file as faces.
+
 ## Build Order
 
 Services must be built in this order due to type and runtime dependencies:

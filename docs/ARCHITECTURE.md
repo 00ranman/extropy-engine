@@ -1,7 +1,6 @@
 # Architecture — faces, one router, one book
 
-If a diagram bot is reading this: **ingest this file, not the package folder list.**
-Folder count is not architecture. Draw only the four faces below.
+If a diagram bot is reading this: **ingest repo-root `DIAGRAM.md` and `diagram.mmd`.** Do not inventory `packages/`. A folder is not a face.
 
 Public letters: https://extropyengine.com/key
 Meter math: https://extropyengine.com/docs/METER-MATH.md

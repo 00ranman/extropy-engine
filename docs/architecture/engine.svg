@@ -1,95 +1,153 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 860" role="img" aria-labelledby="title desc">
-  <title id="title">Extropy Engine — faces, SignalFlow, meters</title>
-  <desc id="desc">Four faces sit on SignalFlow. LOOK is volunteer slices, not a priesthood. Close mints XP. CT feeds L. EP dies in the sale.</desc>
-  <rect width="1200" height="860" fill="#060606"/>
-  <text x="600" y="36" text-anchor="middle" fill="#ff5a1f" font-family="ui-sans-serif, system-ui, sans-serif" font-size="15" letter-spacing="3">EXTROPY ENGINE</text>
-  <text x="600" y="58" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">did:key on the box · post, do, confirm · one router</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1580" role="img" aria-labelledby="title desc">
+  <title id="title">Extropy Engine — Codex 3.0 map</title>
+  <desc id="desc">Four faces on SignalFlow. Vertex is class strip, ZKP, sealed. LOOK is a vertex. CT feeds L. EP dies in the sale. Notebook LM: reverse-engineer from this picture.</desc>
+  <rect width="1200" height="1580" fill="#060606"/>
+  <text x="600" y="32" text-anchor="middle" fill="#ff5a1f" font-family="ui-sans-serif, system-ui, sans-serif" font-size="16" letter-spacing="3">EXTROPY ENGINE — CODEX 3.0 MAP</text>
+  <text x="600" y="52" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">did:key on YOUR node · no Google · no KYC · post, do, confirm · one router</text>
 
-  <text x="40" y="92" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">FACES — SAME LOOP, DIFFERENT SEATS</text>
+  <text x="40" y="82" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">FACES — SAME LOOP, DIFFERENT SEATS</text>
   <g font-family="ui-sans-serif, system-ui, sans-serif">
-    <rect x="40" y="104" width="270" height="86" rx="10" fill="#140c08" stroke="#ff5a1f" stroke-width="1.5"/>
-    <text x="175" y="138" text-anchor="middle" fill="#f3ece1" font-size="16" font-weight="600">LocalFlow</text>
-    <text x="175" y="162" text-anchor="middle" fill="#d8ccb8" font-size="12">person · errands · rides</text>
-
-    <rect x="330" y="104" width="270" height="86" rx="10" fill="#140c08" stroke="#ff5a1f" stroke-width="1.5"/>
-    <text x="465" y="138" text-anchor="middle" fill="#f3ece1" font-size="16" font-weight="600">HomeFlow</text>
-    <text x="465" y="162" text-anchor="middle" fill="#d8ccb8" font-size="12">house · neighborhood board</text>
-
-    <rect x="620" y="104" width="250" height="86" rx="10" fill="#140c08" stroke="#ff5a1f" stroke-width="1.5"/>
-    <text x="745" y="138" text-anchor="middle" fill="#f3ece1" font-size="16" font-weight="600">Quest market</text>
-    <text x="745" y="162" text-anchor="middle" fill="#d8ccb8" font-size="12">2–5 minute grain</text>
-
-    <rect x="890" y="104" width="270" height="86" rx="10" fill="#140c08" stroke="#ff5a1f" stroke-width="1.5"/>
-    <text x="1025" y="138" text-anchor="middle" fill="#f3ece1" font-size="16" font-weight="600">Merchant till</text>
-    <text x="1025" y="162" text-anchor="middle" fill="#d8ccb8" font-size="12">strip mall · EP dies here</text>
+    <rect x="32" y="92" width="278" height="78" rx="10" fill="#140c08" stroke="#ff5a1f"/>
+    <text x="171" y="122" text-anchor="middle" fill="#f3ece1" font-size="15" font-weight="600">LocalFlow</text>
+    <text x="171" y="144" text-anchor="middle" fill="#d8ccb8" font-size="11">person · errands · rides</text>
+    <rect x="318" y="92" width="278" height="78" rx="10" fill="#140c08" stroke="#ff5a1f"/>
+    <text x="457" y="122" text-anchor="middle" fill="#f3ece1" font-size="15" font-weight="600">HomeFlow</text>
+    <text x="457" y="144" text-anchor="middle" fill="#d8ccb8" font-size="11">house · MESO board is this face</text>
+    <rect x="604" y="92" width="258" height="78" rx="10" fill="#140c08" stroke="#ff5a1f"/>
+    <text x="733" y="122" text-anchor="middle" fill="#f3ece1" font-size="15" font-weight="600">Quest market</text>
+    <text x="733" y="144" text-anchor="middle" fill="#d8ccb8" font-size="11">2–5 minute grain</text>
+    <rect x="870" y="92" width="298" height="78" rx="10" fill="#140c08" stroke="#ff5a1f"/>
+    <text x="1019" y="122" text-anchor="middle" fill="#f3ece1" font-size="15" font-weight="600">Merchant till</text>
+    <text x="1019" y="144" text-anchor="middle" fill="#d8ccb8" font-size="11">cash still rings · EP dies here</text>
   </g>
 
-  <path d="M175 190 L175 228 M465 190 L465 228 M745 190 L745 228 M1025 190 L1025 228" stroke="#ff5a1f" stroke-width="2" fill="none"/>
+  <path d="M171 170 L171 198 M457 170 L457 198 M733 170 L733 198 M1019 170 L1019 198" stroke="#ff5a1f" stroke-width="2"/>
 
-  <rect x="40" y="228" width="1120" height="78" rx="12" fill="#ff5a1f"/>
-  <text x="600" y="258" text-anchor="middle" fill="#060606" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="700">SignalFlow</text>
-  <text x="600" y="284" text-anchor="middle" fill="#060606" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">only router · assistant + Personal Signed Local Log (PSLL, file on your disk) + proposed ΔS · you do not score yourself</text>
+  <rect x="32" y="198" width="1136" height="72" rx="12" fill="#ff5a1f"/>
+  <text x="600" y="226" text-anchor="middle" fill="#060606" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20" font-weight="700">SignalFlow — the only router</text>
+  <text x="600" y="250" text-anchor="middle" fill="#060606" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">assistant you trust + Personal Signed Local Log (file on YOUR disk) + public class-strip priors · proposes ΔS · you do not type the mint · you do not score yourself</text>
 
-  <path d="M600 306 L600 338" stroke="#22d3ee" stroke-width="2"/>
-
+  <text x="40" y="296" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">DAG VERTEX — THREE ENVELOPES</text>
   <g font-family="ui-sans-serif, system-ui, sans-serif">
-    <rect x="80" y="338" width="500" height="86" rx="10" fill="#140c08" stroke="#22d3ee" stroke-width="1.5"/>
-    <text x="330" y="368" text-anchor="middle" fill="#f3ece1" font-size="16" font-weight="600">LOOK · both edges · volunteer slices</text>
-    <text x="330" y="392" text-anchor="middle" fill="#d8ccb8" font-size="12">3–10 later looks · no validator class · no priesthood</text>
-    <text x="330" y="412" text-anchor="middle" fill="#888888" font-size="11">a neighbor is evidence, not a gavel · looking writes a vertex</text>
+    <rect x="32" y="306" width="370" height="118" rx="10" fill="#140c08" stroke="#22d3ee"/>
+    <text x="217" y="332" text-anchor="middle" fill="#22d3ee" font-size="14" font-weight="600">A · public class strip</text>
+    <text x="217" y="354" text-anchor="middle" fill="#f3ece1" font-size="11">class · mapper · ΔS · U · buckets</text>
+    <text x="217" y="372" text-anchor="middle" fill="#f3ece1" font-size="11">evidence_root · state · opaque parents</text>
+    <text x="217" y="394" text-anchor="middle" fill="#888888" font-size="11">SignalFlow scours A · no LOOK</text>
+    <text x="217" y="410" text-anchor="middle" fill="#888888" font-size="10">DID/GPS/clock/photo in A = lose</text>
 
-    <rect x="620" y="338" width="500" height="86" rx="10" fill="#140c08" stroke="#7fffb0" stroke-width="1.5"/>
-    <text x="870" y="368" text-anchor="middle" fill="#7fffb0" font-size="16" font-weight="600">loop.closed mints</text>
-    <text x="870" y="392" text-anchor="middle" fill="#d8ccb8" font-size="12">fail closed → XP = 0 · slam window · instant = 0</text>
-    <text x="870" y="412" text-anchor="middle" fill="#888888" font-size="11">no Consensus Engine package. Close is a state.</text>
-  </g>
-  <path d="M580 381 L620 381" stroke="#22d3ee" stroke-width="2"/>
-  <path d="M870 424 L870 458" stroke="#7fffb0" stroke-width="2"/>
+    <rect x="415" y="306" width="370" height="118" rx="10" fill="#140c08" stroke="#a78bfa"/>
+    <text x="600" y="332" text-anchor="middle" fill="#a78bfa" font-size="14" font-weight="600">B · ZKP envelope</text>
+    <text x="600" y="354" text-anchor="middle" fill="#f3ece1" font-size="11">circuit, not a model · DID off the row</text>
+    <text x="600" y="372" text-anchor="middle" fill="#f3ece1" font-size="11">unique in this DFAO · signer bound</text>
+    <text x="600" y="394" text-anchor="middle" fill="#888888" font-size="11">confirmed · band if asked · not slashed</text>
+    <text x="600" y="410" text-anchor="middle" fill="#888888" font-size="10">yes/no at the till · AI does not evaluate</text>
 
-  <rect x="80" y="458" width="1040" height="64" rx="10" fill="#140c08" stroke="#7fffb0" stroke-width="1.5"/>
-  <text x="600" y="486" text-anchor="middle" fill="#7fffb0" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="700">XP = R × F × ΔS × (w · E) × log(1/Tₛ)</text>
-  <text x="600" y="508" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">R is rarity of the action class — not reputation. Reputation never enters this product. CT never enters this product.</text>
-
-  <path d="M600 522 L600 552" stroke="#a78bfa" stroke-width="2"/>
-
-  <text x="40" y="548" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">METERS — CT FEEDS L. L FEEDS THE TILL. NOT BAGS.</text>
-  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">
-    <rect x="40" y="560" width="175" height="78" rx="8" fill="#140c08" stroke="#a78bfa"/>
-    <text x="127" y="588" text-anchor="middle" fill="#f3ece1" font-weight="600">CT_W</text>
-    <text x="127" y="608" text-anchor="middle" fill="#d8ccb8" font-size="11">community standing</text>
-    <text x="127" y="624" text-anchor="middle" fill="#888888" font-size="10">same at compatible tills</text>
-
-    <rect x="245" y="560" width="175" height="78" rx="8" fill="#140c08" stroke="#a78bfa"/>
-    <text x="332" y="588" text-anchor="middle" fill="#f3ece1" font-weight="600">H_cap · S · β</text>
-    <text x="332" y="608" text-anchor="middle" fill="#d8ccb8" font-size="11">till · you · CAT</text>
-    <text x="332" y="624" text-anchor="middle" fill="#888888" font-size="10">door owns H, not CT</text>
-
-    <rect x="450" y="560" width="250" height="78" rx="8" fill="#140c08" stroke="#a78bfa" stroke-width="2"/>
-    <text x="575" y="588" text-anchor="middle" fill="#f3ece1" font-weight="600">L this ticket</text>
-    <text x="575" y="612" text-anchor="middle" fill="#d8ccb8" font-size="11">clip(H_cap · S · κ · CT_W · β)</text>
-
-    <rect x="730" y="560" width="210" height="78" rx="8" fill="#140c08" stroke="#ff5a1f" stroke-width="2"/>
-    <text x="835" y="588" text-anchor="middle" fill="#ff5a1f" font-weight="600">EP spark</text>
-    <text x="835" y="612" text-anchor="middle" fill="#d8ccb8" font-size="11">XP·L + λ·L · clip to list</text>
-
-    <rect x="970" y="560" width="190" height="78" rx="8" fill="#140c08" stroke="#a78bfa"/>
-    <text x="1065" y="588" text-anchor="middle" fill="#f3ece1" font-weight="600">IT · CAT</text>
-    <text x="1065" y="608" text-anchor="middle" fill="#d8ccb8" font-size="11">proposal burns · β</text>
-    <text x="1065" y="624" text-anchor="middle" fill="#888888" font-size="10">IT also takes CT_W</text>
+    <rect x="798" y="306" width="370" height="118" rx="10" fill="#140c08" stroke="#ff5a1f"/>
+    <text x="983" y="332" text-anchor="middle" fill="#ff5a1f" font-size="14" font-weight="600">C · sealed bytes</text>
+    <text x="983" y="354" text-anchor="middle" fill="#f3ece1" font-size="11">hash to evidence_root</text>
+    <text x="983" y="372" text-anchor="middle" fill="#f3ece1" font-size="11">photos, diary, GPS stay here</text>
+    <text x="983" y="394" text-anchor="middle" fill="#888888" font-size="11">LOOK required · no silent fetch</text>
+    <text x="983" y="410" text-anchor="middle" fill="#888888" font-size="10">like-cases live on A, not C</text>
   </g>
 
-  <path d="M215 599 L245 599" stroke="#a78bfa" stroke-width="2"/>
-  <path d="M420 599 L450 599" stroke="#a78bfa" stroke-width="2"/>
-  <path d="M700 599 L730 599" stroke="#ff5a1f" stroke-width="2"/>
-  <text x="228" y="592" fill="#a78bfa" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">→</text>
-  <text x="433" y="592" fill="#a78bfa" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">→</text>
-  <text x="712" y="592" fill="#ff5a1f" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10">→</text>
+  <text x="40" y="450" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">CLOSE</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif">
+    <rect x="32" y="460" width="460" height="100" rx="10" fill="#140c08" stroke="#22d3ee"/>
+    <text x="262" y="488" text-anchor="middle" fill="#f3ece1" font-size="15" font-weight="600">LOOK · both edges · volunteer slices</text>
+    <text x="262" y="510" text-anchor="middle" fill="#d8ccb8" font-size="12">3–10 later · nullifier looker · 1/10 blind</text>
+    <text x="262" y="530" text-anchor="middle" fill="#888888" font-size="11">no validator class · no Consensus Engine · a neighbor is evidence, not a gavel</text>
 
-  <path d="M835 638 L835 678 L1025 678 L1025 190" stroke="#ff5a1f" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/>
-  <text x="920" y="670" fill="#ff5a1f" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">EP dies at the till — not a wallet</text>
+    <rect x="510" y="460" width="330" height="100" rx="10" fill="#140c08" stroke="#7fffb0"/>
+    <text x="675" y="492" text-anchor="middle" fill="#7fffb0" font-size="15" font-weight="600">loop.closed mints</text>
+    <text x="675" y="516" text-anchor="middle" fill="#d8ccb8" font-size="12">if-then after both signatures</text>
+    <text x="675" y="536" text-anchor="middle" fill="#888888" font-size="11">late burn has no expiry</text>
 
-  <text x="600" y="720" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">Neighborhood board is HomeFlow’s MESO skin. Not a civic sidecar. Not pink. Not a second government.</text>
-  <text x="600" y="742" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">Leak 0.99ⁿ on idle XP and CT (10-day ticks). Late burn has no expiry. There is no Token Economy bag.</text>
-  <text x="600" y="778" text-anchor="middle" fill="#555555" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">A folder is not a face. Draw this. Do not inventory packages/. Do not invent a Consensus Engine.</text>
-  <text x="600" y="808" text-anchor="middle" fill="#555555" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">Source: extropyengine.com/docs/engine.svg · DIAGRAM.md · LETTERS beat any generated chart</text>
+    <rect x="858" y="460" width="310" height="100" rx="10" fill="#140c08" stroke="#888888"/>
+    <text x="1013" y="492" text-anchor="middle" fill="#f3ece1" font-size="15" font-weight="600">fail closed → XP = 0</text>
+    <text x="1013" y="516" text-anchor="middle" fill="#d8ccb8" font-size="12">no quorum · reject · missing sig</text>
+    <text x="1013" y="536" text-anchor="middle" fill="#888888" font-size="11">slam window: instant close = 0</text>
+  </g>
+
+  <rect x="32" y="580" width="1136" height="78" rx="10" fill="#140c08" stroke="#7fffb0"/>
+  <text x="600" y="608" text-anchor="middle" fill="#7fffb0" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="700">XP = R × F × ΔS × (w · E) × log(1/Tₛ)</text>
+  <text x="600" y="632" text-anchor="middle" fill="#d8ccb8" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">R = rarity of the ACTION CLASS — not reputation. F = frequency-of-decay. ΔS = bits-equivalent PROXY, proposed not typed. w·E = eight-domain weights. Tₛ = slam. Reputation never enters this product. CT never enters this product.</text>
+  <text x="600" y="648" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11">code: packages/xp-formula · LETTERS beat glossary drift</text>
+
+  <text x="40" y="686" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">METERS — CT FEEDS L. L FEEDS THE TILL. IT BURNS IN THE TALLY.</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif">
+    <rect x="32" y="696" width="220" height="96" rx="8" fill="#140c08" stroke="#a78bfa"/>
+    <text x="142" y="722" text-anchor="middle" fill="#f3ece1" font-weight="600">CT_W</text>
+    <text x="142" y="742" text-anchor="middle" fill="#d8ccb8" font-size="11">community standing</text>
+    <text x="142" y="760" text-anchor="middle" fill="#888888" font-size="10">door does not own CT</text>
+    <text x="142" y="776" text-anchor="middle" fill="#888888" font-size="10">does not travel · leak 0.99ⁿ</text>
+
+    <rect x="264" y="696" width="220" height="96" rx="8" fill="#140c08" stroke="#a78bfa"/>
+    <text x="374" y="722" text-anchor="middle" fill="#f3ece1" font-weight="600">H_cap · S · κ · β</text>
+    <text x="374" y="742" text-anchor="middle" fill="#d8ccb8" font-size="11">till · you · language · CAT</text>
+    <text x="374" y="760" text-anchor="middle" fill="#888888" font-size="10">H Auto from 10-day cash</text>
+    <text x="374" y="776" text-anchor="middle" fill="#888888" font-size="10">training remainder 0</text>
+
+    <rect x="496" y="696" width="250" height="96" rx="8" fill="#140c08" stroke="#a78bfa" stroke-width="2"/>
+    <text x="621" y="724" text-anchor="middle" fill="#f3ece1" font-weight="600">L this ticket</text>
+    <text x="621" y="748" text-anchor="middle" fill="#d8ccb8" font-size="12">clip(H_cap · S · κ · CT_W · β)</text>
+    <text x="621" y="770" text-anchor="middle" fill="#888888" font-size="10">not a sixth bag</text>
+
+    <rect x="758" y="696" width="200" height="96" rx="8" fill="#140c08" stroke="#ff5a1f" stroke-width="2"/>
+    <text x="858" y="722" text-anchor="middle" fill="#ff5a1f" font-weight="600">EP spark</text>
+    <text x="858" y="744" text-anchor="middle" fill="#d8ccb8" font-size="11">XP·L + λ·L</text>
+    <text x="858" y="762" text-anchor="middle" fill="#888888" font-size="10">λ default 0.15</text>
+    <text x="858" y="778" text-anchor="middle" fill="#888888" font-size="10">dies in the sale</text>
+
+    <rect x="970" y="696" width="198" height="96" rx="8" fill="#140c08" stroke="#a78bfa"/>
+    <text x="1069" y="722" text-anchor="middle" fill="#f3ece1" font-weight="600">IT · CAT</text>
+    <text x="1069" y="742" text-anchor="middle" fill="#d8ccb8" font-size="11">IT burns in the tally</text>
+    <text x="1069" y="760" text-anchor="middle" fill="#888888" font-size="10">not XP·G · not a pile</text>
+    <text x="1069" y="776" text-anchor="middle" fill="#888888" font-size="10">CAT feeds β, off mint</text>
+  </g>
+  <text x="600" y="814" text-anchor="middle" fill="#a78bfa" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">CT_W → L ← H_cap · S · κ · β(CAT)     L → EP     CT_W → IT     CAT never multiplies XP</text>
+
+  <text x="40" y="846" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">CLOCKS — DO NOT MASH</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif">
+    <rect x="32" y="856" width="278" height="72" rx="8" fill="#140c08" stroke="#7fffb0"/>
+    <text x="171" y="882" text-anchor="middle" fill="#7fffb0" font-weight="600">Tₛ slam</text>
+    <text x="171" y="904" text-anchor="middle" fill="#d8ccb8" font-size="11">on the mint · instant = 0</text>
+    <rect x="318" y="856" width="278" height="72" rx="8" fill="#140c08" stroke="#7fffb0"/>
+    <text x="457" y="882" text-anchor="middle" fill="#7fffb0" font-weight="600">leak 0.99ⁿ</text>
+    <text x="457" y="904" text-anchor="middle" fill="#d8ccb8" font-size="11">idle 10-day ticks · XP and CT</text>
+    <rect x="604" y="856" width="278" height="72" rx="8" fill="#140c08" stroke="#7fffb0"/>
+    <text x="743" y="882" text-anchor="middle" fill="#7fffb0" font-weight="600">H window</text>
+    <text x="743" y="904" text-anchor="middle" fill="#d8ccb8" font-size="11">10-day signed cash · not leak</text>
+    <rect x="890" y="856" width="278" height="72" rx="8" fill="#140c08" stroke="#7fffb0"/>
+    <text x="1029" y="882" text-anchor="middle" fill="#7fffb0" font-weight="600">late burn</text>
+    <text x="1029" y="904" text-anchor="middle" fill="#d8ccb8" font-size="11">no expiry · no settle window</text>
+  </g>
+
+  <text x="40" y="956" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">ROOMS · CALIBRATION · AUTARKY</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif">
+    <rect x="32" y="966" width="370" height="100" rx="8" fill="#140c08" stroke="#d8ccb8"/>
+    <text x="217" y="994" text-anchor="middle" fill="#f3ece1" font-weight="600">DFAO rooms</text>
+    <text x="217" y="1016" text-anchor="middle" fill="#d8ccb8" font-size="11">NANO → MICRO → MESO → MACRO → PLANETARY</text>
+    <text x="217" y="1036" text-anchor="middle" fill="#888888" font-size="11">votes stay in the room · only PLANETARY hits mesh</text>
+    <rect x="415" y="966" width="370" height="100" rx="8" fill="#140c08" stroke="#d8ccb8"/>
+    <text x="600" y="994" text-anchor="middle" fill="#f3ece1" font-weight="600">Like-cases on strip A</text>
+    <text x="600" y="1016" text-anchor="middle" fill="#d8ccb8" font-size="11">lawns calibrate lawns · coffee is not a lawn</text>
+    <text x="600" y="1036" text-anchor="middle" fill="#888888" font-size="11">proxy gets less stupid · no founder key</text>
+    <rect x="798" y="966" width="370" height="100" rx="8" fill="#140c08" stroke="#d8ccb8"/>
+    <text x="983" y="994" text-anchor="middle" fill="#f3ece1" font-weight="600">Digital Autarky</text>
+    <text x="983" y="1016" text-anchor="middle" fill="#d8ccb8" font-size="11">intelligence + identity stay at the edge</text>
+    <text x="983" y="1036" text-anchor="middle" fill="#888888" font-size="11">network = handshake + schema + DAG</text>
+  </g>
+
+  <text x="40" y="1100" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">RECORD / METER / SPARK — STOP SAYING TOKEN</text>
+  <text x="600" y="1124" text-anchor="middle" fill="#d8ccb8" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">Record = unique signed vertex (CAT, closed loop). Meter = XP, CT, L. Spark = EP at the till, IT in the tally. DT is not a bag. Five objects, not six.</text>
+  <text x="600" y="1146" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">Domain = eight entropy instruments (enum). Lane = skill. CAT lives on a lane. Official skins: cash + remainder, not XP on a forehead.</text>
+
+  <text x="40" y="1184" fill="#ff5a1f" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" letter-spacing="2">DO NOT DRAW</text>
+  <text x="600" y="1208" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">GrantFlow as a face · Consensus Engine · Token Economy bag · validator class · Google Auth · civic sidecar · EP/IT piles · DT bag · contributor hub · [index.ts] boxes</text>
+  <text x="600" y="1228" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">R as reputation · CT inside the XP product · CAT multiplying mint · leak reopening the loop · settle window · 40-day H · 5%/month IT</text>
+
+  <text x="600" y="1268" text-anchor="middle" fill="#555555" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">Source: github.com/00ranman/extropy-engine  DIAGRAM.md · diagram.mmd · llms.txt</text>
+  <text x="600" y="1288" text-anchor="middle" fill="#555555" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12">Authority: extropyengine.com/key  >  xp-formula  >  DEFAULTS  >  SPEC 3.5  >  this picture</text>
+  <text x="600" y="1320" text-anchor="middle" fill="#888888" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13">The running product is post → do → confirm. This picture is the map. A folder is not a face.</text>
 </svg>

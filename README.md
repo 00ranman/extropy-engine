@@ -1,6 +1,8 @@
 > **Canonical mint labels.** R is rarity of the action class. F is Frequency of Decay. ΔS is a bits-equivalent proxy, not XP. Tₛ is the slam window, not the 0.99ⁿ leak. L is this ticket. EP is the till spark (`EP = XP · L + λ · L`) and burns in the sale. Engineering spec: [`docs/SPEC_v3.5.md`](docs/SPEC_v3.5.md) (v3.5, 2026-09-11). Public PDF: https://extropyengine.com/docs/extropy-engine-technical-docs-v3.5.pdf. Codex v2.1 stays signed. Public letter key: https://extropyengine.com/key — meter math: https://extropyengine.com/docs/METER-MATH.md — gaps: https://extropyengine.com/open-problems
 >
 > Codex v2.1 stays signed. Code mint lives here in `packages/xp-formula` (`FORMULA_VERSION` still `canonical-v3.1.2`). If this README and the letter key disagree on names, the key wins. If this README and SPEC 3.5 disagree on meters, 3.5 wins.
+>
+> **Architecture for notebooks / getdiagram:** [`DIAGRAM.md`](DIAGRAM.md) · [`diagram.mmd`](diagram.mmd) · [`llms.txt`](llms.txt). Do not inventory `packages/`.
 
 # Extropy Engine
 
@@ -88,9 +90,37 @@ The split exists so standing cannot buy votes and a skill stamp cannot print XP.
 
 **Meter-first.** Closed-loop meters. Faces are seats of the same loop, not extra religions.
 
-Canonical map: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/architecture/METER_CORE.md`](docs/architecture/METER_CORE.md) · diagram rules: [`docs/architecture/DIAGRAM_RULES.md`](docs/architecture/DIAGRAM_RULES.md)
+**Generators / Notebook LM:** copy [`DIAGRAM.md`](DIAGRAM.md) and [`diagram.mmd`](diagram.mmd). Picture: [`docs/architecture/engine.svg`](docs/architecture/engine.svg). Do not inventory `packages/`. A folder is not a face.
 
-**Faces:** LocalFlow (person / errands) · HomeFlow (house / neighborhood) · quest market (2–5 min) · merchant till (strip mall / EP spark). **Spine:** SignalFlow — the only router. HomeFlow is a face, not an optional edge.
+**Faces:** LocalFlow (person / errands) · HomeFlow (house / neighborhood) · quest market (2–5 min) · merchant till (strip mall / EP spark). **Spine:** SignalFlow — the only router.
+
+```mermaid
+flowchart TB
+  DID["did:key on YOUR node"] --> FACES
+  subgraph FACES["FACES — post, do, confirm"]
+    LF[LocalFlow]
+    HF[HomeFlow]
+    QM[Quest market]
+    TILL[Merchant till]
+  end
+  LF --> SF
+  HF --> SF
+  QM --> SF
+  TILL --> SF
+  SF["SignalFlow — assistant + PSLL + class-strip priors<br/>proposes ΔS · you do not type the mint"]
+  SF --> LOOK["LOOK · both edges · volunteer slices<br/>no validator class"]
+  LOOK -->|agree| CLOSED[loop.closed]
+  LOOK -->|fail| NOMINT[XP = 0]
+  CLOSED --> XP["XP = R × F × ΔS × (w·E) × log(1/Ts)<br/>R = rarity of the action class, not reputation"]
+  XP --> CT[CT_W]
+  CT --> L["L = clip(H_cap · S · κ · CT_W · β)"]
+  L --> EP["EP = XP · L + λ · L · dies in the sale"]
+  CT --> IT["IT burns in the tally"]
+```
+
+Full board, letters, vertex envelopes, clocks: [`DIAGRAM.md`](DIAGRAM.md).
+
+Canonical map: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/architecture/METER_CORE.md`](docs/architecture/METER_CORE.md) · diagram rules: [`docs/architecture/DIAGRAM_RULES.md`](docs/architecture/DIAGRAM_RULES.md)
 
 ```
 packages/
@@ -105,7 +135,7 @@ packages/
 ├── dfao-registry/      # MICRO → PLANETARY
 ├── governance/         # IT burns in the tally.
 ├── token-economy/      # XP, CT, L, EP, CAT, IT. DT leftover — kill it.
-├── temporal/           # Leak 10 days. H window 40 days.
+├── temporal/           # Leak 10 days. H window 10 days of signed cash.
 ├── identity/           # did:key on the box.
 ├── psll-sync/          # Personal Signed Local Log
 ├── quest-market/       # 2–5 minute grain
@@ -142,12 +172,11 @@ Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is 
 Every contribution passes through the same lifecycle:
 
 ```
-OPEN → VALIDATING → CONSENSUS → CLOSED
-                                       ↘ FAILED
-                              ↘ ISOLATED (integrity quarantine)
+OPEN → DOING → BOTH-EDGES → CLOSED
+                           ↘ FAIL CLOSED (no mint)
 ```
 
-XP mints at CLOSED. Leak starts. Lookers attach later, in parts. Late burn has no expiry. Lookers whose consensus is contradicted by later evidence take accuracy penalties. There is no settle window. A clock is not a looker.
+XP mints at CLOSED. Leak starts. Lookers attach later, in parts. Late burn has no expiry. Lookers whose consensus is contradicted by later evidence take accuracy penalties. There is no settle window. A clock is not a looker. **CONSENSUS is a loop state, not a Consensus Engine package.**
 
 > **There is no validator class.** "Validator" throughout this repo means *a contributor while they are performing a validating task*, not a separate tier of people. Validation is itself an entropy-reducing task, so it is a contribution done by ordinary contributors. Most validation is blind or implicit: under 1/10th slicing a contributor scores a slice without knowing whose work it is, and many tasks confirm or contradict earlier tasks as a side effect of their own dependency on them, so the performer never knows they validated anything. The `epistemology-engine` reads validation out of the task graph as an emergent property; it does not appoint validators. This is what removes the review chokepoint and ends the "who watches the watchers" regress. See [`docs/VALIDATION_IS_EMERGENT.md`](docs/VALIDATION_IS_EMERGENT.md).
 

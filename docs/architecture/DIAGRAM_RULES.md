@@ -1,14 +1,18 @@
 # Diagram rules (for humans and diagram generators)
 
-When drawing Extropy Engine architecture from this repository:
+**Source:** repo-root [`DIAGRAM.md`](../../DIAGRAM.md) and [`diagram.mmd`](../../diagram.mmd). Ingest those. Do not inventory `packages/`.
 
-1. **Spine:** **SignalFlow** packages every claim and routes validation. One router.
-2. **Center the meters:** CT, EP, L, CAT, IT, and XP.
-3. **Faces (only these):** **LocalFlow** (person / errands), **HomeFlow** (house / neighborhood), **quest market**, **merchant till** (strip mall / EP). Same loop: post → do → confirm. LocalFlow is not the till.
-4. **Identity:** node-minted **DID** only.
-5. **Happy path:** node DID → face → SignalFlow → both-edges verify → close → mint XP → CT → L/EP · CAT→β · IT → leak.
-6. **Fail closed:** no quorum / reject / missing signature → no mint.
-7. **Do not inventory `packages/`.** A folder is not a face. Draw only the four faces above.
-8. **Do not mint DT.** Expertise is CAT-per-lane.
+When drawing Extropy Engine architecture:
 
-If a generated diagram is missing SignalFlow, LocalFlow, HomeFlow, or the till, it is wrong. Regenerate from `docs/ARCHITECTURE.md`.
+1. **Spine:** **SignalFlow** packages every claim and routes validation. Assistant + PSLL + class-strip priors. Proposes ΔS. You do not type the mint.
+2. **Faces (only these four, equal):** LocalFlow, HomeFlow, quest market, merchant till. Same loop: post → do → confirm. Neighborhood-app is HomeFlow’s MESO skin.
+3. **Vertex:** three envelopes — public class strip · ZKP identity (circuit, not a model) · sealed bytes. LOOK to read sealed. No silent fetch.
+4. **LOOK:** volunteer slices, not a class. No Consensus Engine package. Fail closed → XP = 0.
+5. **Mint:** `XP = R × F × ΔS × (w·E) × log(1/Tₛ)`. R = rarity of the action class, **not reputation**. Tₛ slam: instant = 0.
+6. **Meters:** CT_W feeds L and IT, never the XP product. `L = clip(H_cap · S · κ · CT_W · β)`. `EP = XP · L + λ · L` dies in the sale. IT burns in the tally. CAT feeds β, off the mint.
+7. **Clocks, separate:** Tₛ slam · leak 0.99ⁿ idle 10-day ticks · H window 10-day cash · late burn no expiry.
+8. **Identity:** node-minted did:key. PSLL is a file on disk.
+9. **Rooms:** DFAO NANO→PLANETARY. Votes stay in the room.
+10. **Do not draw:** GrantFlow as a face · Token Economy bag · validator class · Google Auth · `[index.ts]` boxes · EP/IT piles · DT bag · contributor hub bypassing SignalFlow.
+
+If a generated diagram is missing SignalFlow, LocalFlow, HomeFlow, the till, CT→L, LOOK, or the XP formula, or if it has a Consensus Engine or grants at the top, it is wrong. Regenerate from `DIAGRAM.md`.
