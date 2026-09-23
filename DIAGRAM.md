@@ -13,92 +13,76 @@ Same product everywhere: **post → do → confirm**. Confirmation is the receip
 ## Mermaid (copy this — also `diagram.mmd` at repo root)
 
 ```mermaid
-flowchart TB
-  DID["did:key on YOUR node<br/>no Google · no KYC · no registrar"]
-
-  subgraph FACES["FACES — same loop: post, do, confirm"]
-    LF["LocalFlow — person / errands"]
-    HF["HomeFlow — house / neighborhood<br/>MESO board is neighborhood-app"]
-    QM["Quest market — 2 to 5 min"]
-    TILL["Merchant till — cash still rings"]
+flowchart LR
+  subgraph INPUT["INPUT"]
+    DID["did:key on your node"]
+    LF["LocalFlow<br/>person · errands"]
+    HF["HomeFlow<br/>house · neighborhood"]
+    QM["Quest market<br/>2 to 5 min"]
+    TILL["Merchant till<br/>cash still rings"]
   end
 
-  subgraph SPINE["SPINE — one router"]
-    SF["SignalFlow<br/>assistant you trust + PSLL + class-strip priors<br/>proposes delta-S · you do not type the mint"]
-    PSLL["PSLL = Personal Signed Local Log<br/>append-only file on YOUR disk<br/>mesh gets receipts, not the diary"]
+  subgraph ENGINE["ENGINE — one router"]
+    SF["SignalFlow<br/>proposes ΔS<br/>PSLL on your disk<br/>you do not type the mint"]
+    VTX["write vertex<br/>state = open"]
+    EDGES{"both edges agree?"}
+    FAIL["fail closed<br/>XP = 0"]
   end
 
-  subgraph VERTEX["DAG VERTEX — three envelopes"]
-    A["A public CLASS STRIP<br/>class, mapper, delta-S, U, buckets,<br/>evidence_root, state, opaque parents<br/>SignalFlow scours A · no LOOK"]
-    B["B ZKP envelope — circuit, not a model<br/>unique in this DFAO · signer bound to strip<br/>confirmed this loop · band if asked · not slashed<br/>DID off the row"]
-    C["C SEALED bytes<br/>hash to evidence_root<br/>LOOK required · no silent fetch"]
+  subgraph TOKEN["TOKEN — math, not a bag"]
+    XP["XP = R × F × ΔS × w·E × log 1/Ts<br/>R class rarity, not reputation<br/>F repeats pay less<br/>ΔS proposed, not typed<br/>Ts instant close mints 0"]
+    L["L = clip H·S·κ·CT·β<br/>H this till, 10-day cash<br/>CT leaks, does not travel"]
+    EP["EP = XP·L + λ·L<br/>dies in the sale<br/>cash rings the rest"]
+    IT["IT burns in the tally<br/>not a pile · CAT feeds β only"]
   end
 
-  subgraph CLOSE["CLOSE"]
-    LOOK["LOOK vertex — looking is a verb<br/>volunteer slices 3-10 later<br/>nullifier looker · no validator class<br/>no Consensus Engine package"]
-    EDGES["Both edges agree · if-then"]
-    NOMINT["FAIL CLOSED → XP = 0<br/>no quorum / reject / missing signature / slam"]
-    CLOSED["loop.closed"]
+  subgraph DAG["DAG BRANCH — the log, not a face"]
+    P["parent vertex"] --> TH["this vertex"] --> CH["child vertex"]
+    A["A public class strip<br/>class mapper ΔS state parents<br/>DID here is a lose"]
+    B["B ZKP yes or no<br/>DID off the row"]
+    C["C sealed bytes<br/>no silent fetch"]
+    A --> B --> C
+    OPEN["open"] --> CLOSED["closed"]
+    OPEN --> FAILED["failed"]
+    LOOK["LOOK vertex later<br/>slices 3 to 10<br/>not a validator class"]
   end
 
-  subgraph MINT["MINT — reputation never enters this product"]
-    XP["XP = R × F × ΔS × (w·E) × log(1/Ts)<br/>R = rarity of the ACTION CLASS, not reputation<br/>F = frequency-of-decay · repeats pay less<br/>ΔS = bits-equivalent PROXY, proposed not typed<br/>w·E = eight-domain weights · this loop<br/>Ts = slam window · instant close mints 0"]
+  subgraph DFAO["DFAO BRANCH — rooms, not a mint"]
+    NANO["NANO<br/>you close your own"] --> MICRO["MICRO<br/>a crew"]
+    MICRO --> MESO["MESO<br/>neighborhood board"]
+    MESO --> MACRO["MACRO<br/>town or company"]
+    MACRO --> PLANET["PLANETARY<br/>only room that hits the mesh"]
+    KNOB["vote rewrites THIS room<br/>decay, quorum, notice<br/>not the XP product"]
   end
 
-  subgraph METERS["METERS — math, not bags"]
-    CT["CT_W community standing on web W<br/>same at compatible tills · door does not own CT<br/>idle leak 0.99^n · does not travel"]
-    H["H_cap this till this pocket<br/>Auto from 10-day signed cash<br/>training remainder 0"]
-    S["S = you at this house"]
-    KAPPA["kappa = 1 on the language<br/>0 if they left it"]
-    BETA["beta = CAT on-duty this ticket"]
-    L["L = clip(H_cap · S · kappa · CT_W · beta, 0, 1)<br/>this ticket · not a sixth bag"]
-    EP["EP = XP · L + lambda · L<br/>lambda default 0.15 · clip to list<br/>born and burned in the sale"]
-    IT["IT = clip(H_gov · S_gov · kappa · CT_W · beta_gov, 0, 1)<br/>this proposal · burns in the tally<br/>not XP·G · not a pile"]
-    CAT["CAT record<br/>DID + lane + level + issuer<br/>feeds beta · off the XP mint"]
-  end
-
-  subgraph TIME["CLOCKS — do not mash"]
-    LEAK["Leak 0.99^n idle 10-day ticks<br/>XP and CT"]
-    BURN["Late burn · no expiry<br/>no settle window"]
-  end
-
-  subgraph ROOMS["ROOMS"]
-    DFAO["DFAO nested rooms<br/>NANO to PLANETARY<br/>votes stay in the room they are cast in"]
-  end
-
-  DID --> LF
-  DID --> HF
-  DID --> QM
-  DID --> TILL
+  DID --> LF & HF & QM & TILL
   LF --> SF
   HF --> SF
   QM --> SF
   TILL --> SF
-  SF --- PSLL
-  SF --> A
-  A --- B
-  B --- C
-  SF --> LOOK
-  LOOK --> EDGES
-  EDGES -->|agree| CLOSED
-  EDGES -->|fail| NOMINT
-  CLOSED --> XP
-  A -.-> CLOSED
-  XP --> CT
-  CT --> L
-  H --> L
-  S --> L
-  KAPPA --> L
-  BETA --> L
-  CAT --> BETA
-  L --> EP
-  XP --> EP
-  CT --> IT
-  CAT --> IT
-  LEAK -.-> XP
-  LEAK -.-> CT
-  BURN -.-> XP
-  DFAO -.-> EDGES
+  SF --> VTX --> EDGES
+  EDGES -->|no| FAIL
+  EDGES -->|yes loop.closed| XP
+  XP --> L --> EP
+  XP -.-> IT
+  VTX -.-> TH
+  TH --> A
+  LOOK -.-> C
+  EDGES -.-> KNOB
+  PLANET -.-> KNOB
+
+  classDef input fill:#dbeafe,stroke:#2563eb,color:#0f172a
+  classDef engine fill:#fef3c7,stroke:#d97706,color:#0f172a
+  classDef token fill:#dcfce7,stroke:#16a34a,color:#0f172a
+  classDef dag fill:#ccfbf1,stroke:#0f766e,color:#0f172a
+  classDef dfao fill:#e0e7ff,stroke:#4f46e5,color:#0f172a
+  classDef fail fill:#ffe4e6,stroke:#e11d48,color:#0f172a
+  class DID,LF,HF,QM,TILL input
+  class SF,VTX,EDGES engine
+  class FAIL fail
+  class XP,L,EP,IT token
+  class P,TH,CH,A,B,C,OPEN,CLOSED,FAILED,LOOK dag
+  class NANO,MICRO,MESO,MACRO,PLANET,KNOB dfao
 ```
 
 ---
