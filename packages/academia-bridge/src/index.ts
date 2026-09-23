@@ -29,8 +29,6 @@
  *       - View milestones reached (SOCIAL domain)
  *    5. Responds to TASK_ASSIGNED events from SignalFlow for validation
  *    6. Reacts to LOOP_CLOSED events to track XP earned
- *    7. Listens for custom events from grantflow-proposer when papers
- *       are ready for upload (sourceProposalId linkage)
  *
  * ════════════════════════════════════════════════════════════════════════════════
  */
@@ -167,49 +165,6 @@ async function main(): Promise<void> {
       const loopId  = mintEvent.loopId  as string;
       const xpValue = mintEvent.xpValue as number;
       console.log(`[academia-bridge] XP minted for loop ${loopId}: ${xpValue} XP`);
-    }
-  });
-
-  // Listen for grantflow-proposer paper-ready events
-  // These arrive when a proposal has been exported and is ready for academia.edu upload
-  eventBus.on('grantflow.proposal.exported' as unknown as EventType, async (event: DomainEvent) => {
-    const payload = event.payload as Record<string, unknown>;
-
-    if (payload.targetService === 'academia-bridge' || payload.queueForUpload) {
-      console.log(`[academia-bridge] Received paper-ready event from grantflow-proposer`);
-
-      try {
-        const paper = await paperService.queuePaper({
-          title:            (payload.title as string) ?? 'Untitled Paper',
-          abstract:         (payload.abstract as string) ?? '',
-          coAuthors:        (payload.coAuthors as string[]) ?? [],
-          tags:             (payload.tags as string[]) ?? [],
-          filePath:         payload.filePath as string | undefined,
-          content:          payload.content as string | undefined,
-          fileType:         (payload.fileType as 'pdf' | 'docx') ?? 'pdf',
-          sourceProposalId: payload.proposalId as string | undefined,
-        });
-
-        console.log(`[academia-bridge] Auto-queued paper from grantflow-proposer: ${paper.id} — "${paper.title}"`);
-
-        await claimService.emitQueueClaim(paper);
-
-        // Auto-upload if credentials are available
-        const status = uploadService.getSessionStatus();
-        if (status.isAuthenticated && payload.autoUpload) {
-          console.log(`[academia-bridge] Auto-uploading paper ${paper.id}...`);
-          const result = await uploadService.uploadPaper(paper.id);
-          if (result.success && result.academiaUrl) {
-            const updatedPaper = await paperService.getPaper(paper.id);
-            const upload = result.uploadId ? await uploadService.getUpload(result.uploadId) : null;
-            if (updatedPaper && upload) {
-              await claimService.emitUploadClaim(updatedPaper, upload);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('[academia-bridge] Failed to auto-queue paper from grantflow-proposer:', err);
-      }
     }
   });
 

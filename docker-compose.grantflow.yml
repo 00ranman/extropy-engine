@@ -1,14 +1,5 @@
-# ===============================================================================
-#  Personal grants.gov door — NOT a product face
-# ===============================================================================
-#
-#  Same SignalFlow loop as everything else. Discovery + proposer packages
-#  were built as personal tooling. Do not draw these as two boxes at the
-#  top of an architecture diagram. Map: docs/ARCHITECTURE.md
-#
-#    docker compose -f docker-compose.yml -f docker-compose.grantflow.yml up --build
-#
-# ===============================================================================
+# Personal grants.gov tool. Not part of the default compose.
+# docker compose -f docker-compose.yml -f docker-compose.grantflow.yml up --build
 
 services:
   # -- GrantFlow Discovery (port 4020) -----------------------------------------

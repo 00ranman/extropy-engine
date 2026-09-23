@@ -14,8 +14,6 @@
     { "path": "./packages/ethics" },
     { "path": "./packages/extropialingo" },
     { "path": "./packages/governance" },
-    { "path": "./packages/grantflow-discovery" },
-    { "path": "./packages/grantflow-proposer" },
     { "path": "./packages/homeflow" },
     { "path": "./packages/identity" },
     { "path": "./packages/levelup-academy" },

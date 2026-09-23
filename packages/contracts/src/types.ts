@@ -848,8 +848,6 @@ export enum ServiceName {
   CREDENTIALS        = 'credentials',
   ECOSYSTEM          = 'ecosystem',
   ACADEMIA_BRIDGE    = 'academia-bridge',
-  GRANTFLOW_DISCOVERY  = 'grantflow-discovery',
-  GRANTFLOW_PROPOSER   = 'grantflow-proposer',
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 # Extropy Engine — Dependency Graph & Data Flow
 
-**Not the product map.** Compose/build order only. Architecture: [`DIAGRAM.md`](DIAGRAM.md) · [`diagram.mmd`](diagram.mmd). Do not draw this file as faces.
+**Not the product map.** Compose and build order for the services in this workspace.
 
 ## Build Order
 
@@ -22,10 +22,6 @@ Services must be built in this order due to type and runtime dependencies:
 13. credentials                  <- depends on contracts + event-bus + reputation
 14. ecosystem                    <- depends on contracts + event-bus (aggregates all services)
 15. homeflow                     <- depends on contracts + event-bus + all core services
-
-Optional overlay (personal grants.gov door, not a face — docker-compose.grantflow.yml):
-16. grantflow-discovery          <- depends on contracts + event-bus
-17. grantflow-proposer           <- depends on contracts + event-bus + grantflow-discovery
 ```
 
 ## Port Map
@@ -47,11 +43,6 @@ Optional overlay (personal grants.gov door, not a face — docker-compose.grantf
 | homeflow             | 4015 | GET /health     |
 | PostgreSQL           | 5432 | —               |
 | Redis                | 6379 | —               |
-
-Overlay only (`docker-compose.grantflow.yml` — personal door, not a face):
-
-| grantflow-discovery  | 4020 | GET /health     |
-| grantflow-proposer   | 4021 | GET /health     |
 
 ## Frontends
 
@@ -80,11 +71,6 @@ All services share one PostgreSQL database (`extropy_engine`) with isolated sche
 | ecosystem           | `ecosystem`     | `service_registry`, `aggregations`            |
 | homeflow            | `homeflow`      | `hf_households`, `hf_devices`, `hf_entropy_events`, `hf_inventory`, `hf_tasks`, `hf_meal_plans`, `hf_health_profiles`, `hf_shopping_lists` |
 | shared              | `public`        | `event_log`                                   |
-
-Overlay only (personal grants.gov door):
-
-| grantflow-discovery | `grantflow`     | `gf_profiles`, `gf_opportunities`, `gf_matches` |
-| grantflow-proposer  | `grantflow`     | `gf_proposals`, `gf_submissions`              |
 
 Redis is used exclusively as the event bus (pub/sub channels).
 
@@ -147,7 +133,4 @@ homeflow events:
   inventory.change --> epistemology-engine (entropy claims)
   chore.completed  --> xp-mint (household XP)
   entropy.measured --> loop-ledger (verification loops)
-
-# grantflow overlay (personal door, same loop — not a face)
-# grant.discovered --> grantflow-proposer
 ```
