@@ -2,7 +2,9 @@
 
 This guide is for running HomeFlow as a small family service on a single
 computer that everyone in the household connects to from their own phone or
-laptop. It implements the canonical v3.1 identity flow from spec section 8.2:
+laptop. The phone does not run HomeFlow. It opens the page the computer is
+already serving. Keys and the log stay on that computer. It implements the
+canonical v3.1 identity flow from spec section 8.2:
 
   Google OAuth, real `did:extropy` keypair generated in the browser, a
   Verifiable Credential, and a Genesis vertex anchored on the DAG. Each

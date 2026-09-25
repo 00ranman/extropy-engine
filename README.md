@@ -12,6 +12,10 @@ A value-accounting protocol. Standing comes from a closed loop with a declared b
 
 House rule: we do not play their markets. No offset registry. No transferable tonne. No cash-out.
 
+The Engine runs on a box you plug in. A laptop, or a small computer. You clone this repo there. Keys and the log stay on that disk.
+
+A phone is not a node. It cannot clone this repo, and it does not run the stack. A phone may run an app that connects to your box. That is a screen. The only way a phone "runs" an app like everything else is by calling a server somewhere else. That is not this. Hostinger is not a node. A company's server is not your box.
+
 ---
 
 ## The Claim

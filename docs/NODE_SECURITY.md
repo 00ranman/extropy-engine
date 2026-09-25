@@ -2,6 +2,10 @@
 
 Hostinger is not the network. Each laptop is a node.
 
+A phone is not a node. You do not clone the repo onto a phone, and the phone does not run the Engine. That is not secure, and it is not the goal. A phone can run an app that connects to the box you already plugged in. The box holds the key and the log. The phone is a screen.
+
+A phone app that only works because a server somewhere else does the work is the ordinary way. It is the way this refuses. If you do not hold the box, you do not hold the node.
+
 ## How you get a DID
 
 You do not apply. First boot writes a keypair on disk.

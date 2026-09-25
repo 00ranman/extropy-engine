@@ -268,7 +268,7 @@ If a feature, copy change, or contract change violates one of these, it doesn't 
 
 These are unresolved and worth tracking.
 
-- **Best front-end shape for the user?** Browser extension, mobile app, web app, or a thin client across all three? Open.
+- **Front end.** Locked. The Engine runs on a box you plug in. A phone is a client of that box: an app that connects to it. The phone is not a host. A phone app backed by someone else's server is the thing this refuses.
 - **How aggressive should validator-side anomaly detection be?** Tradeoff between false-positive friction and gaming resistance.
 - **What's the exact merchant fee structure at scale?** 1.8% is a rough target. Real number depends on processor partnerships.
 - **Customer support staffing as a one-person project?** Currently best-effort, volunteer. Document this honestly until funding allows otherwise.

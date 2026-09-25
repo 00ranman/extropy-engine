@@ -19,6 +19,7 @@ Think like the architect. The letters already do the jobs.
 - CAT already gates a door. It does not multiply the mint.
 - ΔS is a proxy SignalFlow proposes from prior closes. Humans talk. They do not type the mint.
 - DAG appends. It does not edit.
+- The node is a box you plug in. A phone is a screen for that box. A phone does not run the Engine, and it does not become the Engine by calling a server you do not hold.
 
 Do not explain the machine to Randall. Do not add a knob because a thought experiment sounded like a hole. If a letter already covers it, stop.
 
