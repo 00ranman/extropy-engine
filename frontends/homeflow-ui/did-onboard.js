@@ -1,7 +1,7 @@
 /* ============================================
    HomeFlow Family Pilot, DID Onboarding Wizard
    ============================================
-   Generates an Ed25519 keypair via WebCrypto, derives the did:extropy DID
+   Generates an Ed25519 keypair via WebCrypto, derives the did:key DID
    string from the raw public key (matching packages/identity/src/did.ts),
    computes the multibase encoding, persists the private key in IndexedDB,
    and registers the DID with the server. The server issues a VC, anchors a
@@ -99,8 +99,8 @@
       return window.crypto.subtle.exportKey('raw', kp.publicKey).then(function (rawPub) {
         var pubBytes = new Uint8Array(rawPub);
         var pubHex = bytesToHex(pubBytes);
-        var did = 'did:extropy:' + pubHex;
         var multibase = publicKeyMultibase(pubBytes);
+        var did = 'did:key:' + multibase;
         return {
           publicKey: kp.publicKey,
           privateKey: kp.privateKey,
@@ -146,7 +146,7 @@
       + '  <h2>Step 1. Generate your keypair</h2>'
       + '  <p>Your private key is generated here in your browser using WebCrypto, '
       + '  stored in IndexedDB, and never sent to the server. The server only sees '
-      + '  your public key and the resulting did:extropy identifier.</p>'
+      + '  your public key and the resulting did:key identifier.</p>'
       + '  <button id="onboardStartBtn" class="auth-google-btn">Generate keypair</button>'
       + '</div>'
     );

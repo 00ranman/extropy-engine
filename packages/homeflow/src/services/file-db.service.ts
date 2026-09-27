@@ -147,28 +147,25 @@ export class FileBackedDb {
 
     // ── hf_users ──────────────────────────────────────────────────────────
     if (/^INSERT\s+INTO\s+hf_users/i.test(t)) {
-      const [id, google_sub, email, display_name, avatar_url, created_at] = params as [
-        string, string, string, string, string | null, number,
+      const [id, email, display_name, did, created_at] = params as [
+        string, string | null, string, string, number,
       ];
       const row: Row = {
-        id, google_sub, email, display_name, avatar_url,
-        did: null, public_key_multibase: null, public_key_hex: null,
-        vc_jwt: null, genesis_vertex_id: null, created_at, onboarded_at: null,
+        id, email, display_name, avatar_url: null,
+        did, public_key_multibase: null, public_key_hex: null,
+        vc_jwt: null, genesis_vertex_id: null, created_at, onboarded_at: created_at,
       };
       this.snapshot.users.push(row);
       await this.persist();
       return { rows: [], rowCount: 1 };
     }
 
-    if (/^UPDATE\s+hf_users\s+SET\s+email/i.test(t)) {
-      const [google_sub, email, display_name, avatar_url] = params as [
-        string, string, string, string | null,
-      ];
-      const row = this.snapshot.users.find(u => u.google_sub === google_sub);
+    if (/^UPDATE\s+hf_users\s+SET\s+display_name/i.test(t)) {
+      const [did, display_name, email] = params as [string, string, string | null];
+      const row = this.snapshot.users.find(u => u.did === did);
       if (row) {
-        row.email = email;
         row.display_name = display_name;
-        row.avatar_url = avatar_url;
+        if (email != null) row.email = email;
         await this.persist();
         return { rows: [], rowCount: 1 };
       }
@@ -193,10 +190,6 @@ export class FileBackedDb {
       return { rows: [], rowCount: 0 };
     }
 
-    if (/^SELECT\s+\*\s+FROM\s+hf_users\s+WHERE\s+google_sub/i.test(t)) {
-      const row = this.snapshot.users.find(u => u.google_sub === params[0]);
-      return { rows: row ? [row] : [], rowCount: row ? 1 : 0 };
-    }
     if (/^SELECT\s+\*\s+FROM\s+hf_users\s+WHERE\s+id/i.test(t)) {
       const row = this.snapshot.users.find(u => u.id === params[0]);
       return { rows: row ? [row] : [], rowCount: row ? 1 : 0 };

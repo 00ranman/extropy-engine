@@ -9,7 +9,7 @@
  *
  *  Family Pilot additions (May 2026):
  *    1. Node-minted DID session (no Google Auth)
- *    2. Real did:extropy DID generation in the browser, registered server side
+ *    2. Real did:key DID generation in the browser, registered server side
  *    3. Per user PSLL with Ed25519 signed entries and chain integrity
  *    4. The cyberpunk frontend is served as static files from this same port
  *  See FAMILY_PILOT.md for end user setup.

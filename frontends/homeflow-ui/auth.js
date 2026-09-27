@@ -57,15 +57,29 @@
       + '<div class="auth-card">'
       + '  <div class="auth-logo">&#9851; HomeFlow</div>'
       + '  <h1>Sign in to HomeFlow</h1>'
-      + '  <p class="auth-sub">Family pilot. Each member gets a real did:extropy identity.</p>'
-      + '  <a class="auth-google-btn" href="/auth/google">'
-      + '    <span class="auth-google-icon">G</span>'
-      + '    <span>Continue with Google</span>'
-      + '  </a>'
+      + '  <p class="auth-sub">Family pilot stub. Pasting a did:key opens a session. It does not prove this browser holds the key. The wizard mints that key after.</p>'
+      + '  <form id="hfDidForm">'
+      + '    <input id="hfDidInput" class="auth-input" type="text" autocomplete="off" spellcheck="false" placeholder="did:key:z..." />'
+      + '    <input id="hfDidName" class="auth-input" type="text" autocomplete="off" placeholder="Display name (optional)" />'
+      + '    <button class="auth-google-btn" type="submit"><span>Open session</span></button>'
+      + '  </form>'
       + (message ? '<p class="auth-message">' + escapeHtml(message) + '</p>' : '')
       + '  <p class="auth-foot">Your private key is generated in this browser and never leaves your device.</p>'
       + '</div>';
     document.body.appendChild(wrap);
+    var form = document.getElementById('hfDidForm');
+    if (form) form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var didEl = document.getElementById('hfDidInput');
+      var nameEl = document.getElementById('hfDidName');
+      var did = didEl ? didEl.value.trim() : '';
+      var name = nameEl ? nameEl.value.trim() : '';
+      api('POST', '/auth/session', { did: did, displayName: name || undefined }).then(function () {
+        window.location.reload();
+      }).catch(function (err) {
+        renderLogin(err.message || 'Sign in failed.');
+      });
+    });
   }
 
   function escapeHtml(str) {

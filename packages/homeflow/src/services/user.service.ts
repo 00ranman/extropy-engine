@@ -44,7 +44,7 @@ DO $$ BEGIN
     SELECT 1 FROM information_schema.columns
     WHERE table_name = 'hf_users' AND column_name = 'google_sub'
   ) THEN
-    ALTER TABLE hf_users ALTER COLUMN google_sub DROP NOT NULL;
+    ALTER TABLE hf_users DROP COLUMN google_sub;
   END IF;
 EXCEPTION WHEN others THEN
   NULL;

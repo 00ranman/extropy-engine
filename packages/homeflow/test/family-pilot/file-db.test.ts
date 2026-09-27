@@ -3,7 +3,7 @@
  *
  * Exercises the same SQL surface that the family-pilot golden path uses:
  *   1. Schema DDL is a no-op (no Postgres needed)
- *   2. Insert + read a user row by id, google_sub, did
+ *   2. Insert + read a user row by id, did
  *   3. Update a user with did/keys (the setIdentity path)
  *   4. Insert a hf_user_genesis anchor row (idempotent)
  *   5. Append PSLL entries through PSLLService and read them back
@@ -18,6 +18,7 @@ import { FileBackedDb } from '../../src/services/file-db.service.js';
 import { UserService } from '../../src/services/user.service.js';
 import { PSLLService } from '../../src/services/psll.service.js';
 import {
+  encodeDidKey,
   generateIdentityKeyPair,
   sign,
 } from '@extropy/identity/lib';
@@ -50,25 +51,24 @@ describe('FileBackedDb', () => {
     expect(await db.query('CREATE TABLE foo (id TEXT)')).toEqual({ rows: [], rowCount: 0 });
     expect((await db.query('SELECT 1')).rows).toEqual([{ '?column?': 1 }]);
 
-    // Register a user.
+    // Register a user from its node-minted DID.
+    const keyPair = generateIdentityKeyPair();
+    const publicKeyHex = keyPair.publicKeyHex;
+    const did = encodeDidKey(publicKeyHex);
     const userService = new UserService(db as never);
     await userService.ensureSchema();
-    const user = await userService.upsertFromGoogle({
-      googleSub: 'google-sub-001',
+    const user = await userService.upsertFromDid({
+      did,
       email: 'pilot@example.com',
       displayName: 'Pilot User',
     });
-    expect(user.googleSub).toBe('google-sub-001');
+    expect(user.did).toBe(did);
 
-    // Lookups by all three indexes.
-    expect((await userService.findByGoogleSub('google-sub-001'))?.id).toBe(user.id);
+    // Lookups by id and did.
     expect((await userService.findById(user.id))?.email).toBe('pilot@example.com');
-    expect(await userService.findByDid('did:extropy:nope')).toBeNull();
+    expect(await userService.findByDid(encodeDidKey(generateIdentityKeyPair().publicKeyHex))).toBeNull();
 
-    // Bind a DID + public key to the user.
-    const keyPair = generateIdentityKeyPair();
-    const publicKeyHex = keyPair.publicKeyHex;
-    const did = `did:extropy:${publicKeyHex}`;
+    // Bind the key to the user.
     const updated = await userService.setIdentity(user.id, {
       did,
       publicKeyMultibase: 'z' + publicKeyHex.slice(0, 12),
@@ -139,9 +139,9 @@ describe('FileBackedDb', () => {
     const db = new FileBackedDb({ dataDir: dir });
     await db.initialize();
     await db.query(
-      `INSERT INTO hf_users (id, google_sub, email, display_name, avatar_url, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      ['u1', 'g1', 'a@b.c', 'A', null, Date.now()],
+      `INSERT INTO hf_users (id, email, display_name, did, created_at, onboarded_at)
+       VALUES ($1, $2, $3, $4, $5, $5)`,
+      ['u1', 'a@b.c', 'A', 'did:key:zAtomic1', Date.now()],
     );
     const raw = fs.readFileSync(db.path, 'utf-8');
     // Must be valid JSON, not a partial write.

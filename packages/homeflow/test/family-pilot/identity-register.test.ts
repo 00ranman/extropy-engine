@@ -2,18 +2,18 @@
  * HomeFlow Family Pilot, DID registration integration test.
  *
  * Generates a real Ed25519 keypair via the identity package, derives the
- * canonical did:extropy DID, exercises the /api/v1/identity/register endpoint
+ * node-minted did:key DID, exercises the /api/v1/identity/register endpoint
  * end to end, and asserts that the user row picks up did, vc_jwt, and
  * genesis_vertex_id.
  *
- * Auth is provided by the HOMEFLOW_TEST_AUTH stub route since the real
- * Google OAuth dance cannot run in CI.
+ * Auth is provided by the HOMEFLOW_TEST_AUTH stub route (POST
+ * /auth/_test/login with a node-minted did:key).
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import {
   generateIdentityKeyPair,
-  encodeDid,
+  encodeDidKey,
   publicKeyMultibase,
   verifyCredential,
 } from '@extropy/identity/lib';
@@ -58,8 +58,6 @@ describe('POST /api/v1/identity/register', () => {
       userService,
       psllService,
       authConfig: {
-        googleClientId: undefined,
-        googleClientSecret: undefined,
         baseUrl: 'http://localhost:0',
       },
       sessionSecret: 'test-secret',
@@ -83,15 +81,15 @@ describe('POST /api/v1/identity/register', () => {
   it('accepts a real keypair, issues a VC, anchors a Genesis, persists user fields', async () => {
     const { app, userService, recordedAnchors } = await buildApp();
 
+    const kp = generateIdentityKeyPair();
+    const did = encodeDidKey(kp.publicKeyHex);
+    const mb = publicKeyMultibase(kp.publicKeyHex);
+
     const agent = request.agent(app);
     const login = await agent
       .post('/auth/_test/login')
-      .send({ googleSub: 'g-real', email: 'r@example.com', displayName: 'Real User' });
+      .send({ did, displayName: 'Real User' });
     expect(login.status).toBe(200);
-
-    const kp = generateIdentityKeyPair();
-    const did = encodeDid(kp.publicKeyHex);
-    const mb = publicKeyMultibase(kp.publicKeyHex);
 
     const res = await agent
       .post('/api/v1/identity/register')
@@ -118,11 +116,12 @@ describe('POST /api/v1/identity/register', () => {
 
   it('rejects a DID that does not match the public key', async () => {
     const { app } = await buildApp();
-    const agent = request.agent(app);
-    await agent.post('/auth/_test/login').send({ googleSub: 'g-bad' });
-
     const kp = generateIdentityKeyPair();
-    const wrongDid = 'did:extropy:' + 'b'.repeat(64);
+    const other = generateIdentityKeyPair();
+    const agent = request.agent(app);
+    await agent.post('/auth/_test/login').send({ did: encodeDidKey(kp.publicKeyHex) });
+
+    const wrongDid = encodeDidKey(other.publicKeyHex);
     const res = await agent
       .post('/api/v1/identity/register')
       .send({
@@ -135,11 +134,11 @@ describe('POST /api/v1/identity/register', () => {
 
   it('returns 409 when registering a second time', async () => {
     const { app } = await buildApp();
-    const agent = request.agent(app);
-    await agent.post('/auth/_test/login').send({ googleSub: 'g-twice' });
     const kp = generateIdentityKeyPair();
-    const did = encodeDid(kp.publicKeyHex);
+    const did = encodeDidKey(kp.publicKeyHex);
     const mb = publicKeyMultibase(kp.publicKeyHex);
+    const agent = request.agent(app);
+    await agent.post('/auth/_test/login').send({ did });
     const first = await agent.post('/api/v1/identity/register').send({
       publicKeyHex: kp.publicKeyHex, publicKeyMultibase: mb, did,
     });

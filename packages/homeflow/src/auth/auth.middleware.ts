@@ -44,7 +44,8 @@ export function requireOnboarded(userService: UserService) {
       sessionPassed = true;
     });
     if (!sessionPassed) return;
-    if (!req.hfUser?.did) {
+    // DID is set at session open. Onboarding finishes when the key is bound.
+    if (!req.hfUser?.publicKeyHex) {
       res.status(403).json({ error: 'not_onboarded' });
       return;
     }

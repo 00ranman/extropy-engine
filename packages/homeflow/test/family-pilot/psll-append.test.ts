@@ -9,7 +9,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import {
   generateIdentityKeyPair,
-  encodeDid,
+  encodeDidKey,
   publicKeyMultibase,
   sign,
 } from '@extropy/identity/lib';
@@ -52,8 +52,6 @@ describe('PSLL append flow', () => {
       },
       interopService: { listAdapters: () => [] } as never,
       authConfig: {
-        googleClientId: undefined,
-        googleClientSecret: undefined,
         baseUrl: 'http://localhost:0',
       },
       sessionSecret: 'test-secret',
@@ -62,11 +60,11 @@ describe('PSLL append flow', () => {
         async recordGenesisVertex() { return { vertexId: 'vtx-1' }; },
       },
     });
-    const agent = request.agent(app);
-    await agent.post('/auth/_test/login').send({ googleSub: 'g-psll' });
     const kp = generateIdentityKeyPair();
-    const did = encodeDid(kp.publicKeyHex);
+    const did = encodeDidKey(kp.publicKeyHex);
     const mb = publicKeyMultibase(kp.publicKeyHex);
+    const agent = request.agent(app);
+    await agent.post('/auth/_test/login').send({ did });
     const reg = await agent
       .post('/api/v1/identity/register')
       .send({ publicKeyHex: kp.publicKeyHex, publicKeyMultibase: mb, did });
@@ -90,7 +88,7 @@ describe('PSLL append flow', () => {
         credential: passthrough, dag: passthrough, reputation: passthrough,
       },
       interopService: { listAdapters: () => [] } as never,
-      authConfig: { googleClientId: undefined, googleClientSecret: undefined, baseUrl: 'http://localhost:0' },
+      authConfig: { baseUrl: 'http://localhost:0' },
       sessionSecret: 'test-secret',
       staticFrontendDir: null,
     });

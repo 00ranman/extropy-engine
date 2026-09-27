@@ -13,7 +13,6 @@ interface Row { [k: string]: unknown }
 
 export class FakeDb {
   users = new Map<string, Row>();              // by id
-  usersByGoogle = new Map<string, string>();   // googleSub -> id
   usersByDid = new Map<string, string>();      // did -> id
   pslls: Row[] = [];                           // hf_psll_entries
   genesis = new Map<string, Row>();            // user_id -> row
@@ -29,28 +28,25 @@ export class FakeDb {
 
     // ── hf_users ────────────────────────────────────────────────────────
     if (/^INSERT INTO hf_users/i.test(t)) {
-      const [id, google_sub, email, display_name, avatar_url, created_at] = params as [
-        string, string, string, string, string | null, number,
+      const [id, email, display_name, did, created_at] = params as [
+        string, string | null, string, string, number,
       ];
       const row: Row = {
-        id, google_sub, email, display_name, avatar_url,
-        did: null, public_key_multibase: null, public_key_hex: null,
-        vc_jwt: null, genesis_vertex_id: null, created_at, onboarded_at: null,
+        id, email, display_name, avatar_url: null,
+        did, public_key_multibase: null, public_key_hex: null,
+        vc_jwt: null, genesis_vertex_id: null, created_at, onboarded_at: created_at,
       };
       this.users.set(id, row);
-      this.usersByGoogle.set(google_sub, id);
+      this.usersByDid.set(did, id);
       return { rows: [], rowCount: 1 };
     }
-    if (/^UPDATE hf_users\s+SET email/i.test(t)) {
-      const [google_sub, email, display_name, avatar_url] = params as [
-        string, string, string, string | null,
-      ];
-      const id = this.usersByGoogle.get(google_sub);
+    if (/^UPDATE hf_users\s+SET display_name/i.test(t)) {
+      const [did, display_name, email] = params as [string, string, string | null];
+      const id = this.usersByDid.get(did);
       if (id) {
         const row = this.users.get(id)!;
-        row.email = email;
         row.display_name = display_name;
-        row.avatar_url = avatar_url;
+        if (email != null) row.email = email;
       }
       return { rows: [], rowCount: id ? 1 : 0 };
     }
@@ -60,6 +56,7 @@ export class FakeDb {
       ];
       const row = this.users.get(userId);
       if (row) {
+        if (row.did && row.did !== did) this.usersByDid.delete(row.did as string);
         row.did = did;
         row.public_key_multibase = mb;
         row.public_key_hex = pkh;
@@ -69,11 +66,6 @@ export class FakeDb {
         this.usersByDid.set(did, userId);
       }
       return { rows: [], rowCount: row ? 1 : 0 };
-    }
-    if (/^SELECT \* FROM hf_users WHERE google_sub/i.test(t)) {
-      const id = this.usersByGoogle.get(params[0] as string);
-      const row = id ? this.users.get(id) : null;
-      return { rows: row ? [row] : [], rowCount: row ? 1 : 0 };
     }
     if (/^SELECT \* FROM hf_users WHERE id/i.test(t)) {
       const row = this.users.get(params[0] as string);

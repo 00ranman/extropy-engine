@@ -2,6 +2,7 @@
  * HomeFlow Family Pilot, auth middleware tests.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import { generateIdentityKeyPair, encodeDidKey } from '@extropy/identity/lib';
 import { requireSession, requireOnboarded } from '../../src/auth/auth.middleware.js';
 import { UserService } from '../../src/services/user.service.js';
 import { FakeDb } from './fake-db.js';
@@ -17,6 +18,10 @@ function makeRes() {
     json(b: unknown) { this.body = b; return this; },
   };
   return res;
+}
+
+function freshDid(): string {
+  return encodeDidKey(generateIdentityKeyPair().publicKeyHex);
 }
 
 describe('auth middleware', () => {
@@ -52,8 +57,8 @@ describe('auth middleware', () => {
   });
 
   it('requireSession passes through and attaches hfUser when user exists', async () => {
-    const u = await userService.upsertFromGoogle({
-      googleSub: 'g-1', email: 'a@b.c', displayName: 'A', avatarUrl: null,
+    const u = await userService.upsertFromDid({
+      did: freshDid(), displayName: 'A', email: 'a@b.c',
     });
     const mw = requireSession(userService);
     const req = makeReq({ userId: u.id });
@@ -64,9 +69,9 @@ describe('auth middleware', () => {
     expect((req as { hfUser?: { id: string } }).hfUser?.id).toBe(u.id);
   });
 
-  it('requireOnboarded returns 403 when user has no DID yet', async () => {
-    const u = await userService.upsertFromGoogle({
-      googleSub: 'g-2', email: 'b@b.c', displayName: 'B', avatarUrl: null,
+  it('requireOnboarded returns 403 when user has no keys yet', async () => {
+    const u = await userService.upsertFromDid({
+      did: freshDid(), displayName: 'B', email: 'b@b.c',
     });
     const mw = requireOnboarded(userService);
     const req = makeReq({ userId: u.id });
@@ -78,14 +83,16 @@ describe('auth middleware', () => {
     expect((res.body as { error: string }).error).toBe('not_onboarded');
   });
 
-  it('requireOnboarded passes through once user has a DID', async () => {
-    const u = await userService.upsertFromGoogle({
-      googleSub: 'g-3', email: 'c@b.c', displayName: 'C', avatarUrl: null,
+  it('requireOnboarded passes through once keys are bound', async () => {
+    const kp = generateIdentityKeyPair();
+    const did = encodeDidKey(kp.publicKeyHex);
+    const u = await userService.upsertFromDid({
+      did, displayName: 'C', email: 'c@b.c',
     });
     await userService.setIdentity(u.id, {
-      did: 'did:extropy:' + 'a'.repeat(64),
+      did,
       publicKeyMultibase: 'zABC',
-      publicKeyHex: 'a'.repeat(64),
+      publicKeyHex: kp.publicKeyHex,
       vcJwt: 'vc.jwt.here',
       genesisVertexId: 'v-1',
     });

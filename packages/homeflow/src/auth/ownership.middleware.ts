@@ -8,7 +8,7 @@
  *  mutate any other family's household just by knowing or guessing its ID.
  *
  *  Ownership model for the pilot:
- *    A user's validator identity is their did:extropy DID. A household is owned by
+ *    A user's validator identity is their did:key DID. A household is owned by
  *    the validator that created it and is shared with everyone in
  *    member_validator_ids. The household service already encodes this with
  *      WHERE validator_id = $1 OR $1 = ANY(member_validator_ids)

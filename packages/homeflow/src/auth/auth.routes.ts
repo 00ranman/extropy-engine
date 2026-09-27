@@ -11,6 +11,7 @@
  */
 
 import { Router, type Request, type Response, type NextFunction } from 'express';
+import { isDidKey } from '@extropy/identity/lib';
 import type { UserService, User } from '../services/user.service.js';
 import { requireSession, type AuthedRequest } from './auth.middleware.js';
 
@@ -21,7 +22,7 @@ export interface AuthConfig {
   failureRedirect?: string;
 }
 
-const DID_RE = /^did:[a-z0-9]+:[A-Za-z0-9._%-]+$/i;
+const DID_RE = /^did:key:z[1-9A-HJ-NP-Za-km-z]+$/;
 
 export function createAuthRoutes(userService: UserService, _config: AuthConfig): Router {
   const router = Router();
@@ -34,7 +35,7 @@ export function createAuthRoutes(userService: UserService, _config: AuthConfig):
     try {
       const body = req.body as { did?: string; displayName?: string };
       const did = (body.did ?? '').trim();
-      if (!did || !DID_RE.test(did)) {
+      if (!did || !isDidKey(did) || !DID_RE.test(did)) {
         res.status(400).json({
           error: 'invalid_did',
           message: 'Provide the DID minted by your own node (did:...). No Google Auth.',
@@ -51,7 +52,7 @@ export function createAuthRoutes(userService: UserService, _config: AuthConfig):
         userId: user.id,
         did: user.did,
         displayName: user.displayName,
-        onboarded: !!user.did,
+        onboarded: !!user.publicKeyHex,
       });
     } catch (err) {
       next(err);
@@ -85,7 +86,7 @@ export function createAuthRoutes(userService: UserService, _config: AuthConfig):
       did: user.did,
       publicKeyMultibase: user.publicKeyMultibase,
       genesisVertexId: user.genesisVertexId,
-      onboarded: !!user.did,
+      onboarded: !!user.publicKeyHex,
     });
   });
 
@@ -94,7 +95,11 @@ export function createAuthRoutes(userService: UserService, _config: AuthConfig):
     router.post('/_test/login', async (req: Request, res: Response, next: NextFunction) => {
       try {
         const body = req.body as { did?: string; displayName?: string };
-        const did = (body.did ?? '').trim() || `did:extropy:test-${Date.now()}`;
+        const did = (body.did ?? '').trim();
+        if (!did || !isDidKey(did)) {
+          res.status(400).json({ error: 'invalid_did' });
+          return;
+        }
         const user = await userService.upsertFromDid({
           did,
           displayName: body.displayName ?? 'Test User',

@@ -5,8 +5,8 @@
  *
  *  POST /api/v1/identity/register
  *    Body: { publicKeyHex, publicKeyMultibase, did }
- *    Server validates the DID matches did:extropy:<publicKeyHex>, issues a
- *    self issued OnboardingCredential bound to the user's Google sub, anchors
+ *    Server validates the DID matches did:key for the public key, issues a
+ *    self issued OnboardingCredential, anchors
  *    a Genesis vertex on the DAG substrate, and stores the resulting
  *    materials on the user row.
  *
@@ -19,9 +19,8 @@ import { Router, type Response, type NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import {
   generateIdentityKeyPair,
-  encodeDid,
-  isExtropyDid,
-  publicKeyHexFromDid,
+  encodeDidKey,
+  isDidKey,
   publicKeyMultibase as deriveMultibase,
   issueCredential,
   sha256Hex,
@@ -50,7 +49,8 @@ export function createIdentityRoutes(
     async (req: AuthedRequest, res: Response, next: NextFunction) => {
       try {
         const user = req.hfUser!;
-        if (user.did) {
+        // DID is set when the session opens. Keys are what this route binds.
+        if (user.publicKeyHex) {
           res.status(409).json({
             error: 'already_onboarded',
             did: user.did,
@@ -69,17 +69,13 @@ export function createIdentityRoutes(
           res.status(400).json({ error: 'publicKeyHex must be 64 hex chars' });
           return;
         }
-        if (!body.did || !isExtropyDid(body.did)) {
-          res.status(400).json({ error: 'did must be a valid did:extropy:<hex>' });
+        if (!body.did || !isDidKey(body.did)) {
+          res.status(400).json({ error: 'did must be a valid did:key' });
           return;
         }
-        if (publicKeyHexFromDid(body.did) !== body.publicKeyHex.toLowerCase()) {
+        const expectedDid = encodeDidKey(body.publicKeyHex);
+        if (expectedDid !== body.did) {
           res.status(400).json({ error: 'did does not match publicKeyHex' });
-          return;
-        }
-        const expectedDid = encodeDid(body.publicKeyHex);
-        if (expectedDid !== body.did.toLowerCase()) {
-          res.status(400).json({ error: 'did mismatch with canonical encoding' });
           return;
         }
         const expectedMultibase = deriveMultibase(body.publicKeyHex);
@@ -97,18 +93,18 @@ export function createIdentityRoutes(
         // Self issued OnboardingCredential. The HomeFlow server holds an
         // ephemeral issuer key for the family pilot; in production each
         // participant's personal AI signs their own credential per spec
-        // section 8. For the pilot we trust Google as proof of personhood.
+        // section 8. Personhood here is the node-minted DID. The server still
+        // signs this pilot credential. That is not proof the browser holds the key.
         const issuerKey = generateIdentityKeyPair();
         const vcJwt = issueCredential({
           type: 'OnboardingCredential',
           issuerKey,
           subjectDid: body.did,
           subjectClaims: {
-            googleSub: user.googleSub,
             email: user.email,
             displayName: user.displayName,
           },
-          evidenceDigest: sha256Hex(`google:${user.googleSub}`),
+          evidenceDigest: sha256Hex(body.publicKeyHex.toLowerCase()),
         });
         const vcHash = sha256Hex(vcJwt);
         const ts = Date.now();
@@ -149,7 +145,7 @@ export function createIdentityRoutes(
         publicKeyMultibase: user.publicKeyMultibase,
         vcJwt: user.vcJwt,
         genesisVertexId: user.genesisVertexId,
-        onboarded: !!user.did,
+        onboarded: !!user.publicKeyHex,
       });
     },
   );
