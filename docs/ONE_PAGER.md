@@ -1,132 +1,48 @@
+---
 # Extropy Engine
-### A two-sided market disguised as a loyalty program disguised as a discount engine.
+## The protocol on one page
 
-> **2026-09-11.** This one-pager is a pitch sheet. Engineering spec is [`SPEC_v3.5.md`](./SPEC_v3.5.md). Do not implement meters from this file. Five ledger objects (XP, CT, EP, CAT, IT), not six tokens. EP = XP · L + λ · L. H_cap is Auto. Leak is 0.99ⁿ every 10 days. Letter key wins on names.
+The mission: put entropy on a leash. Local pockets of sanity play a game on a ledger that gets less stupid over time.
 
+This page describes the protocol only. Apps built on it and the movement around it are listed at the bottom, where they belong. Engineering spec is SPEC_v3.5.md. If this page and the spec disagree, the spec wins.
 
+## The mechanism
+
+You do a verifiable thing. The protocol scores the work, scores how it landed, and the till converts it into spending power. Five ledger objects, not tokens: XP, CT, EP, CAT, IT.
+
+**XP** is the work score. XP = R x F x ΔS x (w·E) x log(1/Ts). R is how rare the action class is, never your reputation. Reputation never enters this product. F makes repeats pay less. ΔS is the bits-equivalent proxy of disorder actually reduced, proposed by the loop, never typed in by hand. w·E weights it across eight domains. Ts is the slam window: close a loop instantly and it mints zero.
+
+**CT** is the reception score. Community standing on your local web. It feeds the till and the tally. It never touches XP. It leaks slowly when idle and it does not travel between webs.
+
+**L** is local coupling, clipped between zero and one. **EP** = XP · L + λ · L, with λ at 0.15. EP dies in the sale: it buys the discount and then it is gone. There is no EP pile to hoard.
+
+**IT** is influence in the tally. It burns when used. It is not a pile and it is not bought with XP.
+
+**CAT** is the capability record: who you are, what lane, what level, who issued it. It feeds the weighting. It stays off the mint.
+
+## The hard rules
+
+No validator class. LOOK is a vertex: one neighbor saying "I saw it" is evidence, not a verdict. Nobody gets a gavel.
+
+You do not score yourself. SignalFlow proposes the entropy delta. You do not type the mint.
+
+Identity is did:key on your own node. No Google, no KYC, no registrar. Your log lives on your disk; the mesh gets receipts, not the diary.
+
+The user-facing game is deliberately a different metric from the scoring function. Farm the visible one all day; it pays in fun, not in EP. That is how the measure survives becoming a target.
+
+Fail closed. If verification fails, XP is zero.
+
+## What would kill it
+
+The design names its own falsifiers. If the cost of corrupting a witness can be driven below the maximum local benefit that witness can vouch for, the coupling fails. If stranger onboarding cannot be priced without recreating a club with a stamp, the stranger criterion fails. If adversarial testing shows fabricated identities earning room attention below the published cost, the design is wrong. If the ledger does not get less stupid over time, it is a costume.
+
+## The layers, kept separate
+
+The protocol is the index card above. Everything else is not the protocol.
+
+App layer, four faces, equal: LocalFlow for people and errands, HomeFlow for houses and neighborhoods, the quest market for two to five minute work, the merchant till where cash still rings and EP dies in the sale.
+
+Movement layer: the book, the papers, the music, the speaking. The movement carries the protocol into rooms. It is not the protocol.
+
+A folder is not a face. A face is not the engine.
 ---
-
-## The pitch in one paragraph
-
-Most reward systems are scams. They give you 2.2% back so you spend more, and they sell your data on the back end. Extropy Engine flips it: customers save real money by participating in habits that reduce waste, and merchants get a free point-of-sale, a customer pipeline, and operational signal better than legacy KPIs. Underneath both sides, a thermodynamically grounded coordination layer measures actual entropy reduction and pays out accordingly. Customers don't see the math. Merchants don't see the math. Both sides just feel the effects.
-
----
-
-## The architecture (three layers)
-
-**Layer 1 — User-facing.** Discounts, savings, gamified feedback. The user holds the keys to their own character sheet. Validators prevent forgery. The user holds the pen and the eraser. Reality holds the dice.
-
-**Layer 2 — Merchant-facing.** Free POS, customer pipeline, deeper operational signal than KPIs. Merchants pay no SaaS. Revenue captured through standard merchant-services fees, undercutting incumbents.
-
-**Layer 3 — The engine.** Six canonical tokens (XP, CT, CAT, IT, DT, EP) running on a decentralized ledger with validator consensus. The math is invariant under actor swap: same entropy reduction = same XP, regardless of who's reporting it. No reputation laundering. No Goodhart trap. Users can't farm a number they can't see.
-
----
-
-## Why it works (the flywheel)
-
-1. User self-reports a habit through an app or browser extension. Voluntary. Validators witness.
-2. The engine mints XP from honest entropy reduction. EP = XP × L converts to merchant loyalty value.
-3. User saves real dollars at participating merchants. Word spreads.
-4. Customers walk into shops asking which businesses are on the network.
-5. Merchants opt in. Free POS, standard rails, better signal, more customers.
-6. Merchants begin self-reporting inventory and supply chain. Their data legibility improves.
-7. Larger merchants register as DFAO nodes for deeper benefits. They become network infrastructure.
-8. Multinationals join as nodes. Network effect compounds.
-
-Each side gets more valuable as the other side grows. Classic two-sided market, except the network effect is **entropy-reduction efficiency**, not engagement.
-
----
-
-## What this is not
-
-- Not a credit score. Reputation never enters the XP formula. R is Rarity, an action-class property of the loop, not the actor.
-- Not a social credit system. Users hold their own keys. The state cannot write to a user's record.
-- Not surveillance capitalism. Self-disclosure is voluntary, and over-sharing does not earn more reward. Privacy is not a tax.
-- Not a typical loyalty program. The reward isn't engagement, it's actual money saved. A user who participates once a month for a year gets paid for that. A grinder doesn't get more.
-- Not a SaaS company. We don't charge merchants. We don't paywall users. We capture merchant-services fees instead.
-
----
-
-## What it is
-
-A coordination layer for honest behavior.
-
-A way to make "doing the right thing" cheaper than the alternative, at scale, without surveillance, without coercion, and without an engagement-farming hellscape.
-
-A protocol that pays people to be the kind of people they already wanted to be.
-
----
-
-## The math (canonical v3.1.2)
-
-```
-XP = R × F × ΔS × (w·E) × log(1/Tₛ)
-CT = C × F × ρ × Δ × E
-EP = XP × L
-```
-
-- **R** = Rarity (action-class scarcity per domain). Property of the loop, never the actor.
-- **F** = Frequency-of-decay. Rare actions decay slower; common actions decay fast.
-- **ΔS** = Entropy delta of the loop. The actual measurable disorder reduced.
-- **w·E** = Eight-domain weighting (thermodynamic, informational, social, economic, ecological, governance, cognitive, spiritual).
-- **Tₛ** = Time-to-settle. Slower, harder, more durable contributions weight higher.
-- **C** = Capability. **ρ** = Reputation density. **Δ** = Entropy delta. (CT-only.)
-- **L** = Local merchant loyalty multiplier.
-
-Multiplication is commutative. The math is invariant under actor swap. Verified.
-
----
-
-## The business model
-
-| Source | What we capture | What we don't charge for |
-|---|---|---|
-| Merchant-services fee | ~1.8% (vs 2.5–3% incumbents) | The POS itself |
-| DFAO node registration | Tiered fees for deeper integration | The customer-facing app |
-| Premium merchant analytics | Deeper signal beyond standard dashboards | Basic operational data |
-| Treasury yield on EP float | Standard mechanism | User accounts |
-| Multinational integrations | Specialized contracts | Network participation |
-
-Two flywheel rules: **don't charge SaaS, don't paywall users**. Everything else is negotiable.
-
----
-
-## What we need
-
-- A first 100 customers (organic, through one merchant in one town).
-- A first 5 merchants (free POS swap, no risk to them).
-- One full loop of: customer reports → validator confirms → EP mints → discount redeems → merchant retains customer.
-- Once that loop closes once, in production, at one location, the rest is replication.
-
----
-
-## Why now
-
-Existing loyalty infrastructure is decades behind what's possible. Existing point-of-sale software is overpriced and underbuilt. Existing reward systems are extractive. Decentralized identity, validator networks, and lightweight ledgers are mature enough to deploy. The gap between what exists and what's possible has never been wider, and the cost of building it has never been lower.
-
-A solo developer with the right architecture can ship the first version. Network effects do the rest.
-
----
-
-## About the Author
-
-Randall Gossett. Solo dev out of Maxwell, Texas. Full-stack, systems architecture, music production, books. Built this whole thing himself, mostly between other obligations, on consumer hardware, with a voice-to-text habit and an iteration loop measured in hours.
-
-No PhD. No physics degree. No institution. No funded lab. No paper in a journal anyone has heard of. Not pending. Not coming. The credential gap is real and it is going to stay there.
-
-The work is the point. Operating from first principles with a working command of quantum mechanics, information theory, thermodynamics, decentralized systems, and protocol design puts a person in a thinner slice of the population than most letters after a name will. Not because the letters are fake. Because the letters mostly certify that someone learned to stop noticing the things this project is built on noticing. Read enough physics papers and you start to clock which physicists are bluffing. Build enough systems and you start to clock which architectures are vibes in a trench coat. That's the qualification on offer.
-
-This is getting built because nobody else was going to. The infrastructure exists. The math works. The incentives line up. The only missing input was a person stubborn enough to assemble it without permission, and that part is handled.
-
-I'm looking for collaborators who get protocol-shaped work. Not gatekeepers. Not credential checkers. People who can read the code, run the math, and tell me where I'm wrong, in that order.
-
----
-
-## Contact
-
-GitHub: [github.com/00ranman](https://github.com/00ranman)
-Repo: [github.com/00ranman/extropy-engine](https://github.com/00ranman/extropy-engine)
-
----
-
-*"The system isn't broken. It's working exactly as designed. We're building a different one."*
