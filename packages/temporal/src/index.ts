@@ -26,7 +26,7 @@ import type {
   SeasonId,
   SeasonStatus,
   SeasonRanking,
-  ValidatorId,
+  LookerId,
   LoopId,
   DomainEvent,
   ServiceHealthResponse,
@@ -279,13 +279,13 @@ app.post('/seasons/:id/start', async (req, res) => {
     }
 
     // Take governance rankings snapshot (current validator standings)
-    let rankingsSnapshot: Record<ValidatorId, number> = {};
+    let rankingsSnapshot: Record<LookerId, number> = {};
     try {
       const repRes = await fetch(`${REPUTATION_URL}/validators?isActive=true`);
       if (repRes.ok) {
         const validators = (await repRes.json()) as any[];
         for (const v of validators) {
-          rankingsSnapshot[v.id as ValidatorId] = v.aggregate_reputation ?? v.reputation?.aggregate ?? 0;
+          rankingsSnapshot[v.id as LookerId] = v.aggregate_reputation ?? v.reputation?.aggregate ?? 0;
         }
       }
     } catch (err) {
@@ -515,7 +515,7 @@ app.post('/reputation/decay-tick', async (_req, res) => {
         EventType.REPUTATION_DECAY_TICK,
         row.id as LoopId,
         {
-          validatorId:  row.id as ValidatorId,
+          validatorId:  row.id as LookerId,
           domain:       'aggregate' as unknown as EntropyDomain,
           decayAmount:  currentAggregate - newAggregate,
           newAggregate,
@@ -569,7 +569,7 @@ app.post('/governance/weight-decay', async (_req, res) => {
         EventType.GOVERNANCE_WEIGHT_DECAYED,
         row.validator_id as LoopId,
         {
-          validatorId:    row.validator_id as ValidatorId,
+          validatorId:    row.validator_id as LookerId,
           dfaoId:         row.dfao_id as DFAOId,
           previousWeight,
           newWeight,
@@ -630,7 +630,7 @@ app.post('/xp/decay', async (_req, res) => {
         EventType.XP_DECAYED,
         row.validator_id as LoopId,
         {
-          validatorId:  row.validator_id as ValidatorId,
+          validatorId:  row.validator_id as LookerId,
           previousXP,
           newXP,
           decayRate:    DECAY_RATE,
@@ -844,7 +844,7 @@ app.post('/cron/tick', async (_req, res) => {
           row.validator_id as LoopId,
           {
             walletId:    row.wallet_id,
-            validatorId: row.validator_id as ValidatorId,
+            validatorId: row.validator_id as LookerId,
             amount:      row.amount,
             seasonId,
           },
@@ -1045,7 +1045,7 @@ async function executeScheduledTask(row: any): Promise<void> {
           row.validator_id as LoopId,
           {
             walletId:     row.wallet_id,
-            validatorId:  row.validator_id as ValidatorId,
+            validatorId:  row.validator_id as LookerId,
             burnedAmount,
             inactiveDays,
             vertexId:     '' as any,
@@ -1083,7 +1083,7 @@ async function executeScheduledTask(row: any): Promise<void> {
           EventType.CAT_RECERTIFICATION_DUE,
           row.validator_id as LoopId,
           {
-            validatorId:    row.validator_id as ValidatorId,
+            validatorId:    row.validator_id as LookerId,
             domain:         row.domain as EntropyDomain,
             lastCertifiedAt: new Date(row.issued_at).toISOString(),
             dueBy,
@@ -1128,7 +1128,7 @@ async function computeCurrentRankings(
   ).catch(() => ({ rows: [] as any[] }));
 
   const rankings: SeasonRanking[] = xpRes.rows.map((row: any, idx: number) => ({
-    validatorId: row.validator_id as ValidatorId,
+    validatorId: row.validator_id as LookerId,
     rank:        idx + 1,
     totalXP:     parseFloat(row.season_xp ?? '0'),
     totalLoops:  parseInt(row.loop_count ?? '0', 10),
@@ -1158,7 +1158,7 @@ async function computeFinalRankings(
   ).catch(() => ({ rows: [] as any[] }));
 
   const rankings: SeasonRanking[] = xpRes.rows.map((row: any, idx: number) => ({
-    validatorId: row.validator_id as ValidatorId,
+    validatorId: row.validator_id as LookerId,
     rank:        idx + 1,
     totalXP:     parseFloat(row.season_xp ?? '0'),
     totalLoops:  parseInt(row.loop_count ?? '0', 10),

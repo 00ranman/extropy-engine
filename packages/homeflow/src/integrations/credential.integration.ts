@@ -20,7 +20,7 @@ import type { EventBusService } from '../services/event-bus.service.js';
 import { HomeFlowEventType } from '../types/index.js';
 import type { HouseholdId } from '../types/index.js';
 import { CredentialType, EntropyDomain } from '@extropy/contracts';
-import type { ValidatorId, CredentialId } from '@extropy/contracts';
+import type { LookerId, CredentialId } from '@extropy/contracts';
 
 const EFFICIENCY_THRESHOLDS = [
   { level: 'bronze' as const,   minDeltaS: 100,   name: 'Energy Saver' },
@@ -98,7 +98,7 @@ export class CredentialIntegration {
           householdId,
           {
             householdId: householdId as HouseholdId,
-            validatorId: validatorId as ValidatorId,
+            validatorId: validatorId as LookerId,
             credentialId: credentialId as CredentialId,
             level: threshold.level,
             cumulativeDeltaS,

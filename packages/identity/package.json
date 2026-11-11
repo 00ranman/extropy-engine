@@ -1,7 +1,7 @@
 {
   "name": "@extropy/identity",
   "version": "0.1.0",
-  "description": "Hybrid identity: OAuth + on-device KYC + DID + ZKP wrapper. Sybil-resistant, privacy-preserving, governance-revealable. v3.1.",
+  "description": "Node-minted did:key. No KYC, no OAuth, no registrar. Sandbox routes still implement the retired v3.1 session machine.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

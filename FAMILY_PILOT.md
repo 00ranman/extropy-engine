@@ -4,46 +4,24 @@ This guide is for running HomeFlow as a small family service on a single
 computer that everyone in the household connects to from their own phone or
 laptop. The phone does not run HomeFlow. It opens the page the computer is
 already serving. Keys and the log stay on that computer. It implements the
-canonical v3.1 identity flow from spec section 8.2:
+v3.5 identity rule:
 
-  Google OAuth, real `did:extropy` keypair generated in the browser, a
-  Verifiable Credential, and a Genesis vertex anchored on the DAG. Each
-  subsequent action is signed by the user's local Ed25519 key and appended
-  to their per user signed local log (PSLL).
+  The node mints a W3C `did:key` at first boot. No Google Auth, no KYC,
+  no registrar. The browser wizard can mint that key after a session opens.
+  Pasting a `did:key` opens a session. It does not prove the browser holds
+  the key. Each subsequent action is signed by the user's local Ed25519 key
+  and appended to their per user signed local log (PSLL). Lose the key
+  without a backup and you start over.
 
 ## What you will set up
 
-1. A Google OAuth client so each family member can sign in with their Gmail
-2. A Postgres + Redis pair (already provided by the repo's `docker compose`)
-3. The HomeFlow service, listening on port 4001 and serving the cyberpunk UI
-4. Network access from the rest of the family's devices
+1. The HomeFlow service, listening on port 4001 and serving the UI
+2. A Postgres + Redis pair only if you opt out of the file-backed store
+3. Network access from the rest of the family's devices
 
-## 1. Create a Google OAuth client
+There is no Google OAuth client. `/auth/google` returns 410.
 
-Go to https://console.cloud.google.com, create a project, then OAuth consent
-screen, then Credentials, then Create Credentials, OAuth client ID, type
-"Web application".
-
-Authorized JavaScript origins:
-
-```
-http://localhost:4001
-http://<your-lan-ip>:4001
-```
-
-If you also expose this through Tailscale or Cloudflare Tunnel, add those
-host names too. The Tailscale Magic DNS host name works as well.
-
-Authorized redirect URIs:
-
-```
-http://localhost:4001/auth/google/callback
-http://<your-lan-ip>:4001/auth/google/callback
-```
-
-Copy the Client ID and Client Secret into the env file in step 3.
-
-## 2. Find your LAN IP
+## 1. Find your LAN IP
 
 On macOS or Linux:
 
@@ -59,7 +37,7 @@ On Windows PowerShell:
 
 Pick the address on the same Wi Fi as the rest of the family.
 
-## 3. Configure environment variables
+## 2. Configure environment variables
 
 Copy `.env.example` to `.env` at the repo root and fill in:
 
@@ -69,14 +47,11 @@ BASE_URL=http://<your-lan-ip>:4001
 SESSION_SECRET=<long random string>
 HOMEFLOW_DATA_DIR=./.data
 # DATABASE_URL=postgresql://extropy:extropy_dev@localhost:5432/extropy_engine?schema=homeflow
-GOOGLE_CLIENT_ID=<from step 1>
-GOOGLE_CLIENT_SECRET=<from step 1>
 ```
 
 `SESSION_SECRET` should be 32 plus random bytes. `openssl rand -hex 32` works.
 
-Without `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` the `/auth/google` route
-returns 503 with a hint, the rest of the API still runs so you can poke at it.
+Do not set a Google client id. `/auth/google` returns 410.
 
 ### Storage: file-backed by default, Postgres optional
 
@@ -92,7 +67,7 @@ To graduate to Postgres later, set `DATABASE_URL` to a real connection string
 (or rerun `deploy-homeflow.sh` with `ENABLE_POSTGRES=1`). The Postgres code
 path is intact behind the runtime branch in `src/index.ts`.
 
-## 4. Start the service
+## 3. Start the service
 
 In dev mode (file-backed store, no extra services needed):
 
@@ -111,37 +86,40 @@ port (default 4001). You should see:
 [homeflow] Web: http://localhost:4001/
 ```
 
-## 5. Family members sign in
+## 4. Family members open a session
 
-Open `http://<your-lan-ip>:4001` on a phone or laptop. The first screen is
-"Sign in with Google". After consent, the onboarding wizard:
+Open `http://<your-lan-ip>:4001` on a phone or laptop. The first screen asks
+for a `did:key`. Pasting one calls `POST /auth/session`. It opens a session.
+It does not prove this browser holds the key. There is no Google sign-in.
+
+If the DID has not been onboarded on this browser, the wizard:
 
 1. Generates an Ed25519 keypair using WebCrypto
-2. Stores the private key in IndexedDB on that device, the server never sees it
-3. Posts the public key plus the canonical `did:extropy:<hex>` to the server
-4. The server issues a self issued Onboarding VC and anchors a Genesis vertex
+2. Stores the private key in IndexedDB on that device. The server never sees it
+3. Derives a W3C `did:key` and registers the public key with the server
+4. The server anchors a Genesis vertex
 5. The user lands on the dashboard with a header chip showing their DID
+
+Lose that key without a backup and you start over. There is no registrar.
 
 From that point, key actions like creating a household are signed locally
 with the user's private key and appended to their PSLL. The "My PSLL" tab in
 the sidebar shows the current chain.
 
-## 6. Optional: Tailscale or Cloudflare Tunnel
+## 5. Optional: Tailscale or Cloudflare Tunnel
 
 If your family is not all on the same LAN, two simple options:
 
 - **Tailscale:** install the Tailscale client on Randall's machine and on
   every family member's device. They'll all share a private mesh. Use the
-  Tailscale IP or Magic DNS name as `BASE_URL` and add it to the OAuth
-  authorized origins and redirect URIs.
+  Tailscale IP or Magic DNS name as `BASE_URL`.
 
 - **Cloudflare Tunnel:** `cloudflared tunnel --url http://localhost:4001`
-  prints a public hostname. Add that hostname to the OAuth authorized
-  origins and redirect URIs, then update `BASE_URL`. Note: the free tier
+  prints a public hostname. Set `BASE_URL` to that hostname. Note: the free tier
   rotates the hostname on every restart, prefer Tailscale for a stable
   setup.
 
-## 7. Reset / development tips
+## 6. Reset / development tips
 
 - To wipe a family member's local keys, in their browser open DevTools,
   Application, IndexedDB, delete the `homeflow-identity` database. They will
@@ -188,8 +166,7 @@ What that means in practice:
 **Recommended fix: Tailscale.** Install Tailscale on the host plus each
 family device. Tailscale gives every machine a stable `*.ts.net` hostname
 with a real HTTPS certificate, no manual cert wrangling. Set `BASE_URL` to
-the Tailscale hostname, add it to the Google OAuth authorized origins and
-redirect URIs, and every family device gets the full PWA experience with
+the Tailscale hostname as `BASE_URL`, and every family device gets the full PWA experience with
 offline caching and proper install prompts.
 
 Self signed certs on the LAN are not recommended, that path leads to a
@@ -220,7 +197,7 @@ curl -s http://127.0.0.1:4002/now | head -20
 
 By design the family pilot stops short of:
 
-- On device KYC (we trust Google as a proof of personhood proxy)
+- KYC of any kind. Identity is the node-minted `did:key`. Standing costs work
 - ZK nullifier proofs at the API gateway (the primitives exist in the
   identity package, wiring them up is a follow up PR)
 - Multi node DAG sync (single server sandbox per spec section 2)

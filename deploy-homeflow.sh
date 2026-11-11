@@ -143,9 +143,7 @@ SECURE_COOKIES=true
 TEMPORAL_URL=http://127.0.0.1:$TEMPORAL_PORT
 TEMPORAL_HMAC_SECRET=$TEMPORAL_HMAC_SECRET
 
-# Fill these in after creating Google OAuth client (see post-deploy notes)
-GOOGLE_CLIENT_ID=PASTE_HERE
-GOOGLE_CLIENT_SECRET=PASTE_HERE
+# Identity is the DID minted on this node. No Google Auth client.
 EOF
   chown "$APP_USER:$APP_USER" "$ENV_FILE"
   chmod 600 "$ENV_FILE"
@@ -377,13 +375,8 @@ NEXT STEPS (these still need to be done by you, in this order):
 2) SSL cert (only AFTER dig returns the IP above):
      certbot --nginx -d $DOMAIN --non-interactive --agree-tos -m randall@extropyengine.com --redirect
 
-3) Google OAuth client:
-   Authorized JavaScript origins:  https://$DOMAIN
-   Authorized redirect URIs:       https://$DOMAIN/auth/google/callback
-
-   Then paste the Client ID and Client Secret into:
-     $ENV_FILE
-   (the file already has placeholder lines)
+3) Identity is the DID this node mints. There is no Google Auth client
+   and no KYC step. /auth/google returns 410.
 
 4) Start the services:
      systemctl restart temporal homeflow
@@ -396,7 +389,7 @@ NEXT STEPS (these still need to be done by you, in this order):
      curl -s http://127.0.0.1:$TEMPORAL_PORT/health
      curl -s http://127.0.0.1:$TEMPORAL_PORT/now | head -20
 
-6) Open https://$DOMAIN/ in a browser. Sign in with Google. Family pilot is live.
+6) Open https://$DOMAIN/ in a browser. Open a session with the node-minted did:key. Family pilot is live.
    Season transitions will fire from the temporal service into HomeFlow's
    /temporal/event endpoint automatically once both services are up.
 

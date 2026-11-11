@@ -19,7 +19,7 @@ import type {
   CreateHouseholdRequest,
   CreateZoneRequest,
 } from '../types/index.js';
-import type { ValidatorId, DFAOId } from '@extropy/contracts';
+import type { LookerId, DFAOId } from '@extropy/contracts';
 
 export class HouseholdService {
   constructor(
@@ -48,8 +48,8 @@ export class HouseholdService {
       id,
       name: req.name,
       dfaoId: null,
-      validatorId: req.validatorId as ValidatorId,
-      memberValidatorIds: [req.validatorId as ValidatorId],
+      validatorId: req.validatorId as LookerId,
+      memberValidatorIds: [req.validatorId as LookerId],
       address: req.address ?? null,
       timezone: req.timezone ?? 'America/Chicago',
       area_sqft: req.area_sqft ?? null,
@@ -171,8 +171,8 @@ export class HouseholdService {
       id: row.id as HouseholdId,
       name: row.name as string,
       dfaoId: row.dfao_id as DFAOId | null,
-      validatorId: row.validator_id as ValidatorId,
-      memberValidatorIds: (row.member_validator_ids as string[]).map(v => v as ValidatorId),
+      validatorId: row.validator_id as LookerId,
+      memberValidatorIds: (row.member_validator_ids as string[]).map(v => v as LookerId),
       address: row.address as string | null,
       timezone: row.timezone as string,
       area_sqft: row.area_sqft as number | null,

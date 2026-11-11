@@ -31,7 +31,7 @@ Prove a predicate, not a dossier:
 - this DID
 - access band ≥ n
 - confirmed this loop
-- not slashed in this DFAO
+- no standing penalty open in this DFAO
 - unique in this room (one person, fifty votes: no)
 
 The till gets yes or no. Not the PSLL. Not the XP pile.
@@ -59,6 +59,6 @@ See also: [CODEX_3_NOTES_ZKP_REPUTATION.md](./CODEX_3_NOTES_ZKP_REPUTATION.md), 
 | Fake work | Both edges agree. Evidence on the vertex. Late burn. |
 | Key theft | That's the operator. Passphrase the key file. Hardware key later. |
 | Poison DAG / eclipse | Verify parents and signatures. Don't trust a single peer's dump. |
-| Silent stalking | A look is a vertex. Stalking-shaped bursts can slash. |
+| Silent stalking | A look is a vertex. Stalking-shaped bursts draw a standing adjustment. |
 
 Site copy: https://extropyengine.com/#node

@@ -6,9 +6,14 @@
  *
  * Core formula:  XP = R × F × ΔS × (w · E) × log(1/Tₛ)
  *
- * Two-phase minting:
- *   Phase 1 (ERC):  Provisional XP on loop close
- *   Phase 2 (RCV):  Retroactive confirm or burn
+ * Canon: mint at close. Confirmation is the other edge of the loop.
+ * Later lookers can attach evidence. They are not an office.
+ * Late mint and late burn add new cited records. Late burn has no expiry.
+ * There is no two-phase provisional mint and no 30-day window.
+ *
+ * This process still writes a `provisional` event name and a confirm/burn
+ * status machine. Those wire values are leftover. Replacing them is a
+ * logic change, not a comment.
  */
 
 import express, { type Express } from 'express';
@@ -33,7 +38,7 @@ import type {
   XPFormulaInputs,
   IrreducibleXPInputs,
   LoopId,
-  ValidatorId,
+  LookerId,
   DomainEvent,
   ServiceHealthResponse,
   EntropyDomain,
@@ -50,9 +55,8 @@ const PORT = process.env.PORT || 4005;
 const SERVICE = ServiceName.XP_MINT;
 const LOOP_LEDGER_URL = process.env.LOOP_LEDGER_URL || 'http://loop-ledger:4003';
 
-// Reputation service URL is still needed for downstream rep accrual
-// (validators earn reputation FROM closing loops). What's removed is
-// reputation feeding INTO the XP formula — that's the bug fix.
+// Accuracy history still accrues downstream from a closed loop.
+// It does not feed the XP formula. There is no validator class to pay.
 const REPUTATION_URL = process.env.REPUTATION_URL || 'http://reputation:4004';
 
 // Canonical formula version stamp. New mints carry this; legacy mints are
@@ -150,7 +154,7 @@ async function mintForLoop(loopId: LoopId): Promise<XPMintEvent> {
   if (loop.status !== 'closed') throw new Error(`Loop ${loopId} is not closed (status=${loop.status})`);
   if (!loop.deltaS || loop.deltaS <= 0) throw new Error(`Loop ${loopId} has invalid ΔS: ${loop.deltaS}`);
 
-  const validatorIds: ValidatorId[] = loop.validatorIds || [];
+  const validatorIds: LookerId[] = loop.validatorIds || [];
 
   // R = Rarity. Property of the loop's action class, NOT the actor.
   // Looked up from the per-domain rarity table. Reputation lookups have
@@ -188,9 +192,9 @@ async function mintForLoop(loopId: LoopId): Promise<XPMintEvent> {
   const xpValue = Math.max(fullXP, irreducibleXP);
   const settlementFactor = Ts > 0 ? Math.log(1 / Ts) : 0;
 
-  // Compute distribution (filter null validators)
-  const cleanValidatorIds = validatorIds.filter((v: ValidatorId) => v != null);
-  const distribution: XPDistribution[] = cleanValidatorIds.map((vid: ValidatorId) => ({
+  // Split the mint across the loop's participant ids (wire field: validatorId).
+  const cleanValidatorIds = validatorIds.filter((v: LookerId) => v != null);
+  const distribution: XPDistribution[] = cleanValidatorIds.map((vid: LookerId) => ({
     validatorId: vid,
     share: 1 / Math.max(cleanValidatorIds.length, 1),
     xpAmount: xpValue / Math.max(cleanValidatorIds.length, 1),
@@ -224,12 +228,12 @@ async function mintForLoop(loopId: LoopId): Promise<XPMintEvent> {
     (await pool.query('SELECT * FROM mint.mint_events WHERE id = $1', [mintEventId])).rows[0],
   );
 
-  // Emit provisional mint event
+  // Leftover event name. Canon mints at close; this is not a provisional phase.
   await bus.emit(EventType.XP_MINTED_PROVISIONAL, loopId, {
     mintEvent,
   } as XPMintedProvisionalPayload);
 
-  // Accrue reputation for each validator (filter nulls)
+  // Accrue accuracy history for each participant id on the loop.
   for (const vid of cleanValidatorIds) {
     try {
       await fetch(`${REPUTATION_URL}/reputation/accrue`, {
@@ -469,6 +473,7 @@ app.get('/supply', async (_req, res) => {
 });
 
 // ── GET /supply/by-validator/:validatorId ────────────────────────────────
+// Path segment `validatorId` is a leftover wire name for a participant id.
 app.get('/supply/by-validator/:validatorId', async (req, res) => {
   try {
     const validatorId = req.params.validatorId;

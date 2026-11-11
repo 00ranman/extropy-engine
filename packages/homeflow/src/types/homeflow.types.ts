@@ -20,7 +20,7 @@
 import type {
   LoopId,
   ClaimId,
-  ValidatorId,
+  LookerId,
   MeasurementId,
   DFAOId,
   SeasonId,
@@ -146,8 +146,8 @@ export interface Household {
   id: HouseholdId;
   name: string;
   dfaoId: DFAOId | null;
-  validatorId: ValidatorId;
-  memberValidatorIds: ValidatorId[];
+  validatorId: LookerId;
+  memberValidatorIds: LookerId[];
   address: string | null;
   timezone: string;
   area_sqft: number | null;
@@ -185,7 +185,7 @@ export interface DeviceCommand {
   type: CommandType;
   parameters: Record<string, unknown>;
   status: CommandStatus;
-  issuedBy: ValidatorId;
+  issuedBy: LookerId;
   issuedAt: Timestamp;
   confirmedAt: Timestamp | null;
   previousState: Partial<DeviceState>;
@@ -386,12 +386,12 @@ export interface ScheduleTriggeredPayload {
 export interface HouseholdDFAOCreatedPayload {
   householdId: HouseholdId;
   dfaoId: DFAOId;
-  founderValidatorId: ValidatorId;
+  founderValidatorId: LookerId;
 }
 
 export interface EnergyCreditMintedPayload {
   householdId: HouseholdId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   amount: number;
   loopId: LoopId;
   deltaS: number;
@@ -399,14 +399,14 @@ export interface EnergyCreditMintedPayload {
 
 export interface HouseholdCTIssuedPayload {
   householdId: HouseholdId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   amount: number;
   contribution: string;
 }
 
 export interface EfficiencyCredentialPayload {
   householdId: HouseholdId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   credentialId: CredentialId;
   level: 'bronze' | 'silver' | 'gold' | 'platinum';
   cumulativeDeltaS: number;

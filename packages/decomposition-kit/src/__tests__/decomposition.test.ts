@@ -21,7 +21,7 @@ import {
   type Claim,
   type ClaimId,
   type LoopId,
-  type ValidatorId,
+  type LookerId,
 } from '@extropy/contracts';
 import { initBayesianPrior } from '@extropy/bayesian';
 import { decomposeClaimToSubClaims, detectGodelBoundary } from '../index.js';
@@ -32,7 +32,7 @@ function makeClaim(overrides: Partial<Claim> = {}): Claim {
     loopId: 'l1' as LoopId,
     statement: 'Refactoring module X reduces complexity by 40 percent',
     domain: EntropyDomain.CODE,
-    submitterId: 'v1' as ValidatorId,
+    submitterId: 'v1' as LookerId,
     status: ClaimStatus.SUBMITTED,
     bayesianPrior: initBayesianPrior(0.5),
     subClaimIds: [],

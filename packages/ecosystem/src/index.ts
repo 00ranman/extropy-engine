@@ -31,7 +31,7 @@ import type {
   XPOracleSource,
   XPOracleMappingRule,
   XPExchange,
-  ValidatorId,
+  LookerId,
   DomainEvent,
   ServiceHealthResponse,
   EntropyDomain,
@@ -123,7 +123,7 @@ function err500(res: express.Response, error: any): void {
  * Returns a map of domain → highest CAT level.
  * Falls back to querying ecosystem.validator_cat_cache if available.
  */
-async function getValidatorCATLevels(validatorId: ValidatorId): Promise<Record<string, number>> {
+async function getValidatorCATLevels(validatorId: LookerId): Promise<Record<string, number>> {
   try {
     // Check local cache first
     const cacheRes = await pool.query(
@@ -147,7 +147,7 @@ async function getValidatorCATLevels(validatorId: ValidatorId): Promise<Record<s
  * Get the count of validated performances for a validator on skills in a given domain.
  * Checks ecosystem.skill_performances table (populated by LOOP_CLOSED events).
  */
-async function getValidatedPerformanceCount(validatorId: ValidatorId, domain: EntropyDomain): Promise<number> {
+async function getValidatedPerformanceCount(validatorId: LookerId, domain: EntropyDomain): Promise<number> {
   try {
     const res = await pool.query(
       `SELECT COALESCE(SUM(performance_count), 0) AS total
@@ -193,7 +193,7 @@ async function collectPrerequisiteChain(skillId: SkillNodeId, visited = new Set<
  *   2. Validated performances in this skill's domain >= masteryThreshold
  */
 async function checkSkillMastery(
-  validatorId: ValidatorId,
+  validatorId: LookerId,
   skill: SkillNode,
 ): Promise<{ mastered: boolean; reason?: string; performanceCount: number }> {
   const catLevels = await getValidatorCATLevels(validatorId);
@@ -409,7 +409,7 @@ app.post('/skills/:id/check-mastery', async (req, res) => {
     if (skillRes.rows.length === 0) { err404(res, 'Skill not found'); return; }
 
     const skill = skillNodeFromRow(skillRes.rows[0]);
-    const { mastered, reason, performanceCount } = await checkSkillMastery(validatorId as ValidatorId, skill);
+    const { mastered, reason, performanceCount } = await checkSkillMastery(validatorId as LookerId, skill);
 
     if (mastered) {
       // Record mastery event — upsert so it is idempotent
@@ -429,7 +429,7 @@ app.post('/skills/:id/check-mastery', async (req, res) => {
         EventType.SKILL_MASTERED,
         skill.id as unknown as LoopId,
         {
-          validatorId: validatorId as ValidatorId,
+          validatorId: validatorId as LookerId,
           skillNodeId: skill.id,
           validatedPerformances: performanceCount,
           credentialId,
@@ -460,13 +460,13 @@ app.get('/skills/validator/:validatorId', async (req, res) => {
     const { validatorId } = req.params;
 
     const allSkills = await pool.query(`SELECT * FROM ecosystem.skill_nodes ORDER BY created_at ASC`);
-    const catLevels = await getValidatorCATLevels(validatorId as ValidatorId);
+    const catLevels = await getValidatorCATLevels(validatorId as LookerId);
 
     const results = await Promise.all(
       allSkills.rows.map(async (row: any) => {
         const skill = skillNodeFromRow(row);
         const { mastered, reason, performanceCount } = await checkSkillMastery(
-          validatorId as ValidatorId,
+          validatorId as LookerId,
           skill,
         );
 
@@ -669,7 +669,7 @@ app.post('/oracle/sync', async (req, res) => {
       syncId as unknown as LoopId,
       {
         source,
-        validatorId: validatorId as ValidatorId,
+        validatorId: validatorId as LookerId,
         xpAwarded: totalXP,
         rulesApplied: appliedRules,
         syncedAt,
@@ -894,7 +894,7 @@ app.post('/exchange/execute', async (req, res) => {
       txId as unknown as LoopId,
       {
         exchange,
-        validatorId: validatorId as ValidatorId,
+        validatorId: validatorId as LookerId,
         sentAmount: amount,
         receivedAmount: amountReceived,
         frictionLost: fee,
@@ -999,7 +999,7 @@ app.post('/merchants/convert-ep', async (req, res) => {
       EventType.EP_CONVERTED,
       conversionId as unknown as LoopId,
       {
-        validatorId: validatorId as ValidatorId,
+        validatorId: validatorId as LookerId,
         inputs,
         epAwarded: epAmount,
         dfaoId: merchantId as unknown as DFAOId,
@@ -1218,7 +1218,7 @@ async function handleEvent(event: DomainEvent): Promise<void> {
           for (const skillRow of domainSkills.rows) {
             const skill = skillNodeFromRow(skillRow);
             try {
-              const { mastered } = await checkSkillMastery(validatorId as ValidatorId, skill);
+              const { mastered } = await checkSkillMastery(validatorId as LookerId, skill);
               if (mastered) {
                 const credentialId = uuidv4() as CredentialId;
                 const inserted = await pool.query(
@@ -1234,7 +1234,7 @@ async function handleEvent(event: DomainEvent): Promise<void> {
                     EventType.SKILL_MASTERED,
                     skill.id as unknown as LoopId,
                     {
-                      validatorId: validatorId as ValidatorId,
+                      validatorId: validatorId as LookerId,
                       skillNodeId: skill.id,
                       validatedPerformances: skill.masteryThreshold,
                       credentialId,
@@ -1279,7 +1279,7 @@ async function handleEvent(event: DomainEvent): Promise<void> {
       for (const skillRow of domainSkills.rows) {
         const skill = skillNodeFromRow(skillRow);
         try {
-          const { mastered } = await checkSkillMastery(validatorId as ValidatorId, skill);
+          const { mastered } = await checkSkillMastery(validatorId as LookerId, skill);
           if (mastered) {
             const credentialId = uuidv4() as CredentialId;
             const inserted = await pool.query(
@@ -1295,7 +1295,7 @@ async function handleEvent(event: DomainEvent): Promise<void> {
                 EventType.SKILL_MASTERED,
                 skill.id as unknown as LoopId,
                 {
-                  validatorId: validatorId as ValidatorId,
+                  validatorId: validatorId as LookerId,
                   skillNodeId: skill.id,
                   validatedPerformances: skill.masteryThreshold,
                   credentialId,

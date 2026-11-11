@@ -25,7 +25,7 @@ import {
 import type {
   Credential,
   CredentialId,
-  ValidatorId,
+  LookerId,
   LoopId,
   SeasonId,
   EntropyDomain,
@@ -63,7 +63,7 @@ const bus   = new EventBus(redis, pool, SERVICE);
 function credentialFromRow(row: any): Credential {
   return {
     id:                    row.id            as CredentialId,
-    validatorId:           row.validator_id  as ValidatorId,
+    validatorId:           row.validator_id  as LookerId,
     type:                  row.type          as CredentialType,
     name:                  row.name,
     description:           row.description,
@@ -112,7 +112,7 @@ function levelProgress(currentLevel: number, currentXP: number): number {
 
 /** Issue a credential and emit CREDENTIAL_ISSUED. Returns the saved credential. */
 async function issueCredential(params: {
-  validatorId:           ValidatorId;
+  validatorId:           LookerId;
   type:                  CredentialType;
   name:                  string;
   description:           string;
@@ -163,7 +163,7 @@ async function issueCredential(params: {
 }
 
 /** Check if a badge with the given name already exists for a validator. */
-async function hasBadge(validatorId: ValidatorId, name: string): Promise<boolean> {
+async function hasBadge(validatorId: LookerId, name: string): Promise<boolean> {
   const res = await pool.query(
     `SELECT id FROM credentials.credentials
      WHERE validator_id = $1 AND type = $2 AND name = $3 AND revoked_at IS NULL`,
@@ -173,7 +173,7 @@ async function hasBadge(validatorId: ValidatorId, name: string): Promise<boolean
 }
 
 /** Fetch the validator's current known level from DB (stored in level tracking table). */
-async function getStoredLevel(validatorId: ValidatorId): Promise<number> {
+async function getStoredLevel(validatorId: LookerId): Promise<number> {
   const res = await pool.query(
     `SELECT current_level FROM credentials.validator_levels WHERE validator_id = $1`,
     [validatorId],
@@ -182,7 +182,7 @@ async function getStoredLevel(validatorId: ValidatorId): Promise<number> {
 }
 
 /** Upsert the stored level for a validator. */
-async function setStoredLevel(validatorId: ValidatorId, level: number): Promise<void> {
+async function setStoredLevel(validatorId: LookerId, level: number): Promise<void> {
   await pool.query(
     `INSERT INTO credentials.validator_levels (validator_id, current_level, updated_at)
      VALUES ($1, $2, NOW())
@@ -343,7 +343,7 @@ app.delete('/credentials/:id', async (req, res) => {
 /** POST /levels/check/:validatorId — Check and update reputation level */
 app.post('/levels/check/:validatorId', async (req, res) => {
   try {
-    const validatorId = req.params.validatorId as ValidatorId;
+    const validatorId = req.params.validatorId as LookerId;
 
     // Query current reputation from reputation service
     let aggregateReputation = 0;
@@ -436,7 +436,7 @@ app.post('/levels/check/:validatorId', async (req, res) => {
 /** GET /levels/:validatorId — Get current level info */
 app.get('/levels/:validatorId', async (req, res) => {
   try {
-    const validatorId = req.params.validatorId as ValidatorId;
+    const validatorId = req.params.validatorId as LookerId;
 
     let aggregateReputation = 0;
     try {
@@ -660,11 +660,11 @@ app.post('/badges/check-automated', async (req, res) => {
 
     for (const milestone of milestones) {
       if (!milestone.condition) continue;
-      const alreadyAwarded = await hasBadge(validatorId as ValidatorId, milestone.name);
+      const alreadyAwarded = await hasBadge(validatorId as LookerId, milestone.name);
       if (alreadyAwarded) continue;
 
       const credential = await issueCredential({
-        validatorId:           validatorId as ValidatorId,
+        validatorId:           validatorId as LookerId,
         type:                  CredentialType.BADGE,
         name:                  milestone.name,
         description:           milestone.description,
@@ -710,7 +710,7 @@ app.post('/titles/award', async (req, res) => {
     }
 
     const credential = await issueCredential({
-      validatorId:           validatorId as ValidatorId,
+      validatorId:           validatorId as LookerId,
       type:                  CredentialType.TITLE,
       name:                  title,
       description,
@@ -719,7 +719,7 @@ app.post('/titles/award', async (req, res) => {
       visualMetadata:        { title },
     });
 
-    const storedLevel = await getStoredLevel(validatorId as ValidatorId);
+    const storedLevel = await getStoredLevel(validatorId as LookerId);
     const correlationId = uuidv4() as LoopId;
 
     await bus.emit(
@@ -820,7 +820,7 @@ app.post('/seasons/:seasonId/award-final-titles', async (req, res) => {
     }
 
     for (const entry of rankedValidators) {
-      const vId = entry.validatorId as ValidatorId;
+      const vId = entry.validatorId as LookerId;
 
       if (entry.rank === 1) {
         // Award "Ecosystem Pioneer" title to rank #1
@@ -946,7 +946,7 @@ app.get('/leaderboard', async (req, res) => {
     const result = await pool.query(levelQuery, params);
 
     const entries: LeaderboardEntry[] = result.rows.map((row: any, i: number) => ({
-      validatorId:     row.validator_id   as ValidatorId,
+      validatorId:     row.validator_id   as LookerId,
       validatorName:   row.validator_id,  // Name resolution would require joining validators table
       rank:            i + 1,
       reputationLevel: row.current_level,
@@ -986,7 +986,7 @@ app.get('/leaderboard/domain/:domain', async (req, res) => {
     );
 
     const entries: LeaderboardEntry[] = result.rows.map((row: any, i: number) => ({
-      validatorId:     row.validator_id  as ValidatorId,
+      validatorId:     row.validator_id  as LookerId,
       validatorName:   row.validator_id,
       rank:            i + 1,
       reputationLevel: row.current_level,
@@ -1010,7 +1010,7 @@ app.get('/leaderboard/domain/:domain', async (req, res) => {
 /** GET /profile/:validatorId — Full cosmetic profile */
 app.get('/profile/:validatorId', async (req, res) => {
   try {
-    const validatorId = req.params.validatorId as ValidatorId;
+    const validatorId = req.params.validatorId as LookerId;
 
     // Fetch all active credentials grouped by type
     const credResult = await pool.query(
@@ -1195,10 +1195,10 @@ async function handleEvent(event: DomainEvent): Promise<void> {
 
           for (const m of milestoneChecks) {
             if (!m.condition) continue;
-            if (await hasBadge(validatorId as ValidatorId, m.name)) continue;
+            if (await hasBadge(validatorId as LookerId, m.name)) continue;
 
             const cred = await issueCredential({
-              validatorId:           validatorId as ValidatorId,
+              validatorId:           validatorId as LookerId,
               type:                  CredentialType.BADGE,
               name:                  m.name,
               description:           m.description,

@@ -1,24 +1,24 @@
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  @extropy/identity — DID method: did:extropy
+ *  @extropy/identity — DID strings
  * ════════════════════════════════════════════════════════════════════════════════
  *
- *  Custom DID method scoped to the Extropy Engine network.
+ *  Canon is W3C did:key (encodeDidKey / isDidKey). No registrar.
+ *
+ *  encodeDid still emits the leftover method:
  *
  *      did:extropy:<32-byte ed25519 pubkey, hex>
  *
- *  We anchor the DID identifier to the participant's long-lived signing key.
- *  The DID is a string label for the genesis vertex of that participant's
- *  DAG (see architecture/SUBSTRATE.md).
+ *  Switching callers off did:extropy is a logic change. The string is a
+ *  label for a signing key, not a registration.
  *
  *  This file only handles the DID *string* + the W3C-compliant DID document.
- *  The cryptographic key material lives in `crypto.ts`. Lifecycle (rotation,
- *  recovery, revocation) is tracked as DAG vertices, not by mutating documents
- *  in place.
+ *  The cryptographic key material lives in `crypto.ts`. There is no recovery
+ *  registrar. Lose the key without a backup and you start over.
  *
  *  References:
  *    - W3C DID Core 1.0
- *    - docs/IDENTITY.md §canonical-flow step 3
+ *    - docs/IDENTITY.md (did:key, no registrar)
  * ════════════════════════════════════════════════════════════════════════════════
  */
 

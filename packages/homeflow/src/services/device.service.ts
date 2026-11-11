@@ -26,7 +26,7 @@ import {
   CommandStatus,
   HomeFlowEventType,
 } from '../types/index.js';
-import type { ValidatorId } from '@extropy/contracts';
+import type { LookerId } from '@extropy/contracts';
 
 export class DeviceService {
   constructor(
@@ -221,7 +221,7 @@ export class DeviceService {
       type: req.commandType,
       parameters: req.parameters,
       status: CommandStatus.CONFIRMED,
-      issuedBy: req.issuedBy as ValidatorId,
+      issuedBy: req.issuedBy as LookerId,
       issuedAt: now,
       confirmedAt: new Date().toISOString(),
       previousState,
@@ -307,7 +307,7 @@ export class DeviceService {
       type: row.type as CommandType,
       parameters: row.parameters as Record<string, unknown>,
       status: row.status as CommandStatus,
-      issuedBy: row.issued_by as ValidatorId,
+      issuedBy: row.issued_by as LookerId,
       issuedAt: row.issued_at as string,
       confirmedAt: row.confirmed_at as string | null,
       previousState: row.previous_state as Partial<DeviceState>,

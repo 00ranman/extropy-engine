@@ -20,7 +20,7 @@ A phone is not a node. It cannot clone this repo, and it does not run the stack.
 
 ## The Claim
 
-Useful work is a drop in disorder you can put evidence under and argue with later. The Engine is the audit loop for that claim: both edges, a versioned mapper, provisional mint, late burn, leak.
+Useful work is a drop in disorder you can put evidence under and argue with later. The Engine is the audit loop for that claim: both edges, a versioned mapper, mint at close, late mint, late burn, leak.
 
 Honest contribution is cheaper than farming a bag because there is no bag.
 
@@ -76,7 +76,7 @@ Public copy uses **record / meter / till spark**. The crowd hears “token” an
 | CT | Meter | Community standing on web W. Same readout at compatible tills. |
 | L | Meter | Local rank in `[0, 1]`. |
 | EP | Till spark | `EP = XP · L + λ · L`. Born and burned in the sale. |
-| CAT | Record | Skill credential in a **lane**. Unique. `(DID, lane, level, issuer)`. |
+| CAT | Record | Skill record in a **lane**: a count of settled loops. Not a login. Not KYC. `(DID, lane, level, issuer)`. |
 | IT | This proposal | clip(H_gov · S_gov · κ · CT_W · β_gov, 0, 1). Burns in the tally. |
 | Domain | Enum | Eight entropy instruments. Not minted. |
 | Lane | Field | Skill specialization. Claim is a signed vertex, not a dropdown. |
@@ -192,7 +192,7 @@ This is the section you should actually read before forming an opinion.
 
 **Sybil resistance:** Cost of attack scales with number of loops that must be honestly completed per fake identity. Trivial loops produce near-zero XP (the `log` curve). Residual risk: domains with subjective measurement (social, governance) have lower Sybil cost than domains with objective measurement (thermodynamic, code). The empirical Sybil cost curve is unverified — that requires simulation against real claim distributions.
 
-**Collusion:** Close mints. Retroactive slashing makes sustained collusion risky but does not prevent it. A cartel controlling >50% of domain looker weight can self-confirm indefinitely. Partial mitigation: there is no validator class to buy; looking is a vertex. The oracle layer is currently specified, not built. There is no 40-day silence timer.
+**Collusion:** Close mints. Late burn with cited evidence makes sustained collusion risky but does not prevent it. A cartel controlling >50% of domain looker weight can self-confirm indefinitely. Partial mitigation: there is no validator class to buy; looking is a vertex. The oracle layer is currently specified, not built. There is no 40-day silence timer. There is no slashing of a validator office.
 
 **Economic capture:** XP is non-transferable. IT is not a pile. External capital cannot buy a gavel. Residual risk: "corporate capture" — a well-funded adversary can employ real members whose live CT and S_gov are directed. That is expensive labor, not a token sale.
 
@@ -209,7 +209,7 @@ Phase 1 (protocol kernel) is complete: type system, event architecture, core loo
 
 Phase 2 (organizational layer): DFAO governance, distributed DAG, full retroactive validation pipeline — specified, implementation in progress.
 
-The happy path loop closes and settles. The adversarial path — validators disagreeing, getting slashed, reputation adjustments propagating — is the current build priority.
+The happy path loop closes and settles. The adversarial path — contested confirmations, late burns with cited evidence, and standing adjustments propagating — is the current build priority.
 
 ---
 

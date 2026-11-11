@@ -18,7 +18,7 @@ import type { EntropyService } from './entropy.service.js';
 import type { HomeEntropyReduction, HouseholdId } from '../types/index.js';
 import { HomeFlowEventType } from '../types/index.js';
 import { EntropyDomain } from '@extropy/contracts';
-import type { ClaimId, LoopId, ValidatorId } from '@extropy/contracts';
+import type { ClaimId, LoopId, LookerId } from '@extropy/contracts';
 import { packageClaim } from '@extropy/signalflow';
 
 export class ClaimService {

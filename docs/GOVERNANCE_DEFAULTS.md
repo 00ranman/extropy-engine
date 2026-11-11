@@ -11,7 +11,7 @@ See `docs/CODEX_3_NOTES.md` for the Codex 3.0 capture of mechanics that kept fal
 | Knob | v3.5 default | Tier to vote | Notes |
 |---|---|---|---|
 | ZKP scheme | BBS+ (signatures today) | Ecosystem | zk-SNARKs allowed for advanced use. Circuits are not in Codex 2.1. |
-| Identity reveal threshold | 7-of-12 + cause-shown | Ecosystem | See `IDENTITY.md`. Looking is a vertex. |
+| Identity reveal | None | Planetary | No KYC escrow, no registrar. A look vertex reads more than the public predicate. See `IDENTITY.md`. |
 | Reward escalation curve (early) | linear 1.0× → 3.0× over 5d | Domain DFAO | One 5-day week. Per-domain customization allowed |
 | Reward escalation curve (late) | log to cap 10.0× | Domain DFAO | Hard cap governance-tunable |
 | Late burn | no expiry | Ecosystem / dispute path | Close mints. Burn anytime. |

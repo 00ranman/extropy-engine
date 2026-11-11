@@ -3,7 +3,9 @@
 **Status:** Codex v2.1 stays frozen. Not implemented. This is the missing mechanics note between `IDENTITY.md` (who you are) and `CODEX_3_NOTES_ACCESS.md` (what a till may ask).
 **Date:** 2026-08-23
 
-Identity ZKPs already specified: uniqueness, onboarding, BBS+ wrapper, per-context nullifiers, 7-of-12 reveal escrow. Reputation is still treated like a public vector keyed on a DID. That re-identifies everyone the nullifiers just hid. This file is how standing gets proven without opening the diary.
+> **v3.5 canon override.** Identity is a node-minted `did:key`. No KYC binding, no Google Auth, no registrar. Lose the key without a backup and you start over. There is no slash office. This file is capture. The rule is [`IDENTITY.md`](./IDENTITY.md) and [`SPEC_v3.5.md`](./SPEC_v3.5.md) §15.
+
+Predicates already in the spec: uniqueness in a room, BBS+ when circuits exist, per-context nullifiers, signatures today. Reputation is still treated like a public vector keyed on a DID. That re-identifies everyone the nullifiers just hid. This file is how standing gets proven without opening the diary. Sentences below that still say KYC or a slash accumulator describe the retired model.
 
 **Not a model.** A ZKP is a prover and a verifier doing cryptography. The till gets yes or no. SignalFlow / a local model may help *write a claim*. They do not evaluate the proof. Do not say the AI “figures out” the door.
 

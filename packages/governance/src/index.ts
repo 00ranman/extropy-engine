@@ -28,7 +28,7 @@ import type {
   ProposalChange,
   ProposalId,
   DFAOId,
-  ValidatorId,
+  LookerId,
   VertexId,
   SeasonId,
   LoopId,
@@ -140,7 +140,7 @@ function proposalFromRow(row: any): GovernanceProposal {
     title: row.title,
     description: row.description,
     changes: row.changes || [],
-    proposerId: row.proposer_id as ValidatorId,
+    proposerId: row.proposer_id as LookerId,
     status: row.status as ProposalStatus,
     deliberationStartedAt: row.deliberation_started_at
       ? new Date(row.deliberation_started_at).toISOString()
@@ -172,7 +172,7 @@ function proposalFromRow(row: any): GovernanceProposal {
 function voteFromRow(row: any): GovernanceVote {
   return {
     proposalId: row.proposal_id as ProposalId,
-    voterId: row.voter_id as ValidatorId,
+    voterId: row.voter_id as LookerId,
     dfaoId: row.dfao_id as DFAOId,
     vote: row.vote as 'approve' | 'reject' | 'abstain',
     weight: row.weight,
@@ -197,7 +197,7 @@ async function fetchDFAO(dfaoId: DFAOId): Promise<any | null> {
 }
 
 /** Fetch a single membership record for a validator in a DFAO. Returns null if not a member. */
-async function fetchMembership(dfaoId: DFAOId, validatorId: ValidatorId): Promise<any | null> {
+async function fetchMembership(dfaoId: DFAOId, validatorId: LookerId): Promise<any | null> {
   try {
     const res = await fetch(
       `${DFAO_REGISTRY_URL}/dfaos/${dfaoId}/memberships/${validatorId}`,
@@ -366,7 +366,7 @@ app.post('/proposals', async (req, res) => {
     }
 
     // Validate proposer is a member
-    const membership = await fetchMembership(dfaoId as DFAOId, proposerId as ValidatorId);
+    const membership = await fetchMembership(dfaoId as DFAOId, proposerId as LookerId);
     if (!membership || membership.status !== 'active') {
       res.status(403).json({
         error: 'Proposer is not an active member of this DFAO',
@@ -686,7 +686,7 @@ app.post('/proposals/:id/votes', async (req, res) => {
     }
 
     // Validate voter is an active DFAO member
-    const membership = await fetchMembership(proposal.dfaoId, voterId as ValidatorId);
+    const membership = await fetchMembership(proposal.dfaoId, voterId as LookerId);
     if (!membership || membership.status !== 'active') {
       res.status(403).json({
         error: 'Voter is not an active member of this DFAO',
@@ -999,7 +999,7 @@ app.post('/proposals/:id/veto', async (req, res) => {
 
     const membership = await fetchMembership(
       proposal.dfaoId,
-      initiatorId as ValidatorId,
+      initiatorId as LookerId,
     );
     if (!membership || membership.status !== 'active') {
       res.status(403).json({
@@ -1048,7 +1048,7 @@ app.post('/proposals/:id/veto', async (req, res) => {
       {
         dfaoId: vetoed.dfaoId,
         proposalId,
-        triggeredByValidatorId: initiatorId as ValidatorId,
+        triggeredByValidatorId: initiatorId as LookerId,
         description: description || `Emergency veto of proposal ${proposalId}`,
       } as EmergencyInterventionPayload,
     );

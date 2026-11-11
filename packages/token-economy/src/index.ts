@@ -34,7 +34,7 @@ import {
 } from '@extropy/contracts';
 import type {
   LoopId,
-  ValidatorId,
+  LookerId,
   WalletId,
   TokenId,
   SeasonId,
@@ -92,7 +92,7 @@ const NON_TRANSFERABLE_TYPES = new Set<TokenType>([
 function walletFromRow(row: any): Wallet {
   return {
     id:               row.id as WalletId,
-    validatorId:      row.validator_id as ValidatorId,
+    validatorId:      row.validator_id as LookerId,
     balances:         row.balances         || defaultBalances(),
     lockedBalances:   row.locked_balances  || defaultBalances(),
     nonTransferable:  row.non_transferable || defaultNonTransferable(),
@@ -105,7 +105,7 @@ function balanceFromRow(row: any): TokenBalance {
   return {
     id:              row.id as TokenId,
     walletId:        row.wallet_id as WalletId,
-    validatorId:     row.validator_id as ValidatorId,
+    validatorId:     row.validator_id as LookerId,
     tokenType:       row.token_type as TokenType,
     amount:          Number(row.amount),
     status:          row.status as TokenStatus,
@@ -177,7 +177,7 @@ function errBody(message: string, code: string, details?: Record<string, unknown
  * Ensure a wallet row exists for the given validator.
  * Returns the wallet row's id.
  */
-async function ensureWallet(validatorId: ValidatorId): Promise<WalletId> {
+async function ensureWallet(validatorId: LookerId): Promise<WalletId> {
   const existing = await pool.query(
     'SELECT id FROM economy.wallets WHERE validator_id = $1',
     [validatorId],
@@ -249,7 +249,7 @@ async function recordTransaction(params: {
  * Handles CT locked-mint separately via `locked` flag.
  */
 async function mintTokens(params: {
-  validatorId:       ValidatorId;
+  validatorId:       LookerId;
   tokenType:         TokenType;
   amount:            number;
   reason:            string;
@@ -353,7 +353,7 @@ async function mintTokens(params: {
  * Core burn logic: deduct `amount` from active balance.
  */
 async function burnTokens(params: {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   tokenType:   TokenType;
   amount:      number;
   reason:      string;
@@ -430,7 +430,7 @@ async function burnTokens(params: {
  * Returns the current row.
  */
 async function ensureCATCert(
-  validatorId: ValidatorId,
+  validatorId: LookerId,
   domain: EntropyDomain,
 ): Promise<any> {
   const existing = await pool.query(
@@ -458,7 +458,7 @@ async function ensureCATCert(
  * Run certification check. If threshold met, increment level and mint 1 CAT.
  */
 async function runCATCertify(
-  validatorId: ValidatorId,
+  validatorId: LookerId,
   domain: EntropyDomain,
 ): Promise<{ certified: boolean; level: number; validatedPerformances: number }> {
   const cert = await ensureCATCert(validatorId, domain);
@@ -652,7 +652,7 @@ app.post('/tokens/mint', async (req: Request, res: Response) => {
     }
 
     const { wallet, balance, tx } = await mintTokens({
-      validatorId:       validatorId as ValidatorId,
+      validatorId:       validatorId as LookerId,
       tokenType:         tokenType as TokenType,
       amount:            Number(amount),
       reason,
@@ -686,7 +686,7 @@ app.post('/tokens/burn', async (req: Request, res: Response) => {
     }
 
     const { wallet, tx } = await burnTokens({
-      validatorId: validatorId as ValidatorId,
+      validatorId: validatorId as LookerId,
       tokenType:   tokenType   as TokenType,
       amount:      Number(amount),
       reason,
@@ -939,7 +939,7 @@ app.post('/ct/mint', async (req: Request, res: Response) => {
     const lockupExpiresAt = new Date(Date.now() + CT_LOCKUP_HOURS * 3600 * 1000);
 
     const { wallet, balance, tx } = await mintTokens({
-      validatorId:       validatorId as ValidatorId,
+      validatorId:       validatorId as LookerId,
       tokenType:         TokenType.CT,
       amount:            ctAmount,
       reason:            `CT formula mint: C=${C} F=${F} ρ=${RHO} Δ=${delta} E=${essentiality}`,
@@ -974,7 +974,7 @@ app.post('/ct/check-lockup-expiry', async (_req: Request, res: Response) => {
 
     for (const row of expired.rows) {
       const walletId   = row.wallet_id as WalletId;
-      const validatorId = row.vid as ValidatorId;
+      const validatorId = row.vid as LookerId;
       const amount     = Number(row.amount);
 
       // Move locked → active
@@ -1086,8 +1086,8 @@ app.post('/cat/certify', async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await runCATCertify(validatorId as ValidatorId, domain as EntropyDomain);
-    const cert   = await ensureCATCert(validatorId as ValidatorId, domain as EntropyDomain);
+    const result = await runCATCertify(validatorId as LookerId, domain as EntropyDomain);
+    const cert   = await ensureCATCert(validatorId as LookerId, domain as EntropyDomain);
 
     res.json({
       validatorId,
@@ -1114,7 +1114,7 @@ app.post('/cat/record-performance', async (req: Request, res: Response) => {
       return;
     }
 
-    await ensureCATCert(validatorId as ValidatorId, domain as EntropyDomain);
+    await ensureCATCert(validatorId as LookerId, domain as EntropyDomain);
 
     await pool.query(
       `UPDATE economy.cat_certifications
@@ -1134,7 +1134,7 @@ app.post('/cat/record-performance', async (req: Request, res: Response) => {
 
     let certResult = null;
     if (performances >= threshold) {
-      certResult = await runCATCertify(validatorId as ValidatorId, domain as EntropyDomain);
+      certResult = await runCATCertify(validatorId as LookerId, domain as EntropyDomain);
     }
 
     res.json({
@@ -1174,7 +1174,7 @@ app.post('/cat/check-recertification', async (_req: Request, res: Response) => {
         EventType.CAT_RECERTIFICATION_DUE,
         uuidv4() as LoopId,
         {
-          validatorId:     row.validator_id as ValidatorId,
+          validatorId:     row.validator_id as LookerId,
           domain:          row.domain       as EntropyDomain,
           lastCertifiedAt: row.last_certified_at.toISOString(),
           dueBy:           dueBy.toISOString(),
@@ -1202,7 +1202,7 @@ app.post('/cat/mentorship-bonus', async (req: Request, res: Response) => {
     const bonusAmount = 0.1;
 
     await mintTokens({
-      validatorId: mentorId as ValidatorId,
+      validatorId: mentorId as LookerId,
       tokenType:   TokenType.CAT,
       amount:      bonusAmount,
       reason:      `Mentorship bonus for mentoring ${menteeId} in domain ${domain}`,
@@ -1271,7 +1271,7 @@ app.post('/it/derive', async (req: Request, res: Response) => {
     }
 
     const { wallet, balance, tx } = await mintTokens({
-      validatorId: validatorId as ValidatorId,
+      validatorId: validatorId as LookerId,
       tokenType:   TokenType.IT,
       amount:      governanceWeight,
       reason:      `IT derived from governance weight in DFAO ${dfaoId}`,
@@ -1319,7 +1319,7 @@ app.post('/ep/convert', async (req: Request, res: Response) => {
 
     // Burn XP
     const { tx: burnTx } = await burnTokens({
-      validatorId: validatorId as ValidatorId,
+      validatorId: validatorId as LookerId,
       tokenType:   TokenType.XP,
       amount:      inputs.xpAmount,
       reason:      `XP→EP conversion: ${inputs.xpAmount} XP × L=${inputs.localLoyaltyMultiplier}`,
@@ -1327,7 +1327,7 @@ app.post('/ep/convert', async (req: Request, res: Response) => {
 
     // Mint EP
     const { wallet: updatedWallet, balance: epBalance, tx: mintTx } = await mintTokens({
-      validatorId: validatorId as ValidatorId,
+      validatorId: validatorId as LookerId,
       tokenType:   TokenType.EP,
       amount:      epAmount,
       reason:      `EP from XP conversion: ${epAmount} EP (L=${inputs.localLoyaltyMultiplier})`,
@@ -1338,7 +1338,7 @@ app.post('/ep/convert', async (req: Request, res: Response) => {
       EventType.EP_CONVERTED,
       uuidv4() as LoopId,
       {
-        validatorId: validatorId as ValidatorId,
+        validatorId: validatorId as LookerId,
         inputs,
         epAwarded:   epAmount,
         dfaoId:      ('00000000-0000-0000-0000-000000000000' as DFAOId),
@@ -1562,7 +1562,7 @@ async function handleEvent(event: DomainEvent): Promise<void> {
       for (const validatorId of loop.validatorIds) {
         try {
           // Record performance in the loop's domain
-          await ensureCATCert(validatorId as ValidatorId, loop.domain);
+          await ensureCATCert(validatorId as LookerId, loop.domain);
           await pool.query(
             `UPDATE economy.cat_certifications
              SET validated_performances = validated_performances + 1
@@ -1578,7 +1578,7 @@ async function handleEvent(event: DomainEvent): Promise<void> {
           if (certRes.rows.length > 0) {
             const certRow = certRes.rows[0];
             if (Number(certRow.validated_performances) >= Number(certRow.next_level_threshold)) {
-              await runCATCertify(validatorId as ValidatorId, loop.domain);
+              await runCATCertify(validatorId as LookerId, loop.domain);
             }
           }
         } catch (err) {

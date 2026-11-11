@@ -1,11 +1,15 @@
 # Identity — Implementation Spec (v3.1 sandbox)
 
+> **Not the v3.5 identity rule.** Canon is a W3C `did:key` minted on the participant's own node at first boot. No KYC, no OAuth, no Google Auth, no central registrar. Lose the key without a backup and you start over. CAT is a skill record, not a login. The rule is [`IDENTITY.md`](./IDENTITY.md) and [`SPEC_v3.5.md`](./SPEC_v3.5.md) §15.2.
+>
+> The endpoints below are leftover. They still speak OAuth, an on-device KYC digest, and `did:extropy`. Replacing that session machine is a logic change. Do not build new callers on it.
+
 **Package:** `packages/identity`
 **Server:** Express on `127.0.0.1:4101`
 **Proof profile:** `extropy-zkp-v3.1-sandbox`
-**Status:** All canonical-flow endpoints live. Storage in-memory. ZKP envelope is final shape, BBS+ body deferred.
+**Status:** Leftover sandbox endpoints are live. Storage in-memory. ZKP envelope is a sandbox shape, BBS+ body deferred.
 
-This is the sibling to `IDENTITY.md`. The architecture story lives there. This file pins down exactly what other packages can rely on.
+This file pins down what the leftover routes actually do. It is not the architecture.
 
 ## Key types observable to other packages
 
