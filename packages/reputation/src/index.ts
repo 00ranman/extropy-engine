@@ -24,7 +24,7 @@ import {
   ServiceName,
 } from '@extropy/contracts';
 import type {
-  ValidatorId,
+  LookerId,
   DomainEvent,
   ServiceHealthResponse,
   EntropyDomain,
@@ -86,7 +86,7 @@ function validatorFromRow(row: any): any {
 // ── Internal: Accrue ──────────────────────────────────────────────────────────
 
 async function accrueReputation(
-  validatorId: ValidatorId,
+  validatorId: LookerId,
   domain: EntropyDomain,
   xpEarned: number,
   loopId: LoopId,

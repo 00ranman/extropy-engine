@@ -1,5 +1,6 @@
 /**
- * End-to-end HTTP test of the canonical v3.1 identity flow.
+ * End-to-end HTTP test of the leftover v3.1 identity routes.
+ * Not v3.5 canon. Canon is a node-minted did:key. See docs/IDENTITY.md.
  *
  * Drives the Express app with no live socket — uses a local listener on an
  * ephemeral port. Walks:
@@ -48,7 +49,7 @@ async function post(path: string, body: unknown): Promise<{ status: number; json
   return { status: r.status, json };
 }
 
-describe('canonical v3.1 identity flow over HTTP', () => {
+describe('leftover v3.1 identity routes over HTTP', () => {
   it('walks the full happy path', async () => {
     // 1. OAuth
     const oauthDigest = createHash('sha256').update('user@example.test:google').digest('hex');

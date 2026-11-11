@@ -5,22 +5,14 @@
  *
  *  W3C VC Data Model 2.0, encoded as JWT with EdDSA (Ed25519).
  *
- *  Two credential shapes ship in v3.1:
+ *  Two credential type strings still ship from the retired sandbox:
  *
- *    PersonhoodCredential    — issued after on-device KYC, attests that a real
- *                              human controls this DID. Issuer is the local
- *                              personal-AI; the network never sees the raw
- *                              claims, only the ZKP-wrapped envelope (see zkp.ts).
+ *    PersonhoodCredential    — leftover name. Canon has no KYC personhood
+ *                              check. A self-issued VC is not a registrar.
+ *    OnboardingCredential    — leftover name from the OAuth + KYC handshake.
  *
- *    OnboardingCredential    — issued when a participant completes the OAuth
- *                              + KYC handshake. Confirms valid onboarding.
- *
- *  Note: in the canonical v3.1 flow, the credential issuer is the participant's
- *  personal AI on their own device — i.e. self-issued from a KYC attestation
- *  the device verified locally. This is unusual for VCs but is the privacy
- *  primitive that makes Digital Autarky work. The network does not trust the
- *  raw VC; it trusts the ZKP wrapper that proves the VC exists, was issued
- *  against valid KYC, and that the holder controls the DID.
+ *  Canon identity is the node-minted did:key. These JWTs are helpers.
+ *  evidenceDigest is a leftover field for a KYC hash the protocol does not collect.
  * ════════════════════════════════════════════════════════════════════════════════
  */
 
@@ -48,7 +40,7 @@ export interface VerifiableCredential {
   };
   issuanceDate: string;  // ISO 8601
   expirationDate?: string;
-  /** Hash of the on-device KYC attestation. Network never sees the attestation itself. */
+  /** Leftover field. Canon collects no KYC attestation. */
   evidenceDigest?: string;
 }
 
@@ -79,7 +71,7 @@ export interface IssueCredentialOptions {
   subjectDid?: string;
   /** Additional credential subject fields. */
   subjectClaims?: Record<string, unknown>;
-  /** Hex digest of on-device evidence (KYC attestation). */
+  /** Leftover hex digest. Canon collects no KYC attestation. */
   evidenceDigest?: string;
   /** Validity in seconds. Defaults to 1 year. */
   validitySeconds?: number;

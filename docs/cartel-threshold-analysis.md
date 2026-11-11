@@ -1,6 +1,8 @@
 # Cartel Threshold & Adversarial Validator Analysis
 
-> Source: synthesis of an adversarial-loop simulation conversation. Documents the game-theoretic basis for why the Extropy Engine validator design resists collusion, plus an open vulnerability for follow-up.
+> **Not v3.5 canon.** This note models a retired design: a validator class, a 30-day retroactive window, and slashing of R. Canon is contested confirmations, late burns with cited evidence (no expiry), and standing adjustments. There is no validator office. The numbers below are the old simulation. They are not a spec. See [`docs/SPEC_v3.5.md`](./SPEC_v3.5.md) §11 and §26.
+
+> Source: synthesis of an adversarial-loop simulation conversation. Documents a game-theoretic sketch from that retired model, plus an open vulnerability for follow-up.
 
 ## 1. Summary
 

@@ -60,7 +60,7 @@ Attest: issuer DID signs the interval. Subject DID holds the record. Issuer can 
 
 Public copy: https://extropyengine.com/docs/DEFAULTS.md
 
-A vertex is two envelopes. **A, public:** class, mapper, ΔS, U, buckets, evidence hashes, state, parent vertex ids. SignalFlow scours A by class. No LOOK. **B, ZKP:** unique in this DFAO, signer bound to this strip, confirmed this loop, band if asked, not slashed. DID off the row. **Sealed:** bytes that hash to evidence_root. LOOK to read. DID, GPS, exact clock, or photo bytes in A is a lose-condition. Buckets, or it does not list.
+A vertex is two envelopes. **A, public:** class, mapper, ΔS, U, buckets, evidence hashes, state, parent vertex ids. SignalFlow scours A by class. No LOOK. **B, ZKP:** unique in this DFAO, signer bound to this strip, confirmed this loop, band if asked, no standing penalty open. DID off the row. **Sealed:** bytes that hash to evidence_root. LOOK to read. DID, GPS, exact clock, or photo bytes in A is a lose-condition. Buckets, or it does not list.
 
 ## Review LOOK — the asterisk
 
@@ -70,7 +70,7 @@ Task type, not a class, not a third watcher. Envelope A (class strip) is public.
 
 Ordinary looking is blind 1/10 slices. Diary stays shut.
 
-**If** this web’s published trigger fires **then** a Review LOOK may request the sealed bytes that match the committed hashes — not the rest of either PSLL. Looker writes holds / another slice / burn-claim. Further review is another LOOK. F still applies. Hub (many children cite this one) routes to a curator LOOK. Farming asterisks pays worse. Stalking-shaped bursts slash. False burn-claim can burn the accuser. Party to the dispute: S_gov = 0.
+**If** this web’s published trigger fires **then** a Review LOOK may request the sealed bytes that match the committed hashes — not the rest of either PSLL. Looker writes holds / another slice / burn-claim. Further review is another LOOK. F still applies. Hub (many children cite this one) routes to a curator LOOK. Farming asterisks pays worse. Stalking-shaped bursts draw a standing adjustment. False burn-claim can burn the accuser. Party to the dispute: S_gov = 0.
 
 Trigger is graph facts only: contest/burn cites, cited-harm band for this claim type, or this DFAO opens dispute. Not an LLM vibe. Not a graph crawl. Not identity 7-of-12.
 

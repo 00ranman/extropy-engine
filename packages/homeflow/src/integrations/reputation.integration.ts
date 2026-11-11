@@ -11,7 +11,7 @@
 
 import type { EventBusService } from '../services/event-bus.service.js';
 import { EntropyDomain } from '@extropy/contracts';
-import type { ValidatorId, LoopId } from '@extropy/contracts';
+import type { LookerId, LoopId } from '@extropy/contracts';
 
 export class ReputationIntegration {
   constructor(

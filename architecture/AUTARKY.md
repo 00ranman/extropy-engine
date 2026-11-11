@@ -21,7 +21,7 @@ The Extropy Engine refuses that surface. Not as a stylistic choice. As a structu
 |---|---|
 | Personal AI / model selection | The participant |
 | Local raw context (private logs, sensors, observations) | The participant |
-| Identity material (KYC artifacts, biometric bindings) | The participant's device |
+| Identity material (node keypair, `did:key`) | The participant's node |
 | Decision history (PSLL) | The participant |
 | Claim formulation (decomposition into actionable units) | The participant's personal AI |
 | Submitted claim payload (what the network sees) | Designed to be the minimum interoperable surface |
@@ -31,8 +31,8 @@ The Extropy Engine refuses that surface. Not as a stylistic choice. As a structu
 ## What the network is allowed to do
 
 - Standardize claim and quest schema
-- Route claims to validators via SignalFlow
-- Operate the validation lifecycle (volunteer micro-slices, validator nodes)
+- Route claims to lookers via SignalFlow
+- Operate the look lifecycle (volunteer micro-slices). There is no validator class.
 - Mint, burn, and settle XP via the canonical formula
 - Record receipts to the DAG
 - Aggregate and surface emergent epistemology (`epistemology-engine`)
@@ -80,13 +80,15 @@ This is the difference between a *witness* and an *arbiter*. The engine is a wit
 
 The Identity layer is the strongest test of Autarky. It must establish enough about a participant for the network to enforce uniqueness and accountability, while exposing nothing about the participant beyond what those guarantees require.
 
-The hybrid model (OAuth + on-device KYC + DID + ZKP) is the v3.5 identity answer (signatures today; circuits when they exist):
+Identity is a W3C `did:key` generated on the participant's own node at first boot (signatures today; circuits when they exist):
 
-- KYC happens on-device. The network never sees the documents.
-- DID is generated locally. The network sees a public key.
-- ZKPs (BBS+ default) prove the claims the network needs (uniqueness, valid onboarding, governance eligibility) without revealing what backs them.
+- No KYC, on-device or otherwise. No Google Auth. No central registrar. No customer registry.
+- The keypair stays on the node. The network sees the public `did:key`.
+- Lose the DID without a backup and you start over. Standing does not move to a new key.
+- ZKPs (BBS+ default), when circuits exist, prove a predicate (uniqueness in a room, confirmed this loop). They do not wrap a dossier, because none is collected.
 - Per-context nullifiers prevent cross-context correlation.
-- Reveal under governance threshold is escrowed (provisional 7-of-12 ecosystem-validator threshold key).
+- CAT is a skill record (a count of settled loops in a lane). Not a login. Not KYC.
+- A later reader who needs more than the public predicate writes a look vertex. There is no KYC escrow and no validator office to unmask a customer record.
 
 See [`docs/IDENTITY.md`](../docs/IDENTITY.md).
 
@@ -112,7 +114,7 @@ Before any new feature ships, it must pass these tests:
 
 - Not anti-coordination. The network exists to coordinate.
 - Not anti-validation. Peer review is the heart of the system.
-- Not anti-accountability. Identity binding and reveal-under-governance are real.
+- Not anti-accountability. A look vertex can read more than the public predicate. There is no KYC binding to reveal.
 - Not anti-AI. Personal AI is required, not forbidden.
 - Not isolationism. Participants can opt into deeper sharing voluntarily; the default is sovereign.
 

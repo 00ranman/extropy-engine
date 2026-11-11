@@ -17,7 +17,7 @@ import type { EventBusService } from '../services/event-bus.service.js';
 import { HomeFlowEventType } from '../types/index.js';
 import type { HouseholdId } from '../types/index.js';
 import { TokenType } from '@extropy/contracts';
-import type { LoopId, ValidatorId, VertexId } from '@extropy/contracts';
+import type { LoopId, LookerId, VertexId } from '@extropy/contracts';
 
 export class TokenIntegration {
   constructor(
@@ -80,7 +80,7 @@ export class TokenIntegration {
       loopId,
       {
         householdId: householdId as HouseholdId,
-        validatorId: validatorId as ValidatorId,
+        validatorId: validatorId as LookerId,
         amount,
         loopId: loopId as LoopId,
         deltaS,
@@ -133,7 +133,7 @@ export class TokenIntegration {
       householdId,
       {
         householdId: householdId as HouseholdId,
-        validatorId: validatorId as ValidatorId,
+        validatorId: validatorId as LookerId,
         amount,
         contribution,
       },

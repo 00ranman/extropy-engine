@@ -31,7 +31,7 @@ import type {
   DFAOMembership,
   DFAOGovernanceConfig,
   DFAOTokenConfig,
-  ValidatorId,
+  LookerId,
   VertexId,
   EntropyDomain,
   DomainEvent,
@@ -95,7 +95,7 @@ function dfaoFromRow(row: any): DFAO {
     scale:             row.scale              as DFAOScale,
     parentDFAOId:      (row.parent_dfao_id ?? null) as DFAOId | null,
     childDFAOIds:      (row.child_dfao_ids   || []) as DFAOId[],
-    founderIds:        (row.founder_ids       || []) as ValidatorId[],
+    founderIds:        (row.founder_ids       || []) as LookerId[],
     memberCount:       row.member_count       || 0,
     primaryDomain:     row.primary_domain     as EntropyDomain,
     secondaryDomains:  (row.secondary_domains || []) as EntropyDomain[],
@@ -111,7 +111,7 @@ function dfaoFromRow(row: any): DFAO {
 function membershipFromRow(row: any): DFAOMembership {
   return {
     dfaoId:              row.dfao_id             as DFAOId,
-    validatorId:         row.validator_id        as ValidatorId,
+    validatorId:         row.validator_id        as LookerId,
     role:                row.role                as MembershipRole,
     status:              row.status              as MembershipStatus,
     governanceWeight:    row.governance_weight   || 0,
@@ -286,7 +286,7 @@ app.post('/dfaos', async (req, res) => {
     }
 
     // Create membership records for all founders
-    for (const founderId of founderIds as ValidatorId[]) {
+    for (const founderId of founderIds as LookerId[]) {
       const membershipVertexId = '' as VertexId;
       await pool.query(
         `INSERT INTO dfao.memberships (
@@ -315,7 +315,7 @@ app.post('/dfaos', async (req, res) => {
 
     await bus.emit(EventType.DFAO_CREATED, dfaoId as unknown as LoopId, {
       dfao,
-      creatorId: founderIds[0] as ValidatorId,
+      creatorId: founderIds[0] as LookerId,
     } as DFAOCreatedPayload);
 
     console.log(`[dfao-registry] DFAO ${dfaoId} CREATED: "${name}" (scale=${scale}, founders=${founderIds.length})`);
@@ -556,7 +556,7 @@ app.post('/dfaos/:id/members', async (req, res) => {
 
     await bus.emit(EventType.DFAO_MEMBER_JOINED, dfaoId as unknown as LoopId, {
       dfaoId,
-      validatorId: validatorId as ValidatorId,
+      validatorId: validatorId as LookerId,
       role,
       membershipVertexId,
     } as DFAOMemberJoinedPayload);
@@ -576,7 +576,7 @@ app.post('/dfaos/:id/members', async (req, res) => {
 app.delete('/dfaos/:id/members/:validatorId', async (req, res) => {
   try {
     const dfaoId      = req.params.id          as DFAOId;
-    const validatorId = req.params.validatorId as ValidatorId;
+    const validatorId = req.params.validatorId as LookerId;
 
     const memberRes = await pool.query(
       `SELECT * FROM dfao.memberships WHERE dfao_id = $1 AND validator_id = $2`,
@@ -629,7 +629,7 @@ app.delete('/dfaos/:id/members/:validatorId', async (req, res) => {
 app.post('/dfaos/:id/members/:validatorId/expel', async (req, res) => {
   try {
     const dfaoId      = req.params.id          as DFAOId;
-    const validatorId = req.params.validatorId as ValidatorId;
+    const validatorId = req.params.validatorId as LookerId;
     const { proposalId, reason } = req.body;
 
     if (!proposalId) {
@@ -719,7 +719,7 @@ app.get('/dfaos/:id/members', async (req, res) => {
 app.patch('/dfaos/:id/members/:validatorId/role', async (req, res) => {
   try {
     const dfaoId      = req.params.id          as DFAOId;
-    const validatorId = req.params.validatorId as ValidatorId;
+    const validatorId = req.params.validatorId as LookerId;
     const { role }    = req.body;
 
     if (!role) {
@@ -849,7 +849,7 @@ app.post('/dfaos/:id/governance-weight', async (req, res) => {
       [dfaoId, MembershipStatus.ACTIVE],
     );
 
-    const updates: Array<{ validatorId: ValidatorId; weight: number }> = [];
+    const updates: Array<{ validatorId: LookerId; weight: number }> = [];
 
     for (const row of membersRes.rows) {
       const membership = membershipFromRow(row);

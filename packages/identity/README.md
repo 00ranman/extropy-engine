@@ -1,62 +1,43 @@
 # @extropy/identity
 
-Hybrid identity layer for Extropy Engine v3.1: OAuth + on-device KYC + W3C DID + ZKP (BBS+ default).
+Node-minted identity for Extropy Engine v3.5.
 
-**Status:** Skeleton — interfaces defined, implementation in progress.
+**Canon:** a W3C `did:key` generated on the participant's own node at first boot. No KYC (on-device or otherwise), no Google Auth, no OAuth or OpenID login, no central registrar, no customer registry. Lose the DID without a backup and you start over. CAT is a skill record (a count of settled loops in a lane), not a login and not KYC.
 
-See [`docs/IDENTITY.md`](../../docs/IDENTITY.md) for the full spec.
+**Status:** The library can emit `did:key` (`encodeDidKey`, `isDidKey`). The Express process still mounts the retired v3.1 session machine (OAuth digest, KYC digest, `did:extropy`). That session machine is a logic change. Do not treat the routes as the rule.
 
-## What this package is responsible for
+See [`docs/IDENTITY.md`](../../docs/IDENTITY.md). The route catalog of the leftover server is [`docs/IDENTITY_IMPL.md`](../../docs/IDENTITY_IMPL.md).
 
-- OAuth/OIDC sign-in bridge
-- On-device KYC orchestration (driver: pluggable KYC providers)
-- W3C DID generation and storage hooks
-- Verifiable Credential issuance (locally to the participant)
-- ZKP proof generation (BBS+ default, zk-SNARK supported)
+## What this package is for
+
+- W3C `did:key` from an Ed25519 public key (`encodeDidKey`)
+- Local key material helpers
+- Verifiable Credential helpers (self-issued; not a personhood office)
+- ZKP envelope (signatures today; BBS+ when circuits exist)
 - Per-context nullifier derivation
-- Threshold-keyed reveal escrow integration
+- Shamir split of an opaque payload (not a KYC escrow)
 
-## What this package is NOT
+## What this package is not
 
-- Not a custodian. Identity material lives on the participant's device.
-- Not a database. The network sees ZKPs; this package never stores raw PII.
-- Not a sole authority. Multiple instances run in parallel; verification is local.
+- Not a registrar and not a customer database.
+- Not a KYC vendor.
+- Not a custodian. The private key stays on the participant's node.
+- Not a validator office.
 
-## Module layout (target)
+## Leftover HTTP surface
 
-```
-src/
-├── index.ts                 # Express server, public API
-├── oauth.ts                 # OAuth/OIDC bridge
-├── kyc/
-│   ├── orchestrator.ts      # Local KYC flow coordination
-│   └── providers/           # Pluggable KYC provider drivers
-├── did/
-│   ├── generator.ts         # DID + key material
-│   └── credential.ts        # VC issuance (local)
-├── zkp/
-│   ├── bbs.ts               # BBS+ wrapper
-│   ├── snark.ts             # zk-SNARK circuits
-│   └── nullifier.ts         # Per-context nullifier derivation
-└── reveal/
-    └── escrow.ts            # Threshold-keyed reveal escrow
-```
+These routes are still mounted. They are not canon.
 
-## API surface (target)
-
-| Endpoint | Purpose |
+| Endpoint | What the code still does |
 |---|---|
-| `POST /onboard/oauth` | Begin OAuth flow |
-| `POST /onboard/kyc` | Submit on-device KYC attestation (local-only proof) |
-| `POST /did/generate` | Generate DID + VC for the participant |
-| `POST /zkp/prove` | Generate proof for a stated predicate |
-| `POST /zkp/verify` | Verify a ZKP against expected predicate |
-| `POST /nullifier/derive` | Derive per-context nullifier |
-| `POST /reveal/initiate` | Begin governance reveal flow (requires threshold proposal) |
+| `POST /onboard/oauth` | Accepts a provider name and a subject digest |
+| `POST /onboard/kyc` | Accepts a digest labeled as an on-device KYC attestation |
+| `POST /did/generate` | Mints `did:extropy:<hex>`, not `did:key` |
+| `POST /zkp/prove` | Sandbox proof |
+| `POST /zkp/verify` | Sandbox verify |
+| `POST /nullifier/derive` | Per-context nullifier |
+| `POST /reveal/initiate` | Splits an opaque payload. Not a real-world identity escrow |
 
 ## Status against gaps
 
-Tracked in [`docs/GAPS.md`](../../docs/GAPS.md). Open critical gaps:
-- KYC bootstrap: trusted issuer transition path
-- Recovery: lost-DID recovery without central authority
-- Cross-jurisdictional KYC compatibility
+Tracked in [`docs/GAPS.md`](../../docs/GAPS.md). The open identity question is circuits (Codex 3), not a KYC bootstrap and not a recovery registrar.

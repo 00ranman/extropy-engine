@@ -7,7 +7,8 @@
  *  mesh's emergent peer-review system. Validation, decomposition, and truth
  *  arbitration happen elsewhere: validation in DFAOs, decomposition on the
  *  participant's personal AI, truth in the consensus that emerges from
- *  incentive-aligned validators. This package only witnesses what the mesh
+ *  the other edge of the loop and later lookers. There is no validator class.
+ *  This package only witnesses what the mesh
  *  produces.
  *
  *  Two backends ship in v3.1.x:
@@ -53,7 +54,7 @@
 import type {
   ClaimId,
   SubClaimId,
-  ValidatorId,
+  LookerId,
   EntropyDomain,
   Timestamp,
 } from '@extropy/contracts';

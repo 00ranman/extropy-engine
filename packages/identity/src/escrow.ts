@@ -5,30 +5,13 @@
  *
  *  Shamir Secret Sharing (k-of-n) over GF(256) — byte-oriented, no big-int math.
  *
- *  Used for the v3.1 selective accountability mechanism:
+ *  This file is Shamir secret sharing plus AES-GCM over an opaque payload.
  *
- *      Under governance threshold (default 7-of-12 ecosystem validators),
- *      a DID can be linked back to enforceable real-world identity.
- *
- *  The flow:
- *
- *    1. At onboarding, the participant's device produces a "reveal package":
- *       a JSON blob containing { realIdHash, kycEvidence, contactInfo, ... }.
- *       The participant CHOOSES what to escrow — minimum is the hash of the
- *       real-world identifier so a court order has something to bind to.
- *
- *    2. The package is encrypted with a random 32-byte key K.
- *    3. K is split into n shares with threshold k. Shares are distributed
- *       to ecosystem validators (encrypted to each validator's DID key — that
- *       wrapping is out of scope for this file).
- *
- *    4. To reveal: a governance proposal collects ≥ k shares. This module
- *       reconstructs K and decrypts the package.
- *
- *  This file does Shamir + AES-GCM. Validator-side share wrapping (encrypting
- *  each share to a validator's DID public key) is the next layer; for the
- *  v3.1 sandbox we expose raw shares so callers can integrate their own
- *  wrapping when production hits.
+ *  Canon has no KYC binding and no registrar, so there is no real-world
+ *  identity to escrow and no validator office to hold shares. The 7-of-12
+ *  story in older notes is retired. Callers that still seal a JSON blob
+ *  are using a leftover sandbox. The math below does not know what the
+ *  plaintext means.
  *
  *  Reference: Shamir (1979), "How to share a secret".
  * ════════════════════════════════════════════════════════════════════════════════

@@ -5,9 +5,9 @@
  *
  *  All identity state in v3.1 sandbox is in-memory and ephemeral. The reasons:
  *
- *    1. The canonical flow stores sensitive material (DID private keys, KYC
- *       attestations) ON THE PARTICIPANT'S DEVICE — not on the network. The
- *       service in this package only handles the network-facing artifacts
+ *    1. Canon stores the node keypair on the participant's node. This
+ *       sandbox store still holds leftover session fields (OAuth digest,
+ *       KYC digest). The service also holds network-facing artifacts
  *       (challenges, nullifiers, escrow packages without keys).
  *
  *    2. Stateless restart is part of the design. Anything important is
@@ -40,11 +40,11 @@ export interface OnboardingSession {
   createdAt: string;
   updatedAt: string;
   stage: OnboardingStage;
-  /** OAuth provider (e.g. "google"). */
+  /** Leftover. Canon has no OAuth provider. */
   oauthProvider?: string;
-  /** Hash of the OAuth subject identifier. We never persist the raw sub. */
+  /** Leftover hash of an OAuth subject. Canon has no OAuth. */
   oauthSubjectDigest?: string;
-  /** Hash of the on-device KYC attestation. */
+  /** Leftover hash. Canon has no KYC attestation. */
   kycAttestationDigest?: string;
   /** Issued DID (after step 3). */
   did?: string;

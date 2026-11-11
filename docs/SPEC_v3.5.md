@@ -60,7 +60,7 @@ The machine as coded. Not Codex 3.
 - **Public language:** record / meter / till spark. Domain (eight instruments) vs lane (skill). CAT is a record, off the mint.
 - **Public gaps: 16 live** (12 open, 4 narrowed) as of 2026-09-07.
 
-Digital Autarky, eight domains, personal-AI handshake, PSLL, native substrate, hybrid identity, micro-quest grain, and the mint product itself are unchanged.
+Digital Autarky, eight domains, personal-AI handshake, PSLL, native substrate, node-minted `did:key` (no KYC, no registrar), micro-quest grain, and the mint product itself are unchanged.
 
 ---
 
@@ -451,7 +451,7 @@ Decades later still has weight when a later huge, cited ΔS writes a delta into 
 
 XP can still be destroyed. No expiry. Five days later or a decade later.
 
-You do not collect what decay already ate. You mark the vertex BURNED and slash remaining dust plus any new cited delta. Ordinary XP a decade on is already dust. Clawing a lawn from 1996 is bookkeeping. The DAG does not forget. The wallet does not get a 1996-shaped hole.
+You do not collect what decay already ate. You mark the vertex BURNED and burn remaining dust plus any new cited delta. Ordinary XP a decade on is already dust. Clawing a lawn from 1996 is bookkeeping. The DAG does not forget. The wallet does not get a 1996-shaped hole.
 
 Late mint and late burn are the same machine, both directions.
 
@@ -478,7 +478,7 @@ Most validation is blind or implicit:
 
 The `epistemology-engine` reads validation out of the task graph. It does not appoint validators. That removes the review chokepoint and ends the watcher regress.
 
-**LOOK vertex (specified; not in Codex 2.1).** Reading more than the public predicate (band yes/no, “this loop closed”) requires emitting LOOK. No silent fetch. The looker can stay a nullifier until a governance threshold (same shape as identity reveal: cause shown). Curiosity is allowed. Invisible curiosity is not. Curator LOOKs can mint if the look is the work. Stalking-shaped bursts can slash. Pattern, not the verb.
+**LOOK vertex (specified; not in Codex 2.1).** Reading more than the public predicate (band yes/no, “this loop closed”) requires emitting LOOK. No silent fetch. The looker can stay a nullifier until a governance threshold (cause shown). Curiosity is allowed. Invisible curiosity is not. Curator LOOKs can mint if the look is the work. Stalking-shaped bursts draw a standing adjustment. Pattern, not the verb. There is no validator to slash.
 
 A panopticon is one tower that can see every diary. This has neither. The PSLL is a file on your disk. The network sees a proof — yes or no — not the file. Anyone who later wants WHO writes a look vertex.
 
@@ -552,23 +552,24 @@ The network does not get to decide what you meant. It does not get to own your l
 
 ## 15. Identity and accountability
 
-Hybrid identity: usability, privacy, Sybil resistance. Full spec: [`docs/IDENTITY.md`](./IDENTITY.md).
+Identity is a node-minted DID. Full spec: [`docs/IDENTITY.md`](./IDENTITY.md).
 
 ### 15.1 Constraints
 
 1. Easy onboarding for normal humans.
-2. Strong resistance to one-person-many-identity abuse.
-3. No raw PII exposure to the network DAG.
-4. Selective reveal under governance conditions.
-5. Compatibility with local edge intelligence.
+2. Resistance to one-person-many-identity abuse comes from standing. A new key starts at zero.
+3. No dossier on the network DAG. The protocol does not collect identity documents or biometrics.
+4. Selective disclosure is a predicate or a look vertex, not a government-ID reveal.
+5. Compatibility with local edge intelligence. A personal AI is not required to mint the DID.
 
 ### 15.2 Canonical flow
 
-1. User signs in locally using familiar credentials via OAuth or OpenID.
-2. User performs a one-time on-device KYC binding (ID scan, biometric bind, or trusted issuer handoff).
-3. The **node** generates a DID and corresponding Verifiable Credential. Day-one path: `did:key` on first boot, no registrar. A personal AI is not required for this step.
-4. Credential is wrapped in zero-knowledge proofs (BBS+ default; zk-SNARKs supported) **when circuits exist**.
-5. Network receives only proof material and per-context nullifier outputs required to establish uniqueness and permissions.
+1. On first boot the participant's own node generates a W3C `did:key` from a keypair that stays on that node.
+2. There is no KYC, on-device or otherwise. There is no Google Auth, no OAuth or OpenID login, no central registrar, and no customer registry.
+3. Backup is the participant's job. Lose the DID without a backup and you start over. Standing does not move to a new key.
+4. CAT is a skill record: a count of settled loops in a lane. It is not a login and not KYC.
+5. Predicates may be wrapped in zero-knowledge proofs (BBS+ default; zk-SNARKs supported) **when circuits exist**.
+6. The network receives the public DID and, when circuits exist, the proof material and per-context nullifier outputs required to establish uniqueness in a room.
 
 **Today the handshake is signatures.** ZKP circuits are not in Codex v2.1. 2.1 is the current Codex. The till gets yes or no. Anyone who later wants WHO writes a look vertex.
 
@@ -576,12 +577,12 @@ The yes/no is a **circuit**. Prover builds a proof of one predicate. Verifier ch
 
 | Network sees | Network does not see |
 |---|---|
-| Proof of uniqueness | Raw identity documents |
-| Proof of valid onboarding | Full biometric material |
-| Contextual nullifier material | Private local onboarding state |
-| Governance-relevant accountability hooks | Real-world identity tied to DID by default |
+| Public `did:key` | A customer registry |
+| Proof of uniqueness in a room, when circuits exist | Identity documents or biometrics (none are collected) |
+| Contextual nullifier material, when circuits exist | A legal-name binding |
+| Signatures today | Private local key material |
 
-This is not optional anonymity. It is **selective privacy under enforceable accountability**. If governance thresholds are met under valid process, specific reveal or neutralization actions may be triggered against a DID. Default: **7-of-12 ecosystem-validator threshold-keyed escrow**, governance-tunable. “Validator” here means contributors performing that governance task, not a priesthood.
+There is no escrow of a real-world identity, because no KYC binding exists. Governance does not appoint an office to unmask a customer record. A later reader who needs more than the public predicate writes a look vertex.
 
 Sybil: identity is cheap, standing is not. Unique-in-DFAO stops fifty votes from one person. One captured node can lie about itself; it cannot silently rewrite a neighbor's DAG.
 
@@ -675,7 +676,7 @@ Scaffolds in TypeScript, PostgreSQL, Redis, Docker Compose. The public story is 
 
 | Package | Status | Purpose |
 |---|---|---|
-| `identity/` | Skeleton | OAuth + on-device KYC + DID + ZKP wrapper |
+| `identity/` | Skeleton | Node-minted `did:key`. No OAuth, no KYC, no registrar. Routes still speak the retired flow. |
 | `psll-sync/` | Skeleton | PSLL anchoring service (Merkle commitments to DAG) |
 | `quest-market/` | Skeleton | Micro-quest marketplace + dynamic reward escalation |
 | `validation-neighborhoods/` | Skeleton | Sharded micro-slice routing |
@@ -771,7 +772,7 @@ Published before the first live till. Humans will ask. “The MACRO publishes it
 | Lookers | Mint at close. Looking is a vertex. No validator class. |
 | EP this sale | min(XP · L + λ · L, line × H_cap) |
 | ZKP scheme | BBS+ (when circuits exist; signatures today) |
-| Reveal threshold | 7-of-12 + cause-shown |
+| Identity reveal | None. No KYC escrow. A look vertex reads more than the public predicate. |
 | Late burn | No expiry |
 | Domain weights w | 1.0 default per domain (per-DFAO override) |
 | Default task grain | 2–5 minutes |

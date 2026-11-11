@@ -19,7 +19,7 @@ import type { EventBusService } from '../services/event-bus.service.js';
 import { HomeFlowEventType } from '../types/index.js';
 import type { HouseholdId } from '../types/index.js';
 import { EntropyDomain, DFAOScale, DFAOStatus, MembershipRole } from '@extropy/contracts';
-import type { ValidatorId, DFAOId } from '@extropy/contracts';
+import type { LookerId, DFAOId } from '@extropy/contracts';
 
 export class GovernanceIntegration {
   constructor(
@@ -98,7 +98,7 @@ export class GovernanceIntegration {
       {
         householdId: householdId as HouseholdId,
         dfaoId: dfaoId as DFAOId,
-        founderValidatorId: founderValidatorId as ValidatorId,
+        founderValidatorId: founderValidatorId as LookerId,
       },
     );
 

@@ -1,19 +1,17 @@
 /**
  * ════════════════════════════════════════════════════════════════════════════════
- *  EXTROPY ENGINE — Identity Layer (v3.1)
+ *  EXTROPY ENGINE — Identity Layer
  * ════════════════════════════════════════════════════════════════════════════════
  *
- *  Hybrid identity: OAuth + on-device KYC + W3C DID + ZKP wrapper.
+ *  Canon (docs/IDENTITY.md): a W3C did:key minted on the participant's own
+ *  node at first boot. No KYC, no OAuth, no Google Auth, no registrar.
+ *  Lose the key without a backup and you start over.
  *
- *  The network never sees raw identity material. KYC happens on-device.
- *  The DID is generated locally. Network verification operates on ZKPs only.
- *
- *  See docs/IDENTITY.md for the full spec.
- *
- *  STATUS: v3.1 sandbox — all canonical-flow endpoints are live with real
- *  primitives (Ed25519 sign/verify, JWT-encoded VCs, deterministic per-context
- *  nullifiers, Shamir 7-of-12 reveal escrow). Storage is in-memory; swap
- *  IdentityStore for the Postgres implementation when production hits.
+ *  STATUS: the routes below are the retired v3.1 sandbox. They still accept
+ *  an OAuth digest and a KYC digest, and /did/generate still emits
+ *  did:extropy. Replacing that session machine is a logic change.
+ *  Primitives that are fine to keep: Ed25519 sign/verify, JWT-encoded VCs,
+ *  deterministic per-context nullifiers. Storage is in-memory.
  *
  *  The proof profile is honestly labeled `extropy-zkp-v3.1-sandbox` — it is
  *  sound for the Ed25519 + commitment construction we ship today, NOT yet
@@ -124,12 +122,11 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 // ────────────────────────────────────────────────────────────────────────────
-//  Onboarding — step 1: OAuth (provider verification, on-device)
+//  Leftover route: OAuth digest (not canon)
 // ────────────────────────────────────────────────────────────────────────────
 //
-// Spec note: the network never sees the raw OAuth subject. The participant's
-// device verifies the OAuth flow and submits a digest. We treat the digest as
-// opaque proof-of-account-existence and bind it to a session id.
+// Canon has no OAuth and no Google Auth. This route is still mounted so
+// existing sandbox tests keep passing. Do not add callers.
 
 const onboardOauthSchema = z.object({
   provider: z.string().min(1).max(64),
@@ -153,14 +150,15 @@ app.post('/onboard/oauth', (req: Request, res: Response) => {
 });
 
 // ────────────────────────────────────────────────────────────────────────────
-//  Onboarding — step 2: KYC attestation (on-device)
+//  Leftover route: KYC attestation digest (not canon)
 // ────────────────────────────────────────────────────────────────────────────
 //
-// The participant runs KYC ON THEIR DEVICE. The network only sees a hash.
+// Canon has no KYC, on-device or otherwise. This route is still mounted.
+// Do not add callers.
 
 const onboardKycSchema = z.object({
   sessionId: z.string().min(1),
-  /** Hex SHA-256 of the on-device KYC attestation document. */
+  /** Leftover hex digest. Canon collects no KYC attestation. */
   attestationDigest: z.string().regex(/^[0-9a-f]{64}$/i, 'must be 32-byte hex digest'),
 });
 
@@ -187,12 +185,12 @@ app.post('/onboard/kyc', (req: Request, res: Response) => {
 //  Onboarding — step 3: DID generation + self-issued PersonhoodCredential
 // ────────────────────────────────────────────────────────────────────────────
 //
-// Per docs/architecture/AUTARKY.md the credential is self-issued from the
-// on-device KYC attestation. The keypair is GENERATED ON THE SERVER ONLY for
-// the sandbox flow — production clients generate locally and POST the public
-// key. This endpoint returns the private key in PKCS8 PEM so a client can
-// drive the v3.1 happy-path with one HTTP call. Do NOT use this endpoint as
-// a real key custody surface.
+// Leftover sandbox route. Canon is did:key generated on the participant's
+// node, not did:extropy generated here. The keypair is GENERATED ON THE
+// SERVER ONLY for this sandbox — a real node generates locally and never
+// posts the private key. This endpoint returns the private key in PKCS8 PEM
+// so a client can drive the old happy-path with one HTTP call. Do NOT use
+// this endpoint as a key custody surface.
 
 const didGenerateSchema = z.object({
   sessionId: z.string().min(1).optional(),

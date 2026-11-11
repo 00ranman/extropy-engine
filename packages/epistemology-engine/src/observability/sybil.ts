@@ -19,8 +19,10 @@
  *
  *  This is NOT cryptographically resistant Sybil defense. It is a SIGNAL
  *  surface. Governance and reputation packages consume the ranking, they
- *  do not act on it autonomously. The hard Sybil resistance comes from the
- *  identity package (KYC + DID + per-context nullifiers).
+ *  do not act on it autonomously. Sybil resistance is standing, not KYC.
+ *  Identity is a node-minted did:key. A new DID starts with no XP, no IT,
+ *  and no vote weight. Per-context nullifiers, when circuits exist, stop
+ *  one DID from voting twice in one room.
  *
  *  Determinism: identical inputs produce identical outputs. Iteration order
  *  is over a sorted DID list; ties in seed-fallback selection break by DID

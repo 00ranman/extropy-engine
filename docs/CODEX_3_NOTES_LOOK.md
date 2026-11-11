@@ -2,7 +2,9 @@
 
 **Status:** Codex v2.1 stays frozen.
 **Date:** 2026-08-23
-**Companions:** `IDENTITY.md` (threshold reveal), `CODEX_3_NOTES_ZKP_REPUTATION.md` (predicates)
+**Companions:** `IDENTITY.md` (node-minted `did:key`), `CODEX_3_NOTES_ZKP_REPUTATION.md` (predicates)
+
+> **v3.5 canon override.** Identity is a node-minted `did:key`. No KYC, no registrar. There is no validator office and no slashing of one. Contested confirmations, late burns with cited evidence, and standing adjustments are the adversarial path. This file is capture. The rule is [`IDENTITY.md`](./IDENTITY.md) and [`SPEC_v3.5.md`](./SPEC_v3.5.md) §15.
 
 Do not warp this into a woods-privacy sermon. Google already has a file on people who sleep outside. Hermit anonymity is not the product. **Accountable looking** is.
 

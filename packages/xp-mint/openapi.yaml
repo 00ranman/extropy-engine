@@ -2,12 +2,16 @@ openapi: 3.1.0
 info:
   title: XP Mint API
   description: |
-    Mints XP tokens after loop closure. XP is a function of entropy reduction
-    (ΔS), validator reputation (R), and domain difficulty (D):
+    Mints XP when a loop closes with verified ΔS > 0.
 
-      XP = ΔS · R · D
+      XP = R × F × ΔS × (w · E) × log(1/Tₛ)
 
-    Each minted XP is stored as an immutable ledger entry.
+    R is rarity of the action class, not a reputation score. There is no
+    validator class and no two-phase provisional mint. Late burn has no expiry.
+
+    Several paths and schema fields in this file are leftover names
+    (`validatorId`) and do not match the running routes in src/index.ts.
+    Renaming those wire fields is a logic change.
   version: 1.0.0
 
 servers:
@@ -44,11 +48,10 @@ paths:
       operationId: mintXP
       summary: Mint XP for a validator after loop closure
       description: |
-        Mints XP using the formula: XP = ΔS · R · D
-        
-        - ΔS = entropy reduction (deltaS)
-        - R = validator aggregate reputation
-        - D = domain difficulty multiplier
+        Canon formula: XP = R × F × ΔS × (w · E) × log(1/Tₛ)
+
+        - R = rarity of the action class, not reputation
+        - Confirmation is the other edge of the loop, not a validator office
         
         Emits: `xp.minted`
       requestBody:

@@ -6,8 +6,8 @@
  *  Core formula:  XP = R × F × ΔS × (w · E) × log(1/Tₛ)
  *
  *  Where:
- *    R   = Validator reputation (compressed evidence of past accuracy)
- *    F   = Feedback closure strength [0,1]
+ *    R   = Rarity of the action class (property of the loop, not the actor)
+ *    F   = Frequency of decay [0,1]
  *    ΔS  = Net entropy reduction (Joule/Kelvin) across a closed causal loop
  *    w   = Domain-authority weight vector
  *    E   = Essentiality factor (how critical the task is to the loop)
@@ -27,7 +27,11 @@
 export type LoopId        = string & { readonly __brand: 'LoopId' };
 export type ClaimId       = string & { readonly __brand: 'ClaimId' };
 export type SubClaimId    = string & { readonly __brand: 'SubClaimId' };
-export type ValidatorId   = string & { readonly __brand: 'ValidatorId' };
+/**
+ * Participant id on a confirming edge, or a later looker attaching evidence.
+ * There is no validator class. Wire fields may still be named `validatorId`.
+ */
+export type LookerId   = string & { readonly __brand: 'LookerId' };
 export type TaskId        = string & { readonly __brand: 'TaskId' };
 export type MintEventId   = string & { readonly __brand: 'MintEventId' };
 export type MeasurementId = string & { readonly __brand: 'MeasurementId' };
@@ -200,7 +204,7 @@ export interface Claim {
   domain: EntropyDomain;
 
   /** Who submitted the claim */
-  submitterId: ValidatorId;
+  submitterId: LookerId;
 
   status: ClaimStatus;
 
@@ -258,7 +262,7 @@ export interface SubClaim {
   measurementIds: MeasurementId[];
 
   /** Which validator(s) are assigned to verify this */
-  assignedValidatorIds: ValidatorId[];
+  assignedValidatorIds: LookerId[];
 
   /** Weight of this sub-claim in the parent's composite truth score */
   weight: number;
@@ -271,15 +275,16 @@ export interface SubClaim {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Validators & Reputation
+//  Participants and accuracy history
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * A validator — human or AI agent capable of verifying sub-claims.
- * Reputation is compressed evidence of past verification accuracy.
+ * A participant record. Confirmation comes from the other edge of the loop.
+ * Later lookers can attach evidence. They are not an office.
+ * The interface name `Validator` is leftover. Accuracy history does not enter XP.
  */
 export interface Validator {
-  id: ValidatorId;
+  id: LookerId;
 
   /** Display name / alias */
   name: string;
@@ -394,7 +399,7 @@ export interface TaskRouting {
   loopId: LoopId;
 
   /** The validator this task is routed to */
-  assignedValidatorId: ValidatorId;
+  assignedValidatorId: LookerId;
 
   status: TaskStatus;
 
@@ -427,7 +432,7 @@ export interface RoutingReason {
 
   /** Alternative validators considered and their scores */
   alternatives: Array<{
-    validatorId: ValidatorId;
+    validatorId: LookerId;
     compositeWeight: number;
   }>;
 }
@@ -512,7 +517,7 @@ export interface Loop {
   // ── Participants ──────────────────────────────────────────────────────
 
   /** All validators involved in this loop */
-  validatorIds: ValidatorId[];
+  validatorIds: LookerId[];
 
   /** All task routings for this loop's sub-claims */
   taskIds: TaskId[];
@@ -562,7 +567,7 @@ export interface LoopConsensus {
 }
 
 export interface ConsensusVote {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   vote: 'confirm' | 'deny' | 'abstain';
   reputationWeight: number;
   justification?: string;
@@ -573,11 +578,14 @@ export interface ConsensusVote {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export enum MintStatus {
-  /** Provisional mint — loop closed but awaiting retroactive validation */
+  /**
+   * Leftover wire value. Canon has no two-phase or provisional mint
+   * and no 30-day window. Mint at close. Do not treat this as a phase.
+   */
   PROVISIONAL   = 'provisional',
-  /** Confirmed — retroactive validation passed */
+  /** Recorded mint. The string is historical; close is the mint. */
   CONFIRMED     = 'confirmed',
-  /** Burned — retroactive validation failed, XP revoked */
+  /** A later cited burn. Late burn has no expiry. */
   BURNED        = 'burned',
 }
 
@@ -586,9 +594,10 @@ export enum MintStatus {
  *
  * XP = R × F × ΔS × (w · E) × log(1/Tₛ)
  *
- * The mint is initially PROVISIONAL (Epistemic Risk Claim phase).
- * After retroactive validation (Retroactive Convergence Validation),
- * it transitions to CONFIRMED or BURNED.
+ * Canon: mint at close. Late mint and late burn add new cited records.
+ * Late burn has no expiry. There is no two-phase provisional mint.
+ * The `provisional` status and `mint.xp.provisional` event name are leftover
+ * wire values. Replacing that state machine is a logic change.
  */
 export interface XPMintEvent {
   id: MintEventId;
@@ -639,7 +648,7 @@ export interface XPMintEvent {
 }
 
 export interface XPDistribution {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   /** Proportion of total XP allocated to this validator */
   share: number;
   /** Absolute XP amount */
@@ -710,11 +719,11 @@ export enum EventType {
   REPUTATION_PENALIZED        = 'reputation.penalized',
 
   // ── XP Mint Events ────────────────────────────────────────────────────
-  /** XP provisionally minted */
+  /** Leftover event name. Canon mints at close; this is not a provisional phase. */
   XP_MINTED_PROVISIONAL       = 'mint.xp.provisional',
-  /** XP retroactively confirmed */
+  /** Close mint recorded. Event name is historical. */
   XP_CONFIRMED                = 'mint.xp.confirmed',
-  /** XP burned (retroactive validation failed) */
+  /** Late burn. Adds a cited record. No expiry. */
   XP_BURNED                   = 'mint.xp.burned',
 
   // ── DAG Substrate Events ──────────────────────────────────────────────
@@ -883,13 +892,13 @@ export interface TaskCreatedPayload {
 
 export interface TaskAssignedPayload {
   taskId: TaskId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   routingReason: RoutingReason;
 }
 
 export interface TaskCompletedPayload {
   taskId: TaskId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   result: ValidationResult;
 }
 
@@ -918,7 +927,7 @@ export interface LoopFailedPayload {
 }
 
 export interface ReputationAccruedPayload {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   domain: EntropyDomain;
   delta: number;
   newAggregate: number;
@@ -926,7 +935,7 @@ export interface ReputationAccruedPayload {
 }
 
 export interface ReputationPenalizedPayload {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   domain: EntropyDomain;
   penalty: number;
   reason: string;
@@ -970,7 +979,7 @@ export interface VertexRejectedPayload {
 
 export interface DFAOCreatedPayload {
   dfao: DFAO;
-  creatorId: ValidatorId;
+  creatorId: LookerId;
 }
 
 export interface DFAOStatusChangedPayload {
@@ -982,20 +991,20 @@ export interface DFAOStatusChangedPayload {
 
 export interface DFAOMemberJoinedPayload {
   dfaoId: DFAOId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   role: MembershipRole;
   membershipVertexId: VertexId;
 }
 
 export interface DFAOMemberLeftPayload {
   dfaoId: DFAOId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   reason: string;
 }
 
 export interface DFAOMemberExpelledPayload {
   dfaoId: DFAOId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   proposalId: ProposalId;
   reason: string;
 }
@@ -1043,7 +1052,7 @@ export interface ProposalImplementedPayload {
 export interface EmergencyInterventionPayload {
   dfaoId: DFAOId;
   proposalId: ProposalId;
-  triggeredByValidatorId: ValidatorId;
+  triggeredByValidatorId: LookerId;
   description: string;
 }
 
@@ -1066,14 +1075,14 @@ export interface LoopTimedOutPayload {
 }
 
 export interface ReputationDecayTickPayload {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   domain: EntropyDomain;
   decayAmount: number;
   newAggregate: number;
 }
 
 export interface GovernanceWeightDecayedPayload {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   dfaoId: DFAOId;
   previousWeight: number;
   newWeight: number;
@@ -1114,21 +1123,21 @@ export interface TokenConvertedPayload {
 
 export interface CTLockupExpiredPayload {
   walletId: WalletId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   amount: number;
   seasonId: SeasonId;
 }
 
 export interface CTInactivityBurnPayload {
   walletId: WalletId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   burnedAmount: number;
   inactiveDays: number;
   vertexId: VertexId;
 }
 
 export interface XPDecayedPayload {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   previousXP: number;
   newXP: number;
   decayRate: number;
@@ -1141,13 +1150,13 @@ export interface CredentialIssuedPayload {
 
 export interface CredentialRevokedPayload {
   credentialId: CredentialId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   reason: string;
   revokedAt: Timestamp;
 }
 
 export interface LevelUpPayload {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   previousLevel: number;
   newLevel: number;
   title: string;
@@ -1155,7 +1164,7 @@ export interface LevelUpPayload {
 }
 
 export interface CATCertifiedPayload {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   domain: EntropyDomain;
   level: number;
   validatedPerformances: number;
@@ -1163,7 +1172,7 @@ export interface CATCertifiedPayload {
 }
 
 export interface CATRecertificationDuePayload {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   domain: EntropyDomain;
   lastCertifiedAt: Timestamp;
   dueBy: Timestamp;
@@ -1184,7 +1193,7 @@ export interface SkillNodeCreatedPayload {
 }
 
 export interface SkillMasteredPayload {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   skillNodeId: SkillNodeId;
   validatedPerformances: number;
   credentialId: CredentialId;
@@ -1192,7 +1201,7 @@ export interface SkillMasteredPayload {
 
 export interface XPOracleSyncPayload {
   source: XPOracleSource;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   xpAwarded: number;
   rulesApplied: XPOracleMappingRule[];
   syncedAt: Timestamp;
@@ -1200,14 +1209,14 @@ export interface XPOracleSyncPayload {
 
 export interface XPExchangeCompletedPayload {
   exchange: XPExchange;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   sentAmount: number;
   receivedAmount: number;
   frictionLost: number;
 }
 
 export interface EPConvertedPayload {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   inputs: EPConversionInputs;
   epAwarded: number;
   dfaoId: DFAOId;
@@ -1236,7 +1245,7 @@ export interface EventPayloadMap {
   [EventType.LOOP_ISOLATED]:             { loopId: LoopId; reason: string };
   [EventType.LOOP_SETTLED]:              { loopId: LoopId; mintEventId: MintEventId };
   [EventType.REPUTATION_ACCRUED]:        ReputationAccruedPayload;
-  [EventType.REPUTATION_DECAYED]:        { validatorId: ValidatorId; domain: EntropyDomain; decayAmount: number };
+  [EventType.REPUTATION_DECAYED]:        { validatorId: LookerId; domain: EntropyDomain; decayAmount: number };
   [EventType.REPUTATION_PENALIZED]:      ReputationPenalizedPayload;
   [EventType.XP_MINTED_PROVISIONAL]:     XPMintedProvisionalPayload;
   [EventType.XP_CONFIRMED]:              XPConfirmedPayload;
@@ -1504,7 +1513,7 @@ export interface DFAO {
   /** Child DFAO IDs — fractal children */
   childDFAOIds: DFAOId[];
   /** Founding members */
-  founderIds: ValidatorId[];
+  founderIds: LookerId[];
   /** Current member count */
   memberCount: number;
   /** Primary entropy domain this DFAO operates in */
@@ -1544,7 +1553,7 @@ export interface DFAOGovernanceConfig {
 }
 
 export interface DFAOTokenConfig {
-  /** Whether this DFAO mints its own domain tokens */
+  /** Leftover flag. DT (domain tokens) are retired. Nothing transfers. */
   mintsDomainTokens: boolean;
   /** Custom CT multiplier for contributions within this DFAO */
   ctMultiplier: number;
@@ -1570,7 +1579,7 @@ export enum MembershipStatus {
 
 export interface DFAOMembership {
   dfaoId: DFAOId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   role: MembershipRole;
   status: MembershipStatus;
   /** Governance weight in this DFAO */
@@ -1621,7 +1630,7 @@ export interface GovernanceProposal {
   /** The specific changes this proposal would enact */
   changes: ProposalChange[];
   /** Who submitted this proposal */
-  proposerId: ValidatorId;
+  proposerId: LookerId;
   status: ProposalStatus;
   /** Deliberation start time */
   deliberationStartedAt: Timestamp | null;
@@ -1658,7 +1667,7 @@ export interface ProposalChange {
 
 export interface GovernanceVote {
   proposalId: ProposalId;
-  voterId: ValidatorId;
+  voterId: LookerId;
   dfaoId: DFAOId;
   vote: 'approve' | 'reject' | 'abstain';
   /** Weight of this vote (reputation-based or quadratic) */
@@ -1728,7 +1737,7 @@ export interface Season {
   /** Reward multiplier for this season (e.g., early-season bonus) */
   rewardMultiplier: number;
   /** Governance rankings snapshot at season start */
-  startingRankingsSnapshot: Record<ValidatorId, number> | null;
+  startingRankingsSnapshot: Record<LookerId, number> | null;
   /** Final rankings at season end */
   finalRankings: SeasonRanking[] | null;
   /** DAG vertex recording season start */
@@ -1743,7 +1752,7 @@ export interface Season {
 }
 
 export interface SeasonRanking {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   rank: number;
   totalXP: number;
   totalLoops: number;
@@ -1792,7 +1801,7 @@ export enum TokenStatus {
 export interface TokenBalance {
   id: TokenId;
   walletId: WalletId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   tokenType: TokenType;
   amount: number;
   status: TokenStatus;
@@ -1834,10 +1843,10 @@ export interface TokenTransaction {
   timestamp: Timestamp;
 }
 
-/** Wallet — each validator has one */
+/** Wallet — each participant has one. Nothing in it transfers. */
 export interface Wallet {
   id: WalletId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   /** Balances by token type */
   balances: Record<TokenType, number>;
   /** Locked balances by token type */
@@ -1849,12 +1858,15 @@ export interface Wallet {
   createdAt: Timestamp;
 }
 
-/** Capability Token certification requirements */
+/**
+ * CAT is a skill record: a count of settled loops in a lane.
+ * Not a login. Not KYC. Not a pile. The field names below are leftover.
+ */
 export interface CATCertification {
   domain: EntropyDomain;
-  /** Current CAT level (log scale: 10/30/90/270 validations) */
+  /** Current CAT level, derived from settled loops in the lane. Not a credential office. */
   level: number;
-  /** Number of validated performances */
+  /** Count of settled loops in this lane. Field name is leftover. */
   validatedPerformances: number;
   /** Threshold for next level */
   nextLevelThreshold: number;
@@ -1921,7 +1933,7 @@ export enum CredentialType {
 
 export interface Credential {
   id: CredentialId;
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   type: CredentialType;
   name: string;
   description: string;
@@ -1961,7 +1973,7 @@ export const CAT_LEVEL_THRESHOLDS: number[] = [10, 30, 90, 270, 810, 2430];
 
 /** Leaderboard entry */
 export interface LeaderboardEntry {
-  validatorId: ValidatorId;
+  validatorId: LookerId;
   validatorName: string;
   rank: number;
   reputationLevel: number;
