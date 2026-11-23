@@ -260,6 +260,16 @@ That's the point. File an issue describing the attack vector, the domain it targ
 
 ---
 
+## Funding
+
+The Engine is free and stays free. The code, the spec, and everything published with it is not gated and never will be.
+
+The work is funded voluntarily at [extropyengine.com/dollar](https://extropyengine.com/dollar): one dollar a month from people who want the work to keep existing. The dollar buys nothing, unlocks nothing, and promises no return. It pays for the hours.
+
+Supporters are recorded by number on the public wall at [extropyengine.com/supporters](https://extropyengine.com/supporters). Every supporter keeps their number. The first 100 are the Founding Supporters.
+
+---
+
 ## License
 
 MIT. Build on it.
