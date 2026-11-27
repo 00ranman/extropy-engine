@@ -1,4 +1,4 @@
-# Mesh — Web3 as promised
+# Mesh: Web3 as promised
 
 Two boxes. A signed loop. The other edge countersigns. A later vertex can burn it. No bag. No gas. No chain.
 
@@ -45,3 +45,31 @@ Discovery is ugly: you type the other box’s URL. QR / file / LAN later. Repo d
 ## What this is not
 
 Not Ethereum. Not an ERC-20. Not a wallet you withdraw. Cash still rings. Standing still does not cash out. This package is the wire for the loop. Meters live in the rest of `extropy-engine`.
+
+## Public record
+
+`GET /record` and `node packages/mesh/mesh.mjs record` export settled loops as envelope A only: class, entropy-reduction proxy (`delta_s`), state, hashes. Task text, evidence bytes, reasons, and actor ids stay on the local dag. They are not in `record.json`.
+
+`ok_to_feature` defaults to false. The strip sets it true only when the open, the done, and the confirm each passed `--ok-to-feature` (or the JSON boolean `true`). One side saying yes is not enough.
+
+A loop is exported after CONFIRM. A later BURN stays on the strip with state `BURN`. OPEN or DONE alone is left out.
+
+Contested confirmations are not finished. There is no contest vertex, no late-burn propagation, and no standing adjustment in this package. A receipt is the happy path. Do not read it as a finished adversarial close.
+
+## Ad-check loops
+
+Class `ad-check` is the "every ad gets a receipt" loop. The poster opens it. A verifier marks it done. The poster confirms.
+
+Rules this package enforces:
+
+- The verifier (the node that marks done) cannot be the poster or anyone passed in `parties`.
+- The confirm has to be the poster's signature.
+- `poster_mint` on the public strip is 0. This mesh does not mint a meter for anyone else either. Null on other classes means "not minted here," not zero.
+
+```bash
+DATA=./.mesh-a node packages/mesh/mesh.mjs open \
+  --class ad-check --task "check the three claims" --parties "<other-party-id>" \
+  --peer http://127.0.0.1:4210
+```
+
+Pass `--ok-to-feature` on open, done, and confirm only when that person agrees to be featured. The default is no.

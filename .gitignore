@@ -46,3 +46,7 @@ pgdata/
 
 # pnpm
 .pnpm-store/
+
+# Hostinger private config. Copy from site-drop/private/config.example.php.
+site-drop/private/config.php
+site-drop/private/state.json

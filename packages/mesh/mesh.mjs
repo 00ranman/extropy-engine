@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Extropy mesh — Web3 as promised.
+ * Extropy mesh. Web3 as promised.
  * Two boxes. Signed vertices. Both edges. No bag. No gas. No chain.
  *
  *   DATA=./.mesh-a PORT=4210 node packages/mesh/mesh.mjs serve
@@ -21,6 +21,12 @@ import {
 } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
+import {
+  adCheckConfirmError,
+  adCheckDoneError,
+  exportRecord,
+  readOpenFields,
+} from "./record.mjs";
 
 const DATA = resolve(process.env.DATA || ".mesh");
 const PORT = Number(process.env.PORT || 4210);
@@ -145,6 +151,10 @@ function makeVertex(fields) {
     evidence: fields.evidence || "",
     why: fields.why || "",
     ts: new Date().toISOString(),
+    class: fields.class ?? null,
+    deltaS: fields.deltaS ?? null,
+    okToFeature: fields.okToFeature === true,
+    parties: Array.isArray(fields.parties) ? fields.parties : [],
   };
   const signed = { ...body, signature: sign(body) };
   signed.hash = hashVertex(signed);
@@ -207,6 +217,9 @@ function serve() {
       if (req.method === "GET" && url.pathname === "/dag") {
         return json(res, 200, { nodeId: NODE_ID, vertices: loadDag() });
       }
+      if (req.method === "GET" && url.pathname === "/record") {
+        return json(res, 200, exportRecord(loadDag()));
+      }
       if (req.method === "POST" && url.pathname === "/hello") {
         const env = await readBody(req);
         if (!env.nodeId || !verify(env.nodeId, env)) return json(res, 401, { error: "bad hello" });
@@ -221,32 +234,65 @@ function serve() {
         return json(res, 200, { ok: true, id: v.id, state: v.state });
       }
       if (req.method === "POST" && url.pathname === "/loop/open") {
-        const { task, evidence } = await readBody(req);
-        const v = makeVertex({ state: "OPEN", task, evidence });
+        const body = await readBody(req);
+        let fields;
+        try {
+          fields = readOpenFields(body);
+        } catch (err) {
+          return json(res, err.status || 400, { error: err.message });
+        }
+        const v = makeVertex({
+          state: "OPEN",
+          task: body.task,
+          evidence: body.evidence,
+          ...fields,
+          okToFeature: body.okToFeature === true || body.ok_to_feature === true,
+        });
         append(v);
         await gossip(v);
         return json(res, 200, v);
       }
       if (req.method === "POST" && url.pathname === "/loop/done") {
-        const { loopId, evidence } = await readBody(req);
+        const body = await readBody(req);
+        const { loopId, evidence } = body;
         const open = loadDag().find((x) => x.loopId === loopId && x.state === "OPEN");
         if (!open) return json(res, 404, { error: "no OPEN" });
-        const v = makeVertex({ id: randomUUID(), loopId, state: "DONE", task: open.task, evidence });
+        const denied = adCheckDoneError(open, NODE_ID);
+        if (denied) return json(res, 403, { error: denied });
+        const v = makeVertex({
+          id: randomUUID(),
+          loopId,
+          state: "DONE",
+          task: open.task,
+          evidence,
+          class: open.class ?? null,
+          deltaS: open.deltaS ?? null,
+          parties: open.parties || [],
+          okToFeature: body.okToFeature === true || body.ok_to_feature === true,
+        });
         append(v);
         await gossip(v);
         return json(res, 200, v);
       }
       if (req.method === "POST" && url.pathname === "/loop/confirm") {
-        const { loopId } = await readBody(req);
+        const body = await readBody(req);
+        const { loopId } = body;
         const done = loadDag().find((x) => x.loopId === loopId && x.state === "DONE");
         if (!done) return json(res, 404, { error: "no DONE" });
         if (done.actor === NODE_ID) return json(res, 400, { error: "other edge confirms" });
+        const open = loadDag().find((x) => x.loopId === loopId && x.state === "OPEN");
+        const denied = adCheckConfirmError(open, NODE_ID);
+        if (denied) return json(res, 403, { error: denied });
         const v = makeVertex({
           id: randomUUID(),
           loopId,
           state: "CONFIRM",
           task: done.task,
           evidence: done.evidence,
+          class: open?.class ?? done.class ?? null,
+          deltaS: open?.deltaS ?? done.deltaS ?? null,
+          parties: open?.parties || [],
+          okToFeature: body.okToFeature === true || body.ok_to_feature === true,
         });
         append(v);
         await gossip(v);
@@ -305,19 +351,33 @@ async function main() {
   if (cmd === "open") {
     const peer = arg("peer") || `http://127.0.0.1:${PORT}`;
     const task = arg("task") || "untitled loop";
-    const v = await postJson(peer, "/loop/open", { task, evidence: arg("evidence") });
+    const v = await postJson(peer, "/loop/open", {
+      task,
+      evidence: arg("evidence"),
+      class: arg("class") || undefined,
+      delta_s: arg("delta-s") === "" ? undefined : arg("delta-s"),
+      parties: arg("parties") || undefined,
+      ok_to_feature: process.argv.includes("--ok-to-feature"),
+    });
     console.log(JSON.stringify(v, null, 2));
     return;
   }
   if (cmd === "done") {
     const peer = arg("peer") || `http://127.0.0.1:${PORT}`;
-    const v = await postJson(peer, "/loop/done", { loopId: arg("id"), evidence: arg("evidence") });
+    const v = await postJson(peer, "/loop/done", {
+      loopId: arg("id"),
+      evidence: arg("evidence"),
+      ok_to_feature: process.argv.includes("--ok-to-feature"),
+    });
     console.log(JSON.stringify(v, null, 2));
     return;
   }
   if (cmd === "confirm") {
     const peer = arg("peer") || `http://127.0.0.1:${PORT}`;
-    const v = await postJson(peer, "/loop/confirm", { loopId: arg("id") });
+    const v = await postJson(peer, "/loop/confirm", {
+      loopId: arg("id"),
+      ok_to_feature: process.argv.includes("--ok-to-feature"),
+    });
     console.log(JSON.stringify(v, null, 2));
     return;
   }
@@ -331,7 +391,14 @@ async function main() {
     console.log(JSON.stringify(loadDag(), null, 2));
     return;
   }
-  console.error("serve | id | hello | open | done | confirm | burn | dag");
+  if (cmd === "record") {
+    const out = exportRecord(loadDag());
+    const dest = arg("out");
+    if (dest) writeFileSync(resolve(dest), JSON.stringify(out, null, 2));
+    console.log(JSON.stringify(out, null, 2));
+    return;
+  }
+  console.error("serve | id | hello | open | done | confirm | burn | dag | record");
   process.exit(2);
 }
 

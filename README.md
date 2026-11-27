@@ -268,6 +268,18 @@ The work is funded voluntarily at [extropyengine.com/dollar](https://extropyengi
 
 Supporters are recorded by number on the public wall at [extropyengine.com/supporters](https://extropyengine.com/supporters). Every supporter keeps their number. The first 100 are the Founding Supporters.
 
+## Wear the badge
+
+Operator zero wears it here. The image is the public supporter count, cached 10 minutes, and it links to the dollar page. The dollar gates nothing.
+
+[![Runs the Extropy Engine. Supporters of 10,000. Start your own pocket.](https://extropyengine.com/badge.svg)](https://extropyengine.com/dollar)
+
+```html
+<a href="https://extropyengine.com/dollar"><img src="https://extropyengine.com/badge.svg" alt="Runs the Extropy Engine. Supporters of 10,000. Start your own pocket."></a>
+```
+
+Copy that onto a site you run. If you run a node, the same line is in the node setup docs. The badge says the count is not in yet until [supporters.json](https://extropyengine.com/supporters.json) has a real number. It will not invent one.
+
 ---
 
 ## License

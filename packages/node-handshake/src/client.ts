@@ -9,6 +9,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { canonicalize, type NodeRole } from './protocol.js';
 import { loadKeyPairFromEnv, sign, verify } from './keys.js';
+import { helloAnnounceFields } from './pocket.js';
 
 const PEER_URL = process.env.PEER_URL ?? 'http://localhost:4200';
 const NODE_ROLE = (process.env.NODE_ROLE ?? 'local') as NodeRole;
@@ -19,6 +20,14 @@ const NODE_FEATURES = ['dag-replay', 'claim-relay', 'heartbeat'];
 const keyPair = loadKeyPairFromEnv();
 
 async function hello(): Promise<{ sessionId: string; peerNodeId: string }> {
+  const announce = helloAnnounceFields({
+    flag: process.env.ANNOUNCE_POCKET,
+    town: process.env.POCKET_TOWN,
+  });
+  if (process.env.ANNOUNCE_POCKET && !('town' in announce)) {
+    // eslint-disable-next-line no-console
+    console.log('[hello] pocket announce stayed off (flag without a plain town name)');
+  }
   const body = {
     nodeId: keyPair.nodeId,
     version: NODE_VERSION,
@@ -27,6 +36,7 @@ async function hello(): Promise<{ sessionId: string; peerNodeId: string }> {
     features: NODE_FEATURES,
     nonce: uuidv4(),
     ts: new Date().toISOString(),
+    ...announce,
   };
   const env = { ...body, signature: sign(keyPair.privateKey, canonicalize(body as unknown as Record<string, unknown>)) };
 

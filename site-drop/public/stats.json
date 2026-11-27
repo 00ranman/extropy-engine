@@ -1,0 +1,11 @@
+{
+  "schema": "extropy.stats.v1",
+  "updated_at": null,
+  "note": "Each field is a count from a named public source. Null means that source could not be read. Null is not zero. An empty list that was actually read is zero.",
+  "stars": null,
+  "forks": null,
+  "open_problems": null,
+  "loops": null,
+  "supporters": null,
+  "pockets": null
+}

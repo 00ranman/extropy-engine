@@ -1,0 +1,36 @@
+# Writes nodes/forks.json from the public fork event.
+# Does not post to X. No X credentials.
+
+name: Fork log
+
+on:
+  fork:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fork-log
+  cancel-in-progress: false
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Append the public fork
+        run: node scripts/feeds/fork-log.mjs
+      - name: Commit the feed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nodes/forks.json
+          if git diff --staged --quiet; then
+            echo "no change"
+            exit 0
+          fi
+          git commit -m "chore: log a public fork"
+          git push

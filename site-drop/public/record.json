@@ -1,0 +1,6 @@
+{
+  "schema": "extropy.record.v1",
+  "updated_at": null,
+  "note": "Public class strips only (envelope A). Envelope C is not in this file. Contested confirmations are not finished. No loops are published in this file yet.",
+  "loops": []
+}

@@ -1,4 +1,4 @@
-# VPS Node — Sandbox-Node Posture (v3.1)
+# VPS Node: Sandbox-Node Posture (v3.1)
 
 **Status:** Sandbox. This is a live engineering testbed, not a production deployment.
 
@@ -34,10 +34,10 @@ The VPS exists to:
 
 The minimum viable test harness is in [`packages/node-handshake`](../packages/node-handshake). It implements:
 
-1. `/hello` — mutual identity exchange + capability advertisement
-2. `/capabilities` — package + domain + load exchange
-3. `/dag/replay` — DAG segment replay between peers
-4. `/heartbeat` — signed liveness pings
+1. `/hello`: mutual identity exchange + capability advertisement
+2. `/capabilities`: package + domain + load exchange
+3. `/dag/replay`: DAG segment replay between peers
+4. `/heartbeat`: signed liveness pings
 
 ### Running the VPS side
 
@@ -78,6 +78,20 @@ You should see:
 - A session ID
 - Capability advertisement
 - An empty replay window response (until `dag-substrate` indexing is wired in)
+
+### Wear the badge
+
+The node setup does not include the badge unless you add it to a site you run. One line, linking at the dollar page. The dollar gates nothing.
+
+```html
+<a href="https://extropyengine.com/dollar"><img src="https://extropyengine.com/badge.svg" alt="Runs the Extropy Engine. Supporters of 10,000. Start your own pocket."></a>
+```
+
+The count comes from the public supporter file. If that file has no count yet, the badge says so.
+
+### Announce a town
+
+Pocket announce is off unless you set `ANNOUNCE_POCKET=1` and type `POCKET_TOWN`. See [`packages/node-handshake/README.md`](../packages/node-handshake/README.md). A fork of the repo is not a pocket.
 
 ### What success looks like (sandbox)
 

@@ -1,0 +1,5 @@
+{
+  "schema": "extropy.forks.v1",
+  "note": "A fork is a public GitHub fork. It is not a pocket and it is not a node. fork_count is GitHub's number when the event was logged. Null means GitHub did not give a number.",
+  "entries": []
+}

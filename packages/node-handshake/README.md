@@ -2,9 +2,9 @@
 
 **Sandbox-to-sandbox node handshake.** Proof-of-concept for the v3.1 substrate.
 
-This package implements the minimum viable communication layer between two Extropy Engine nodes — for example, a VPS-hosted node and a local laptop node. It exists to prove the protocol shape end-to-end and to give Randall a working harness for testing today, while the full libp2p / native gossip layer is being designed.
+This package implements the minimum viable communication layer between two Extropy Engine nodes, for example a VPS-hosted node and a local laptop node. It exists to prove the protocol shape end-to-end and to give Randall a working harness for testing today, while the full libp2p / native gossip layer is being designed.
 
-**Status:** Skeleton — wire protocol defined; reference implementation in progress.
+**Status:** Skeleton. Wire protocol defined. Reference implementation in progress.
 
 See [`docs/VPS_NODE.md`](../../docs/VPS_NODE.md) for the deployment posture this is built against.
 
@@ -99,6 +99,34 @@ Response: streamed DAG vertices, each individually signed by their original auth
   "signature": "<base64>"
 }
 ```
+
+## Announce my pocket
+
+Off by default. A town name in the environment does nothing until the operator turns the flag on.
+
+```bash
+ANNOUNCE_POCKET=1 POCKET_TOWN="Iowa City" \
+  NODE_ROLE=local PEER_URL=http://localhost:4200 \
+  pnpm --filter @extropy/node-handshake client:hello
+```
+
+On the server, the same two variables publish this node's own entry. If the flag is on and `POCKET_TOWN` is empty and the process has a terminal, it asks for one line. A blank line keeps the pocket quiet. With no terminal and no town, it stays quiet.
+
+What gets emitted, and only then, is a public hello entry: `town`, `node_id`, `announced_at`, `spec`. No host, no street, no GPS. `GET /pocket` returns it. `GET /pockets.json` is this process's feed (itself, plus peers who opted in on a signed hello). That file is not the global site feed.
+
+`POCKETS_OUT=/path/pockets.json` writes this node's entry so you can upload it by hand. The node does not post it to the website.
+
+A fork is not a pocket. Forks land in `nodes/forks.json` from a GitHub Action. Pockets land here only after this flag.
+
+## Wear the badge
+
+If this box has a site, put the badge on it. The image reads the public supporter count and links to the dollar page. The dollar gates nothing.
+
+```html
+<a href="https://extropyengine.com/dollar"><img src="https://extropyengine.com/badge.svg" alt="Runs the Extropy Engine. Supporters of 10,000. Start your own pocket."></a>
+```
+
+Until `https://extropyengine.com/supporters.json` has a real count, the badge says the count is not in yet. It does not show a made-up number.
 
 ## Running locally + against the VPS
 

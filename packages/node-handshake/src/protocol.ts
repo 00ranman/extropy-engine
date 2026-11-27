@@ -25,6 +25,10 @@ export const HelloRequest = z.object({
   role: NodeRole,
   features: z.array(z.string()),
   nonce: z.string().uuid(),
+  // Opt-in public pocket. Absent means not announcing. Do not default these
+  // in the parser: a default would change the signed canonical form.
+  announcePocket: z.boolean().optional(),
+  town: z.string().max(80).optional(),
   ...baseSigned,
 });
 export type HelloRequest = z.infer<typeof HelloRequest>;

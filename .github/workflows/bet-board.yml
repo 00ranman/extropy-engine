@@ -1,0 +1,47 @@
+# Regenerates site-drop/public/bet from labeled issues and supporters.json.
+# Does not post to X. No X credentials.
+
+name: Bet board
+
+on:
+  issues:
+    types: [opened, edited, labeled, unlabeled, closed, reopened, milestoned, demilestoned]
+  milestone:
+    types: [created, opened, closed, edited, deleted]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: read
+
+concurrency:
+  group: bet-board
+  cancel-in-progress: false
+
+jobs:
+  bet:
+    if: >-
+      github.event_name != 'issues' ||
+      github.event.label.name == 'open-problem' ||
+      contains(toJSON(github.event.issue.labels), 'open-problem')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Rebuild the bet page
+        env:
+          SUPPORTERS_URL: https://extropyengine.com/supporters.json
+        run: node scripts/feeds/bet-board.mjs
+      - name: Commit the page
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site-drop/public/bet/bet.json site-drop/public/bet/index.html
+          if git diff --staged --quiet; then
+            echo "no change"
+            exit 0
+          fi
+          git commit -m "chore: refresh the bet board"
+          git push
