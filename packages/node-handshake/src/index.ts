@@ -1,31 +1,23 @@
 /**
- * ════════════════════════════════════════════════════════════════════════════════
- *  EXTROPY ENGINE — Node Handshake Server (v3.1 sandbox)
- * ════════════════════════════════════════════════════════════════════════════════
+ * EXTROPY ENGINE. Node Handshake Server (v3.1 sandbox)
  *
- *  Exposes /hello, /capabilities, /dag/replay, /heartbeat over signed JSON.
+ * Exposes /hello, /capabilities, /dag/replay, /heartbeat over signed JSON.
+ * Pocket announce is off unless ANNOUNCE_POCKET is set and a town is typed.
  *
- *  This is the proof-of-concept node-to-node communication layer. It runs on
- *  both the VPS and the local laptop. Each side authenticates the other via
- *  Ed25519 signatures over canonicalized JSON envelopes.
- *
- *  See README.md and docs/VPS_NODE.md.
- *
- * ════════════════════════════════════════════════════════════════════════════════
+ * See README.md and docs/VPS_NODE.md.
  */
 
-import express, { Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { createInterface } from 'node:readline';
+import { writeFileSync } from 'node:fs';
+import { createHandshakeApp, SERVICE_NAME, SPEC } from './app.js';
+import { loadKeyPairFromEnv } from './keys.js';
 import {
-  HelloRequest,
-  HelloResponse,
-  CapabilitiesEnvelope,
-  DagReplayRequest,
-  HeartbeatEnvelope,
-  canonicalize,
-  type NodeRole,
-} from './protocol.js';
-import { loadKeyPairFromEnv, sign, verify } from './keys.js';
+  announceFlagOn,
+  pocketsDocument,
+  resolvePocketAnnounce,
+  townFromOperator,
+} from './pocket.js';
+import type { NodeRole } from './protocol.js';
 
 const PORT = Number(process.env.PORT ?? 4200);
 // Default-deny remote access. Bind to loopback only so the listener is
@@ -33,169 +25,74 @@ const PORT = Number(process.env.PORT ?? 4200);
 // Explicitly set HOST=0.0.0.0 to expose on all interfaces (only do this
 // behind a firewall + reverse proxy with TLS).
 const HOST = process.env.HOST ?? '127.0.0.1';
-const SERVICE_NAME = '@extropy/node-handshake';
 const NODE_ROLE = (process.env.NODE_ROLE ?? 'vps') as NodeRole;
-const NODE_VERSION = '0.1.0';
-const SPEC = 'v3.1';
-const NODE_FEATURES = [
-  'dag-replay',
-  'claim-relay',
-  'heartbeat',
-  'capability-exchange',
-  'epistemology-witness',
-];
 
-const keyPair = loadKeyPairFromEnv();
+async function readTownLine(): Promise<string> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const line = await new Promise<string>((resolve) => {
+    rl.question('Town name to publish (empty line keeps this pocket quiet): ', resolve);
+  });
+  rl.close();
+  return line;
+}
 
-const sessions = new Map<string, { peerNodeId: string; openedAt: string; lastHeartbeat: string }>();
-
-const app = express();
-app.use(express.json({ limit: '4mb' }));
-
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({
-    service: SERVICE_NAME,
-    status: 'ok',
-    version: NODE_VERSION,
-    spec: SPEC,
-    role: NODE_ROLE,
+async function main() {
+  const keyPair = loadKeyPairFromEnv();
+  const typedTown = await townFromOperator({
+    flag: process.env.ANNOUNCE_POCKET,
+    town: process.env.POCKET_TOWN,
+    isTty: Boolean(process.stdin.isTTY),
+    readLine: readTownLine,
+  });
+  const decision = resolvePocketAnnounce({
+    flag: process.env.ANNOUNCE_POCKET,
+    town: typedTown,
     nodeId: keyPair.nodeId,
-    features: NODE_FEATURES,
-    openSessions: sessions.size,
-  });
-});
-
-// ── /hello ──────────────────────────────────────────────────────────────────
-
-app.post('/hello', (req: Request, res: Response) => {
-  const parse = HelloRequest.safeParse(req.body);
-  if (!parse.success) {
-    return res.status(400).json({ error: 'invalid hello envelope', detail: parse.error.flatten() });
-  }
-  const env = parse.data;
-  const canonical = canonicalize(env as unknown as Record<string, unknown>);
-  if (!verify(env.nodeId, canonical, env.signature)) {
-    return res.status(401).json({ error: 'invalid signature' });
-  }
-
-  const sessionId = uuidv4();
-  const ts = new Date().toISOString();
-  const responseBody = {
-    ok: true,
-    peerNodeId: keyPair.nodeId,
-    version: NODE_VERSION,
+    announcedAt: new Date().toISOString(),
     spec: SPEC,
+  });
+
+  if (decision.emit) {
+    // eslint-disable-next-line no-console
+    console.log(`[${SERVICE_NAME}] pocket announce on. town=${decision.entry.town}`);
+    if (process.env.POCKETS_OUT) {
+      const doc = pocketsDocument([decision.entry], decision.entry.announced_at);
+      writeFileSync(process.env.POCKETS_OUT, JSON.stringify(doc, null, 2));
+      // eslint-disable-next-line no-console
+      console.log(`[${SERVICE_NAME}] wrote ${process.env.POCKETS_OUT}`);
+    }
+  } else if (announceFlagOn(process.env.ANNOUNCE_POCKET)) {
+    // eslint-disable-next-line no-console
+    console.log(`[${SERVICE_NAME}] pocket announce stayed off: ${decision.reason}`);
+  } else {
+    // eslint-disable-next-line no-console
+    console.log(`[${SERVICE_NAME}] pocket announce off`);
+  }
+
+  const app = createHandshakeApp({
+    keyPair,
     role: NODE_ROLE,
-    features: NODE_FEATURES,
-    sessionId,
-    ts,
-  };
-  const signedResp: HelloResponse = {
-    ...responseBody,
-    signature: sign(keyPair.privateKey, canonicalize(responseBody as unknown as Record<string, unknown>)),
-  };
-  sessions.set(sessionId, {
-    peerNodeId: env.nodeId,
-    openedAt: ts,
-    lastHeartbeat: ts,
+    ownPocket: decision.emit ? decision.entry : null,
   });
-  return res.json(signedResp);
-});
 
-// ── /capabilities ───────────────────────────────────────────────────────────
-
-app.post('/capabilities', (req: Request, res: Response) => {
-  const parse = CapabilitiesEnvelope.safeParse(req.body);
-  if (!parse.success) {
-    return res.status(400).json({ error: 'invalid capabilities envelope', detail: parse.error.flatten() });
-  }
-  const env = parse.data;
-  const session = sessions.get(env.sessionId);
-  if (!session) return res.status(404).json({ error: 'unknown session' });
-  if (!verify(session.peerNodeId, canonicalize(env as unknown as Record<string, unknown>), env.signature)) {
-    return res.status(401).json({ error: 'invalid signature' });
-  }
-  // Reply with our own capabilities
-  const ts = new Date().toISOString();
-  const body = {
-    sessionId: env.sessionId,
-    packages: [
-      '@extropy/contracts',
-      '@extropy/xp-formula',
-      '@extropy/loop-ledger',
-      '@extropy/signalflow',
-      '@extropy/dag-substrate',
-      '@extropy/epistemology-engine',
-      '@extropy/identity',
-      '@extropy/psll-sync',
-      '@extropy/quest-market',
-      '@extropy/validation-neighborhoods',
-    ],
-    validatedDomains: ['cognitive', 'code', 'social', 'economic', 'thermodynamic', 'informational', 'governance', 'temporal'],
-    loadFactor: 0.0,
-    acceptsInboundClaims: NODE_ROLE === 'vps',
-    acceptsInboundQuests: NODE_ROLE === 'vps',
-    ts,
-  };
-  return res.json({
-    ...body,
-    signature: sign(keyPair.privateKey, canonicalize(body as unknown as Record<string, unknown>)),
-  });
-});
-
-// ── /dag/replay ─────────────────────────────────────────────────────────────
-
-app.post('/dag/replay', (req: Request, res: Response) => {
-  const parse = DagReplayRequest.safeParse(req.body);
-  if (!parse.success) {
-    return res.status(400).json({ error: 'invalid replay request', detail: parse.error.flatten() });
-  }
-  const env = parse.data;
-  const session = sessions.get(env.sessionId);
-  if (!session) return res.status(404).json({ error: 'unknown session' });
-  if (!verify(session.peerNodeId, canonicalize(env as unknown as Record<string, unknown>), env.signature)) {
-    return res.status(401).json({ error: 'invalid signature' });
-  }
-  // Sandbox stub: return an empty replay window with a structural envelope
-  return res.json({
-    sessionId: env.sessionId,
-    fromIndex: env.fromIndex,
-    toIndex: env.toIndex,
-    vertices: [],
-    note: 'sandbox stub — wire to dag-substrate index in next iteration',
-  });
-});
-
-// ── /heartbeat ──────────────────────────────────────────────────────────────
-
-app.post('/heartbeat', (req: Request, res: Response) => {
-  const parse = HeartbeatEnvelope.safeParse(req.body);
-  if (!parse.success) {
-    return res.status(400).json({ error: 'invalid heartbeat', detail: parse.error.flatten() });
-  }
-  const env = parse.data;
-  const session = sessions.get(env.sessionId);
-  if (!session) return res.status(404).json({ error: 'unknown session' });
-  if (!verify(session.peerNodeId, canonicalize(env as unknown as Record<string, unknown>), env.signature)) {
-    return res.status(401).json({ error: 'invalid signature' });
-  }
-  session.lastHeartbeat = new Date().toISOString();
-  return res.json({ ok: true, sessionId: env.sessionId, observedAt: session.lastHeartbeat });
-});
-
-// ────────────────────────────────────────────────────────────────────────────
-
-app.listen(PORT, HOST, () => {
-  // eslint-disable-next-line no-console
-  console.log(
-    `[${SERVICE_NAME}] listening on ${HOST}:${PORT} role=${NODE_ROLE} nodeId=${keyPair.nodeId}`,
-  );
-  if (HOST === '127.0.0.1' || HOST === 'localhost') {
+  app.listen(PORT, HOST, () => {
     // eslint-disable-next-line no-console
     console.log(
-      `[${SERVICE_NAME}] loopback-only. To reach from another machine, use:\n` +
-        `    ssh -L ${PORT}:localhost:${PORT} <user>@<this-host>\n` +
-        `  Or set HOST=0.0.0.0 to expose on all interfaces (firewall + TLS strongly advised).`,
+      `[${SERVICE_NAME}] listening on ${HOST}:${PORT} role=${NODE_ROLE} nodeId=${keyPair.nodeId}`,
     );
-  }
+    if (HOST === '127.0.0.1' || HOST === 'localhost') {
+      // eslint-disable-next-line no-console
+      console.log(
+        `[${SERVICE_NAME}] loopback-only. To reach from another machine, use:\n` +
+          `    ssh -L ${PORT}:localhost:${PORT} <user>@<this-host>\n` +
+          `  Or set HOST=0.0.0.0 to expose on all interfaces (firewall + TLS strongly advised).`,
+      );
+    }
+  });
+}
+
+main().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error('[node-handshake] failed to start', err);
+  process.exit(1);
 });

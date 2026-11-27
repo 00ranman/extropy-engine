@@ -1,0 +1,6 @@
+{
+  "schema": "extropy.pockets.v1",
+  "updated_at": null,
+  "note": "Each entry is a node whose operator turned announce on and typed a town. A fork is not a pocket. The town is a name they typed, not a checked location.",
+  "entries": []
+}

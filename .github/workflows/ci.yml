@@ -21,6 +21,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      - name: Install PHP CLI
+        run: sudo apt-get update && sudo apt-get install -y php-cli
       - run: pnpm -r --if-present run build
       - run: pnpm -r --if-present run test
 

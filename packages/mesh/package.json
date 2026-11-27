@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node mesh.mjs serve",
-    "demo": "node demo.mjs"
+    "demo": "node demo.mjs",
+    "test": "node --test record.test.mjs && node --test ../../scripts/feeds/feeds.test.mjs && php ../../site-drop/private/webhook.test.php"
   }
 }

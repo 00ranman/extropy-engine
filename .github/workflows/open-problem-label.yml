@@ -1,0 +1,27 @@
+# Creates the open-problem label and applies the documented issue list.
+# Does not post to X. No X credentials.
+
+name: Open-problem label
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - docs/open-problem-issues.json
+      - .github/workflows/open-problem-label.yml
+      - scripts/feeds/open-problem-label.mjs
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the label and apply it
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/feeds/open-problem-label.mjs --apply

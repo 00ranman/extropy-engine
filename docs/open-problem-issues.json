@@ -1,0 +1,32 @@
+{
+  "label": {
+    "name": "open-problem",
+    "color": "b60205",
+    "description": "Public open problem or adversarial-path work. The bet board counts these."
+  },
+  "apply": [
+    {
+      "number": 6,
+      "title": "t_s speed-farming vulnerability in XP formula",
+      "why": "Adversarial-path issue. Still open. An attacker can try to drive the slam window and farm the meter."
+    },
+    {
+      "number": 40,
+      "title": "Reframe validator bootstrap as adoption density (gap 15)",
+      "why": "The priesthood version of gap 15 is scratched. The issue itself still lists open questions: how thin a local graph can get, coverage, and an untested provisional N. That is open-problem work."
+    }
+  ],
+  "not_applied": [
+    { "number": 3, "why": "Split a types file. Engineering chore, not an open problem." },
+    { "number": 4, "why": "Add unit tests. Chore, not an open problem." },
+    { "number": 7, "why": "Rename an old spec file. Housekeeping." },
+    { "number": 8, "why": "v3.1 request to remove epistemology-engine. Current spec keeps it as a witness. Not an open problem." },
+    { "number": 9, "why": "v3.1 identity feature. Current spec is did:key on the box, not an OAuth bridge." },
+    { "number": 10, "why": "Feature work for PSLL anchors. Not a stated open problem." },
+    { "number": 11, "why": "Feature work for the quest market. Not a stated open problem." },
+    { "number": 12, "why": "Implementation checklist for validation neighborhoods. Adjacent to looking, but it is a feature list, not the open problem itself." },
+    { "number": 13, "why": "Docs for an old architecture page." },
+    { "number": 14, "why": "Reconcile the legacy 63-gap list. The public count is not 63. Do not label the doc chore as an open problem." },
+    { "number": 28, "why": "LocalFlow production hardening. Not an open problem." }
+  ]
+}

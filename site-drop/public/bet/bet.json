@@ -1,0 +1,9 @@
+{
+  "schema": "extropy.bet.v1",
+  "updated_at": null,
+  "open_problem_count": null,
+  "last_closed_problem": null,
+  "supporter_count": null,
+  "milestones": null,
+  "note": "open_problem_count is the number of open GitHub issues labeled open-problem. last_closed_problem is the latest of those issues GitHub shows as closed. supporter_count is the count field from supporters.json. Null means that source could not be read. It is not zero."
+}
